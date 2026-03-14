@@ -1,0 +1,35 @@
+const API_BASE = '';
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: 'include',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: 'Request failed' }));
+    throw Object.assign(new Error(body.error || body.message || `HTTP ${res.status}`), {
+      status: res.status,
+      body,
+    });
+  }
+
+  return res.json();
+}
+
+export const api = {
+  getMe: () => request<{ displayName: string; connected: boolean; accessToken: string }>('/auth/me'),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  search: (q: string) => request<{ tracks: any[]; artists: any[] }>(`/spotify/search?q=${encodeURIComponent(q)}`),
+  getTrack: (id: string) => request<any>(`/spotify/track/${id}`),
+  getArtistAlbums: (id: string) => request<any[]>(`/spotify/artist/${id}/albums`),
+  createVibe: (body: { trackId: string; mode: string; startSec?: number }) =>
+    request<{ vibeId: string; shareUrl: string }>('/vibes/create', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+};

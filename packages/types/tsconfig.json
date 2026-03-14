@@ -6,12 +6,11 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist",
+    "rootDir": "."
   },
-  "references": [
-    { "path": "packages/types" },
-    { "path": "apps/api" },
-    { "path": "apps/web" }
-  ]
+  "include": ["./**/*.ts"]
 }
