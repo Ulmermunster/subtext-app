@@ -12,17 +12,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // Early intercept: if this is a receiver page (/v/XXX), redirect to
-      // the static receiver.html before React even loads. This is the most
-      // reliable approach — no SPA routing, no lazy loading, no document.write.
-      (function() {
-        var match = location.pathname.match(/^\/v\/([A-Z0-9]+)$/i);
-        if (match) {
-          location.replace('/receiver.html?id=' + match[1]);
-        }
-      })();
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
