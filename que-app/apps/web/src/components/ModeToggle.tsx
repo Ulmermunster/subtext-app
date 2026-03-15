@@ -11,10 +11,12 @@ export default function ModeToggle({ mode, onModeChange, hasPreview }: Props) {
         onClick={() => hasPreview && onModeChange('AUTO')}
         className={`card p-4 text-left transition-all ${
           mode === 'AUTO' ? 'border-gold ring-2 ring-gold/20' : ''
-        } ${!hasPreview ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        } ${!hasPreview ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div className="text-lg mb-1">✨ Let Spotify pick</div>
-        <div className="text-muted text-xs">Auto-selects the chorus</div>
+        <div className="text-muted text-xs">
+          {hasPreview ? 'Auto-selects the chorus' : 'Not available for this track'}
+        </div>
       </button>
       <button
         onClick={() => onModeChange('PICK')}

@@ -42,9 +42,6 @@ export default function TrackResult({ track, onSelect, selected }: Props) {
           </svg>
         </div>
       )}
-      {!selected && !track.hasPreview && (
-        <span className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full flex-shrink-0">no clip</span>
-      )}
     </button>
   );
 }
