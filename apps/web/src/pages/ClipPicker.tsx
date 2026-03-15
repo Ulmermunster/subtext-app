@@ -1,7 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ModeToggle from '../components/ModeToggle';
-import WaveformPicker from '../components/WaveformPicker';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
 
@@ -11,32 +9,16 @@ function formatDuration(ms: number) {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-function formatTime(sec: number) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
 export default function ClipPicker() {
   const location = useLocation();
   const navigate = useNavigate();
   const track = (location.state as any)?.track;
-  const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
-  const [startSec, setStartSec] = useState(0);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [vibeId, setVibeId] = useState('');
   const [senderName, setSenderName] = useState('');
-  const [recipientName, setRecipientName] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-
-  // Spotify embed preview for PICK mode
-  const [showPreview, setShowPreview] = useState(false);
-
-  const handleWindowChange = useCallback((sec: number) => {
-    setStartSec(sec);
-  }, []);
 
   const handleGenerate = async () => {
     if (!track) return;
@@ -45,8 +27,7 @@ export default function ClipPicker() {
     try {
       const result = await api.createVibe({
         trackId: track.spotifyId,
-        mode,
-        startSec: mode === 'PICK' ? startSec : undefined,
+        mode: 'AUTO',
         senderDisplayName: senderName || undefined,
       });
       setVibeId(result.vibeId);
@@ -160,7 +141,7 @@ export default function ClipPicker() {
     );
   }
 
-  // Track selection + clip picker screen
+  // Track confirmation screen
   return (
     <div className="w-full max-w-md mx-auto px-5 flex flex-col" style={{ minHeight: '100dvh', paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
       <div className="flex items-center gap-4 py-2">
@@ -183,47 +164,13 @@ export default function ClipPicker() {
         </div>
       </div>
 
-      {/* Mode toggle */}
-      <div className="mt-5">
-        <ModeToggle mode={mode} onModeChange={setMode} hasPreview={track.hasPreview} />
+      {/* Auto mode info */}
+      <div className="card p-4 border-mint/30 mt-5">
+        <p className="text-sm text-ink">
+          <span className="font-semibold text-mint">Auto clip</span> — sends the best
+          30-second preview (usually the chorus). Your friend listens blind and reacts.
+        </p>
       </div>
-
-      {/* Auto mode callout */}
-      {mode === 'AUTO' && (
-        <div className="card p-4 border-mint/30 mt-4">
-          <p className="text-sm text-ink">
-            <span className="font-semibold text-mint">Auto mode</span> — Spotify picks the best
-            30-second preview clip (usually the chorus).
-          </p>
-        </div>
-      )}
-
-      {/* Pick mode waveform */}
-      {mode === 'PICK' && (
-        <div className="space-y-4 mt-4">
-          <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
-
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="w-full card p-3 text-center text-sm font-semibold text-gold hover:bg-gold/5 transition-colors min-h-[44px]"
-          >
-            {showPreview ? '⏸ Hide preview' : `▶ Preview ${formatTime(startSec)}–${formatTime(startSec + 30)}`}
-          </button>
-
-          {showPreview && (
-            <div className="rounded-xl overflow-hidden">
-              <iframe
-                src={`https://open.spotify.com/embed/track/${track.spotifyId}?utm_source=generator&theme=0`}
-                width="100%"
-                height="80"
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                style={{ borderRadius: '12px' }}
-              />
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="flex-1" />
 
