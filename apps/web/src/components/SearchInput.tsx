@@ -18,20 +18,22 @@ export default function SearchInput({ onSearch, isLoading }: Props) {
   }, [value, onSearch]);
 
   return (
-    <div className="relative">
-      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-lg">🔍</span>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={'"Georgia Hanson" or "Blinding Lights"…'}
-        className="w-full pl-12 pr-4 py-4 rounded-card border border-border bg-white text-ink placeholder:text-muted focus:outline-none focus:border-violet focus:ring-2 focus:ring-violet/20 text-base font-medium shadow-card"
-      />
-      {isLoading && (
-        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <div className="spinner" />
-        </div>
-      )}
+    <div>
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Search a track..."
+          className="w-full py-3 text-3xl font-bold text-ink placeholder:text-muted/40 bg-transparent border-none focus:outline-none"
+        />
+        {isLoading && (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            <div className="spinner" />
+          </div>
+        )}
+      </div>
+      <div className="gold-underline" />
     </div>
   );
 }

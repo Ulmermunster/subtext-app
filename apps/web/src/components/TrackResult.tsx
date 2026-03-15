@@ -9,37 +9,42 @@ interface Props {
     hasPreview: boolean;
   };
   onSelect: () => void;
+  selected?: boolean;
 }
 
-function formatDuration(ms: number) {
-  const min = Math.floor(ms / 60000);
-  const sec = Math.floor((ms % 60000) / 1000);
-  return `${min}:${sec.toString().padStart(2, '0')}`;
-}
-
-export default function TrackResult({ track, onSelect }: Props) {
+export default function TrackResult({ track, onSelect, selected }: Props) {
   return (
     <button
       onClick={onSelect}
-      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-violet/5 transition-colors text-left"
+      className={`w-full flex items-center gap-4 p-4 rounded-card transition-all text-left mb-3 ${
+        selected
+          ? 'bg-navy text-white shadow-card-hover'
+          : 'card hover:shadow-card-hover'
+      }`}
     >
       <img
         src={track.albumArt}
         alt=""
-        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+        className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <div className="font-semibold text-ink text-sm truncate">{track.title}</div>
-        <div className="text-muted text-xs truncate">
-          {track.artist} · {track.albumName}
+        <div className={`font-bold text-sm truncate ${selected ? 'text-white' : 'text-ink'}`}>
+          {track.title}
+        </div>
+        <div className={`text-xs truncate ${selected ? 'text-gold' : 'text-muted'}`}>
+          {track.artist}
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-xs text-muted">{formatDuration(track.duration)}</span>
-        {!track.hasPreview && (
-          <span className="text-xs bg-amber/10 text-amber px-2 py-0.5 rounded-full">no clip</span>
-        )}
-      </div>
+      {selected && (
+        <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center flex-shrink-0">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8L6.5 11.5L13 5" stroke="#1A1A2E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
+      {!selected && !track.hasPreview && (
+        <span className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full flex-shrink-0">no clip</span>
+      )}
     </button>
   );
 }

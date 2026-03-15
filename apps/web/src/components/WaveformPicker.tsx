@@ -10,7 +10,6 @@ const CLIP_DURATION = 30; // seconds
 
 function generateBars(): number[] {
   return Array.from({ length: BAR_COUNT }, (_, i) => {
-    // Sine-based fake heights for visual appeal
     const x = i / BAR_COUNT;
     return 0.3 + 0.7 * Math.abs(Math.sin(x * Math.PI * 3.5 + 0.5) * Math.cos(x * Math.PI * 1.2));
   });
@@ -77,7 +76,7 @@ export default function WaveformPicker({ durationMs, onWindowChange }: Props) {
         />
         {/* Selection window border */}
         <div
-          className="absolute top-0 bottom-0 border-2 border-violet rounded-lg z-20 pointer-events-none"
+          className="absolute top-0 bottom-0 border-2 border-gold rounded-lg z-20 pointer-events-none"
           style={{ left: `${windowStart * 100}%`, width: `${(windowEnd - windowStart) * 100}%` }}
         />
         {/* Bars */}
@@ -87,7 +86,7 @@ export default function WaveformPicker({ durationMs, onWindowChange }: Props) {
           return (
             <div
               key={i}
-              className={`flex-1 rounded-sm transition-colors ${inWindow ? 'bg-violet' : 'bg-border'}`}
+              className={`flex-1 rounded-sm transition-colors ${inWindow ? 'bg-gold' : 'bg-border'}`}
               style={{ height: `${h * 100}%` }}
             />
           );
@@ -95,7 +94,7 @@ export default function WaveformPicker({ durationMs, onWindowChange }: Props) {
       </div>
       <div className="flex justify-between text-sm text-muted">
         <span>{formatTime(startSec)} → {formatTime(startSec + CLIP_DURATION)}</span>
-        <span className="text-xs">Drag to choose · tap anywhere to reposition</span>
+        <span className="text-xs">Drag to choose</span>
       </div>
     </div>
   );

@@ -57,7 +57,7 @@ export default function Send() {
     return (
       <div className="max-w-md mx-auto px-5 py-8 space-y-6">
         <Wordmark />
-        <h2 className="text-2xl font-bold text-ink">Send a vibe.</h2>
+        <h2 className="text-2xl font-bold text-ink">Que a song.</h2>
         <p className="text-muted text-sm">
           Connect Spotify to search songs and pick your clip. Your friend won't need it.
         </p>
@@ -77,7 +77,7 @@ export default function Send() {
           </a>
         </div>
 
-        <div className="card p-5 bg-background border-violet/20">
+        <div className="card p-5">
           <div className="flex items-start gap-3">
             <span className="text-xl">👤</span>
             <div>
@@ -95,61 +95,67 @@ export default function Send() {
   // Post-auth: search
   return (
     <div className="max-w-md mx-auto px-5 py-8 space-y-6">
+      {/* Back + close button */}
       <div className="flex items-center justify-between">
-        <Wordmark size="sm" />
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted">{user.displayName}</span>
-          <div className="w-2 h-2 rounded-full bg-spotify" />
-        </div>
+        <button onClick={() => navigate('/')} className="text-muted text-lg">←</button>
+        <button
+          onClick={() => navigate('/')}
+          className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm"
+        >
+          ✕
+        </button>
       </div>
-
-      <h2 className="text-2xl font-bold text-ink">Send a vibe.</h2>
 
       <SearchInput onSearch={handleSearch} isLoading={searchLoading} />
 
       {searchLoading && (
-        <p className="text-center text-violet text-sm font-medium">searching…</p>
+        <p className="text-center text-gold text-sm font-medium">searching...</p>
+      )}
+
+      {/* Empty state with Q watermark */}
+      {!searchLoading && !searched && (
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
+          <span className="text-8xl font-extrabold text-gold/15">Q</span>
+          <p className="text-sm font-semibold text-muted">Spotify API</p>
+          <p className="text-xs text-muted">Search to Que a 30s clip.</p>
+        </div>
       )}
 
       {!searchLoading && searched && tracks.length === 0 && artists.length === 0 && (
         <div className="card p-6 text-center space-y-2">
           <p className="text-muted text-sm">No results found</p>
           <p className="text-xs text-muted">
-            Try searching like "Georgia Hanson" — we'll find the song and artist match.
+            Try a different search term.
           </p>
         </div>
       )}
 
-      {(tracks.length > 0 || artists.length > 0) && (
-        <div className="card p-2 divide-y divide-border">
-          {tracks.length > 0 && (
-            <div className="pb-2">
-              <div className="px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wider">
-                🎵 Songs
-              </div>
-              {tracks.map((track) => (
-                <TrackResult
-                  key={track.id}
-                  track={track}
-                  onSelect={() => handleTrackSelect(track)}
-                />
-              ))}
-            </div>
-          )}
-          {artists.length > 0 && (
-            <div className="pt-2">
-              <div className="px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wider">
-                🎤 Artists
-              </div>
-              {artists.map((artist) => (
-                <ArtistResult
-                  key={artist.id}
-                  artist={artist}
-                  onSelect={() => handleArtistSelect(artist)}
-                />
-              ))}
-            </div>
-          )}
+      {/* Track results */}
+      {tracks.length > 0 && (
+        <div className="space-y-0">
+          {tracks.map((track) => (
+            <TrackResult
+              key={track.id}
+              track={track}
+              onSelect={() => handleTrackSelect(track)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Artist results */}
+      {artists.length > 0 && (
+        <div className="space-y-0">
+          <div className="px-1 py-2 text-xs font-semibold text-muted uppercase tracking-wider">
+            Artists
+          </div>
+          {artists.map((artist) => (
+            <ArtistResult
+              key={artist.id}
+              artist={artist}
+              onSelect={() => handleArtistSelect(artist)}
+            />
+          ))}
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ export default function ModeToggle({ mode, onModeChange, hasPreview }: Props) {
       <button
         onClick={() => hasPreview && onModeChange('AUTO')}
         className={`card p-4 text-left transition-all ${
-          mode === 'AUTO' ? 'border-violet ring-2 ring-violet/20' : ''
+          mode === 'AUTO' ? 'border-gold ring-2 ring-gold/20' : ''
         } ${!hasPreview ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div className="text-lg mb-1">✨ Let Spotify pick</div>
@@ -19,7 +19,7 @@ export default function ModeToggle({ mode, onModeChange, hasPreview }: Props) {
       <button
         onClick={() => onModeChange('PICK')}
         className={`card p-4 text-left transition-all cursor-pointer ${
-          mode === 'PICK' ? 'border-violet ring-2 ring-violet/20' : ''
+          mode === 'PICK' ? 'border-gold ring-2 ring-gold/20' : ''
         }`}
       >
         <div className="text-lg mb-1">✂️ I'll choose</div>

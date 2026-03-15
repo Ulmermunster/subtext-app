@@ -34,12 +34,12 @@ export default function ArtistCatalog() {
       {/* Artist header */}
       {artist && (
         <div className="card p-5 flex items-center gap-4" style={{
-          background: `linear-gradient(135deg, rgba(124,58,237,0.08), rgba(59,130,246,0.05))`
+          background: `linear-gradient(135deg, rgba(245,166,35,0.08), rgba(255,217,106,0.05))`
         }}>
           {artist.image ? (
             <img src={artist.image} alt="" className="w-16 h-16 rounded-full object-cover" />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-violet/10 flex items-center justify-center text-2xl">🎤</div>
+            <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center text-2xl">🎤</div>
           )}
           <div>
             <h2 className="text-xl font-bold text-ink">{artist.name}</h2>
@@ -60,12 +60,12 @@ export default function ArtistCatalog() {
             <div key={album.id} className="card overflow-hidden">
               <button
                 onClick={() => setExpandedAlbum(expandedAlbum === album.id ? null : album.id)}
-                className="w-full p-4 flex items-center gap-3 text-left hover:bg-violet/5 transition-colors"
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gold/5 transition-colors"
               >
                 {album.image ? (
                   <img src={album.image} alt="" className="w-12 h-12 rounded-lg object-cover" />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg bg-violet/10 flex items-center justify-center">💿</div>
+                  <div className="w-12 h-12 rounded-lg bg-gold/10 flex items-center justify-center">💿</div>
                 )}
                 <div className="flex-1">
                   <div className="font-semibold text-ink text-sm">{album.name}</div>
@@ -95,4 +95,3 @@ export default function ArtistCatalog() {
     </div>
   );
 }
-
