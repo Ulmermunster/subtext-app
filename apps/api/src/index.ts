@@ -67,8 +67,13 @@ if (fs.existsSync(webDistPath)) {
     wildcard: false,
   });
 
-  // SPA fallback — serve index.html for unmatched routes
-  app.setNotFoundHandler(async (_request, reply) => {
+  // SPA fallback — serve index.html for unmatched frontend routes only
+  app.setNotFoundHandler(async (request, reply) => {
+    const url = request.url;
+    if (url.startsWith('/v/') || url.startsWith('/vibes/') || url.startsWith('/auth/') ||
+        url.startsWith('/spotify/') || url.startsWith('/health')) {
+      return reply.status(404).send({ error: 'Not found' });
+    }
     return reply.sendFile('index.html');
   });
 }
