@@ -258,21 +258,11 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       $landing.style.display = 'flex';
       $fromTag.textContent = data.senderDisplayName + " que'd you a song \\u{1F440}";
 
-      if (data.mode === 'AUTO' && data.previewUrl) {
+      // Use previewUrl Audio if available, otherwise Spotify embed handles playback
+      if (data.previewUrl) {
         audio = new Audio();
         audio.preload = 'auto';
         audio.src = data.previewUrl;
-      } else if (data.mode === 'PICK' || (!data.previewUrl && data.spotifyId)) {
-        if (isIOS && data.previewUrl) {
-          audio = new Audio();
-          audio.preload = 'auto';
-          audio.src = data.previewUrl;
-        }
-      }
-
-      if (!data.previewUrl && data.mode === 'AUTO') {
-        showError('\\u{1F3B5}', "This clip can't be played right now",
-          'Ask ' + data.senderDisplayName + ' to send another one.');
       }
     })
     .catch(function(err) {
@@ -308,36 +298,19 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $reactions.classList.add('active');
     $hint.textContent = 'artist reveals at the end';
 
-    if (vibeData.mode === 'PICK' && !audio && !isIOS) {
-      setupEmbed();
-      startClipTimer(30);
-    } else if (audio) {
-      if (vibeData.mode === 'PICK' && vibeData.startSec && isIOS) {
-        audio.addEventListener('loadedmetadata', function() {
-          audio.currentTime = vibeData.startSec;
-        }, {once: true});
-      }
-      audio.play().catch(function() {
-        showError('\\u{1F507}', 'Playback blocked', 'Tap the orb again to play.');
-        playing = false;
-      });
-      audio.addEventListener('ended', onClipEnd);
-      audio.addEventListener('timeupdate', updateProgress);
-
-      clipTimeout = setTimeout(function() {
-        if (!revealed) onClipEnd();
-      }, 32000);
-    } else {
-      setupEmbed();
-      startClipTimer(30);
-    }
+    // Always use Spotify embed for playback (works for all tracks)
+    setupEmbed();
+    startClipTimer(30);
   });
 
   function setupEmbed() {
     var iframe = document.createElement('iframe');
     var src = 'https://open.spotify.com/embed/track/' + vibeData.spotifyId +
-      '?utm_source=generator';
-    if (vibeData.startSec) src += '&t=' + vibeData.startSec;
+      '?utm_source=generator&theme=0';
+    // PICK mode: start from user-chosen time. AUTO mode: start from beginning
+    if (vibeData.mode === 'PICK' && vibeData.startSec) {
+      src += '&t=' + vibeData.startSec;
+    }
     iframe.src = src;
     iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:300px;height:80px;border:0;opacity:0.01';
@@ -476,6 +449,8 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 </script>
 </body>
 </html>`;
+
+export { RECEIVER_HTML };
 
 export async function receiverRoutes(app: FastifyInstance) {
   app.get('/v/:id', async (_request, reply) => {

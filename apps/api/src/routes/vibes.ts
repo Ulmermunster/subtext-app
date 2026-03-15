@@ -24,12 +24,6 @@ export async function vibeRoutes(app: FastifyInstance) {
     const track = await getTrack(trackId, request.session!.accessToken);
 
     const previewUrl = track.preview_url || null;
-    if (!previewUrl && mode === 'AUTO') {
-      return reply.status(409).send({
-        error: 'no_preview',
-        message: "This track doesn't have a preview clip available. Try choosing a different song, or switch to Pick mode to select your own clip window.",
-      });
-    }
 
     const vibeId = nanoid();
     const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours
