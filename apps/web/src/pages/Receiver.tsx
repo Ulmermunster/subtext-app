@@ -301,11 +301,8 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       $landing.style.display = 'flex';
       $fromTag.textContent = data.senderDisplayName + " que'd you a song \\u{1F440}";
 
-      if (data.previewUrl) {
-        audio = new Audio(data.previewUrl);
-        audio.setAttribute('playsinline', '');
-        audio.setAttribute('webkit-playsinline', '');
-      }
+      // Don't create Audio here — Android requires it within a user gesture
+
     })
     .catch(function(err) {
       if (err.message === '404') {
@@ -314,26 +311,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
         showError('\\u{1F635}', 'Something went wrong', 'Check your connection and try again.');
       }
     });
-
-  var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  function showFallbackEmbed() {
-    if (!isMobile) {
-      setupEmbed();
-      return;
-    }
-    var iframe = document.createElement('iframe');
-    var src = 'https://open.spotify.com/embed/track/' + vibeData.spotifyId + '?utm_source=generator&theme=0';
-    if (vibeData.mode === 'PICK' && vibeData.startSec) {
-      src += '&t=' + vibeData.startSec;
-    }
-    iframe.src = src;
-    iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
-    iframe.style.cssText = 'width:100%;max-width:300px;height:80px;border:0;border-radius:12px;margin:8px auto;display:block';
-    $scrubber.style.display = 'none';
-    $scrubber.parentNode.insertBefore(iframe, $scrubber);
-    $hint.textContent = 'tap play above, then react below';
-  }
 
   function startPlayback() {
     playing = true;
@@ -344,24 +321,19 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $reactions.classList.add('active');
     $hint.textContent = 'artist reveals at the end';
 
-    if (audio) {
-      var playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.then(function() {
-          clipTimeout = setTimeout(function() {
-            if (audio && !audio.paused) { audio.pause(); }
-          }, 30000);
-          setTimeout(function() {
-            if (audio && audio.currentTime < 0.01) {
-              showFallbackEmbed();
-            }
-          }, 1500);
-        }).catch(function() {
-          showFallbackEmbed();
-        });
-      }
+    if (vibeData.previewUrl) {
+      // Create Audio inside the tap gesture — Android requires this
+      audio = new Audio(vibeData.previewUrl);
+      audio.setAttribute('playsinline', '');
+      audio.play().then(function() {
+        clipTimeout = setTimeout(function() {
+          if (audio && !audio.paused) { audio.pause(); }
+        }, 30000);
+      }).catch(function() {
+        setupEmbed();
+      });
     } else {
-      showFallbackEmbed();
+      setupEmbed();
     }
     startClipTimer(30);
   }
