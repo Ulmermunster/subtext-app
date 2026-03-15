@@ -1,6 +1,33 @@
 const SPOTIFY_API = 'https://api.spotify.com/v1';
 const SPOTIFY_ACCOUNTS = 'https://accounts.spotify.com';
 
+// Client credentials token cache (no user login needed)
+let clientTokenCache: { token: string; expiresAt: number } | null = null;
+
+export async function getClientToken(clientId: string, clientSecret: string): Promise<string> {
+  if (clientTokenCache && clientTokenCache.expiresAt > Date.now() + 60000) {
+    return clientTokenCache.token;
+  }
+  const res = await fetch(`${SPOTIFY_ACCOUNTS}/api/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Client credentials failed: ${await res.text()}`);
+  }
+  const data = await res.json() as { access_token: string; expires_in: number };
+  clientTokenCache = {
+    token: data.access_token,
+    expiresAt: Date.now() + data.expires_in * 1000,
+  };
+  return data.access_token;
+}
+
 export async function spotifyFetch(path: string, accessToken: string, options?: RequestInit) {
   const res = await fetch(`${SPOTIFY_API}${path}`, {
     ...options,

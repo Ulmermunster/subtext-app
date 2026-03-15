@@ -1,8 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { customAlphabet } from 'nanoid';
 import { prisma } from '../lib/prisma.js';
-import { requireSession } from '../middleware/session.js';
-import { getTrack } from '../lib/spotify.js';
+import { getTrack, getClientToken } from '../lib/spotify.js';
 import { env } from '../config.js';
 
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
@@ -20,20 +19,22 @@ async function findItunesPreview(title: string, artist: string): Promise<string 
 }
 
 export async function vibeRoutes(app: FastifyInstance) {
-  // Create a vibe (requires auth)
-  app.post('/vibes/create', { preHandler: [requireSession] }, async (request, reply) => {
-    const { trackId, mode, startSec } = request.body as {
+  // Create a vibe (no auth required — uses client credentials)
+  app.post('/vibes/create', async (request, reply) => {
+    const { trackId, mode, startSec, senderDisplayName } = request.body as {
       trackId: string;
       mode: 'AUTO' | 'PICK';
       startSec?: number;
+      senderDisplayName?: string;
     };
 
     if (!trackId || !mode) {
       return reply.status(400).send({ error: 'trackId and mode are required' });
     }
 
-    // Fetch track info from Spotify
-    const track = await getTrack(trackId, request.session!.accessToken);
+    // Fetch track info using app-level credentials (no user login needed)
+    const token = await getClientToken(env.SPOTIFY_CLIENT_ID, env.SPOTIFY_CLIENT_SECRET);
+    const track = await getTrack(trackId, token);
 
     const previewUrl = track.preview_url || null;
 
@@ -52,7 +53,7 @@ export async function vibeRoutes(app: FastifyInstance) {
         spotifyId: track.id,
         mode,
         startSec: startSec ?? null,
-        senderDisplayName: request.session!.displayName,
+        senderDisplayName: senderDisplayName || 'Someone',
         expiresAt,
       },
     });
