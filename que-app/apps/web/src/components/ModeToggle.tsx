@@ -1,22 +1,20 @@
 interface Props {
   mode: 'AUTO' | 'PICK';
   onModeChange: (mode: 'AUTO' | 'PICK') => void;
-  hasPreview: boolean;
+  hasPreview?: boolean;
 }
 
-export default function ModeToggle({ mode, onModeChange, hasPreview }: Props) {
+export default function ModeToggle({ mode, onModeChange }: Props) {
   return (
     <div className="grid grid-cols-2 gap-3">
       <button
-        onClick={() => hasPreview && onModeChange('AUTO')}
-        className={`card p-4 text-left transition-all ${
+        onClick={() => onModeChange('AUTO')}
+        className={`card p-4 text-left transition-all cursor-pointer ${
           mode === 'AUTO' ? 'border-gold ring-2 ring-gold/20' : ''
-        } ${!hasPreview ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+        }`}
       >
         <div className="text-lg mb-1">✨ Let Spotify pick</div>
-        <div className="text-muted text-xs">
-          {hasPreview ? 'Auto-selects the chorus' : 'Not available for this track'}
-        </div>
+        <div className="text-muted text-xs">Plays from the start</div>
       </button>
       <button
         onClick={() => onModeChange('PICK')}

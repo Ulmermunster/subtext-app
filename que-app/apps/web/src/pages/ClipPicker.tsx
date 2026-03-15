@@ -22,7 +22,7 @@ export default function ClipPicker() {
   const location = useLocation();
   const navigate = useNavigate();
   const track = (location.state as any)?.track;
-  const [mode, setMode] = useState<'AUTO' | 'PICK'>(track?.hasPreview ? 'AUTO' : 'PICK');
+  const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
   const [startSec, setStartSec] = useState(0);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);

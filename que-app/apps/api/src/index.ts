@@ -13,7 +13,7 @@ import { redis, checkRedisHealth } from './lib/redis.js';
 import { authRoutes } from './routes/auth.js';
 import { spotifyRoutes } from './routes/spotify.js';
 import { queRoutes } from './routes/que.js';
-import { receiverRoutes } from './routes/receiver.js';
+import { RECEIVER_HTML } from './routes/receiver.js';
 import { startCleanupJob } from './jobs/cleanup.js';
 
 const app = Fastify({ logger: true });
@@ -41,7 +41,13 @@ await app.register(rateLimit, {
 await app.register(authRoutes);
 await app.register(spotifyRoutes);
 await app.register(queRoutes);
-await app.register(receiverRoutes);
+
+// Receiver route — registered DIRECTLY on app, not through a plugin
+app.get('/v/:id', async (_request, reply) => {
+  reply.header('Content-Type', 'text/html');
+  reply.header('Cache-Control', 'no-cache');
+  return reply.send(RECEIVER_HTML);
+});
 
 // Rate limit overrides for specific routes
 app.addHook('onRoute', (routeOptions) => {
@@ -67,14 +73,24 @@ if (fs.existsSync(webDistPath)) {
     wildcard: false,
   });
 
-  // SPA fallback — serve index.html for unmatched frontend routes only
+  // SPA fallback — but NEVER for /v/ paths (receiver) or API paths
   app.setNotFoundHandler(async (request, reply) => {
     const url = request.url;
-    // Don't serve SPA for API routes or receiver paths
-    if (url.startsWith('/v/') || url.startsWith('/vibes/') || url.startsWith('/auth/') ||
+
+    // Receiver fallback — if somehow the direct route didn't catch it
+    if (url.startsWith('/v/')) {
+      reply.header('Content-Type', 'text/html');
+      reply.header('Cache-Control', 'no-cache');
+      return reply.send(RECEIVER_HTML);
+    }
+
+    // API routes should 404, not serve the SPA
+    if (url.startsWith('/vibes/') || url.startsWith('/auth/') ||
         url.startsWith('/spotify/') || url.startsWith('/health')) {
       return reply.status(404).send({ error: 'Not found' });
     }
+
+    // Everything else: serve React SPA
     return reply.sendFile('index.html');
   });
 }
