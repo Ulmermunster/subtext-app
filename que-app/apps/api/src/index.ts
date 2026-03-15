@@ -1,8 +1,12 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import fastifyStatic from '@fastify/static';
 import { env } from './config.js';
 import { prisma } from './lib/prisma.js';
 import { redis, checkRedisHealth } from './lib/redis.js';
@@ -51,6 +55,23 @@ app.addHook('onRoute', (routeOptions) => {
 
 // Health check
 app.get('/health', async () => ({ status: 'ok' }));
+
+// Serve frontend in production
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const webDistPath = path.resolve(__dirname, '../../web/dist');
+
+if (fs.existsSync(webDistPath)) {
+  await app.register(fastifyStatic, {
+    root: webDistPath,
+    prefix: '/',
+    wildcard: false,
+  });
+
+  // SPA fallback — serve index.html for unmatched routes
+  app.setNotFoundHandler(async (_request, reply) => {
+    return reply.sendFile('index.html');
+  });
+}
 
 // Graceful shutdown
 const shutdown = async () => {
