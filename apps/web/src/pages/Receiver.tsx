@@ -1,19 +1,34 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
- * This component completely replaces the React SPA with the standalone
- * receiver page HTML when the user visits /v/:id.
- *
- * Why document.write? The receiver page is a self-contained vanilla HTML/CSS/JS
- * page that needs its own styles and scripts without React interference.
- * location.pathname is preserved so the receiver JS can extract the vibeId.
+ * Receiver page — replaces the React SPA DOM with standalone receiver HTML.
+ * Uses DOMParser + manual script execution instead of document.write
+ * (which is unreliable across browsers, especially on mobile).
  */
 export default function Receiver() {
+  const injected = useRef(false);
+
   useEffect(() => {
-    // Replace entire document with receiver page
-    document.open();
-    document.write(RECEIVER_HTML);
-    document.close();
+    if (injected.current) return;
+    injected.current = true;
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(RECEIVER_HTML, 'text/html');
+
+    // Replace head (styles, meta tags, fonts)
+    document.head.innerHTML = doc.head.innerHTML;
+
+    // Replace body content
+    document.body.innerHTML = doc.body.innerHTML;
+    document.body.style.cssText = '';
+    document.body.className = '';
+
+    // Scripts injected via innerHTML don't execute — recreate them
+    document.querySelectorAll('script').forEach((old) => {
+      const fresh = document.createElement('script');
+      fresh.textContent = old.textContent;
+      old.parentNode!.replaceChild(fresh, old);
+    });
   }, []);
 
   return null;
@@ -143,7 +158,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .error-title{font-size:20px;font-weight:700;margin-bottom:8px}
 .error-sub{font-size:14px;color:#9CA3AF}
 
-.hidden{display:none!important}
+.vis-hidden{visibility:hidden;position:absolute;pointer-events:none}
 </style>
 </head>
 <body>
@@ -158,13 +173,13 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
   </div>
 
-  <div id="error" class="error-state hidden">
-    <div class="error-emoji" id="errorEmoji">\\u{1F4A8}</div>
+  <div id="error" class="error-state" style="display:none">
+    <div class="error-emoji" id="errorEmoji"></div>
     <div class="error-title" id="errorTitle">This clip has expired</div>
     <div class="error-sub" id="errorSub">Mystery clips only last 72 hours.</div>
   </div>
 
-  <div id="landing" class="hidden" style="display:none;flex-direction:column;align-items:center;width:100%">
+  <div id="landing" style="display:none;flex-direction:column;align-items:center;width:100%">
     <div class="wordmark">Que<span class="dot">.</span></div>
     <div class="from-tag" id="fromTag"></div>
     <div class="orb-wrap" id="orbWrap">
@@ -213,8 +228,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 <script>
 (function(){
   var vibeId, vibeData, audio, currentReaction = null, playing = false, revealed = false;
-  var clipStartTime = 0, clipTimeout = null, progressInterval = null;
-  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  var clipTimeout = null, progressInterval = null;
   var API = location.origin;
 
   var $loading = document.getElementById('loading');
@@ -243,9 +257,9 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var $sendbackCta = document.getElementById('sendbackCta');
 
   function showError(emoji, title, sub) {
-    $loading.classList.add('hidden');
+    $loading.style.display = 'none';
     $landing.style.display = 'none';
-    $error.classList.remove('hidden');
+    $error.style.display = 'block';
     document.getElementById('errorEmoji').textContent = emoji;
     document.getElementById('errorTitle').textContent = title;
     document.getElementById('errorSub').textContent = sub;
@@ -283,7 +297,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     })
     .then(function(data) {
       vibeData = data;
-      $loading.classList.add('hidden');
+      $loading.style.display = 'none';
       $landing.style.display = 'flex';
       $fromTag.textContent = data.senderDisplayName + " que'd you a song \\u{1F440}";
 
