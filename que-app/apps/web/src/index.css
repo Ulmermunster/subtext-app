@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: linear-gradient(180deg, #FFF8E7 0%, #FFFBF0 40%, #FFF3D0 100%);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Warm ambient blobs */
+.blob-1 {
+  position: fixed;
+  top: -120px;
+  right: -80px;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,166,35,0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.8s ease;
+}
+
+.blob-2 {
+  position: fixed;
+  bottom: -100px;
+  left: -60px;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,217,106,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.8s ease;
+}
+
+/* Card base */
+.card {
+  background: rgba(255,251,240,0.85);
+  border-radius: 20px;
+  border: 1.5px solid #F0E6C8;
+  box-shadow: 0 2px 16px rgba(200,170,80,.08);
+  backdrop-filter: blur(8px);
+}
+
+/* Primary button - dark navy */
+.btn-primary {
+  background: #1A1A2E;
+  color: white;
+  border-radius: 999px;
+  padding: 14px 32px;
+  font-weight: 700;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* Gold gradient button */
+.btn-gold {
+  background: linear-gradient(135deg, #F5A623 0%, #FFD96A 100%);
+  color: #1A1A2E;
+  border-radius: 999px;
+  padding: 14px 32px;
+  font-weight: 700;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-gold:hover {
+  box-shadow: 0 4px 24px rgba(245,166,35,.3);
+}
+.btn-gold:active {
+  transform: scale(0.97);
+}
+
+/* Spotify button */
+.btn-spotify {
+  background: #1DB954;
+  color: white;
+  border-radius: 999px;
+  padding: 14px 32px;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.btn-spotify:hover { opacity: 0.9; }
+.btn-spotify:active { transform: scale(0.97); }
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #F0E6C8;
+  border-top-color: #F5A623;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Gold underline for search */
+.gold-underline {
+  height: 3px;
+  background: linear-gradient(90deg, #F5A623, #FFD96A);
+  border-radius: 2px;
+  margin-top: 4px;
+}

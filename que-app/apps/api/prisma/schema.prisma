@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model QueToken {
+  id                String    @id
+  trackId           String
+  trackTitle        String
+  trackArtist       String
+  albumName         String
+  albumArt          String
+  previewUrl        String?
+  spotifyId         String
+  mode              String    // AUTO | PICK
+  startSec          Int?
+  senderDisplayName String
+  createdAt         DateTime  @default(now())
+  expiresAt         DateTime
+  playedAt          DateTime?
+  reaction          String?   // VIBE | NOPE
+  reactedAt         DateTime?
+  revealedAt        DateTime?
+
+  @@index([expiresAt])
+  @@map("que_tokens")
+}
+
+model Session {
+  id                  String   @id
+  spotifyAccessToken  String
+  spotifyRefreshToken String
+  spotifyUserId       String
+  displayName         String
+  tokenExpiresAt      DateTime
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("sessions")
+}
