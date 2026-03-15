@@ -7,6 +7,18 @@ import { env } from '../config.js';
 
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
 
+async function findItunesPreview(title: string, artist: string): Promise<string | null> {
+  try {
+    const term = encodeURIComponent(`${title} ${artist}`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=3`);
+    if (!res.ok) return null;
+    const data = await res.json() as { results: Array<{ previewUrl?: string }> };
+    return data.results?.[0]?.previewUrl || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function vibeRoutes(app: FastifyInstance) {
   // Create a vibe (requires auth)
   app.post('/vibes/create', { preHandler: [requireSession] }, async (request, reply) => {
@@ -79,6 +91,42 @@ export async function vibeRoutes(app: FastifyInstance) {
       spotifyId: vibe.spotifyId,
       senderDisplayName: vibe.senderDisplayName,
     };
+  });
+
+  // Stream audio for a vibe (same-origin proxy — works on all mobile browsers)
+  app.get('/vibes/:id/audio', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const vibe = await prisma.vibeToken.findUnique({ where: { id } });
+
+    if (!vibe || vibe.expiresAt < new Date()) {
+      return reply.status(404).send({ error: 'Not found' });
+    }
+
+    let audioUrl = vibe.previewUrl;
+
+    // If no Spotify preview, search iTunes
+    if (!audioUrl) {
+      audioUrl = await findItunesPreview(vibe.trackTitle, vibe.trackArtist);
+      // Cache it for next time
+      if (audioUrl) {
+        await prisma.vibeToken.update({ where: { id }, data: { previewUrl: audioUrl } }).catch(() => {});
+      }
+    }
+
+    if (!audioUrl) {
+      return reply.status(404).send({ error: 'No preview available' });
+    }
+
+    // Proxy the audio so it's served from our domain
+    const upstream = await fetch(audioUrl);
+    if (!upstream.ok) {
+      return reply.status(502).send({ error: 'Audio unavailable' });
+    }
+
+    reply.header('Content-Type', upstream.headers.get('content-type') || 'audio/mpeg');
+    reply.header('Accept-Ranges', 'none');
+    reply.header('Cache-Control', 'public, max-age=3600');
+    return reply.send(Buffer.from(await upstream.arrayBuffer()));
   });
 
   // React to a vibe (no auth required)

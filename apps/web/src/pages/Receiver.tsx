@@ -301,8 +301,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       $landing.style.display = 'flex';
       $fromTag.textContent = data.senderDisplayName + " que'd you a song \\u{1F440}";
 
-      // Don't create Audio here — Android requires it within a user gesture
-
     })
     .catch(function(err) {
       if (err.message === '404') {
@@ -321,20 +319,21 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $reactions.classList.add('active');
     $hint.textContent = 'artist reveals at the end';
 
-    if (vibeData.previewUrl) {
-      // Create Audio inside the tap gesture — Android requires this
-      audio = new Audio(vibeData.previewUrl);
-      audio.setAttribute('playsinline', '');
-      audio.play().then(function() {
-        clipTimeout = setTimeout(function() {
-          if (audio && !audio.paused) { audio.pause(); }
-        }, 30000);
-      }).catch(function() {
-        setupEmbed();
-      });
-    } else {
-      setupEmbed();
-    }
+    // Same-origin audio proxy — works on every mobile browser
+    var audioUrl = API + '/vibes/' + vibeId + '/audio';
+    audio = new Audio();
+    audio.setAttribute('playsinline', '');
+    audio.setAttribute('webkit-playsinline', '');
+    audio.crossOrigin = 'anonymous';
+    audio.src = audioUrl;
+    document.body.appendChild(audio);
+    audio.play().then(function() {
+      clipTimeout = setTimeout(function() {
+        if (audio && !audio.paused) { audio.pause(); }
+      }, 30000);
+    }).catch(function(e) {
+      $hint.textContent = 'could not play audio — try opening in browser';
+    });
     startClipTimer(30);
   }
 
@@ -357,19 +356,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 
     startPlayback();
   });
-
-  function setupEmbed() {
-    var iframe = document.createElement('iframe');
-    var src = 'https://open.spotify.com/embed/track/' + vibeData.spotifyId +
-      '?utm_source=generator&theme=0';
-    if (vibeData.mode === 'PICK' && vibeData.startSec) {
-      src += '&t=' + vibeData.startSec;
-    }
-    iframe.src = src;
-    iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:300px;height:80px;border:0;opacity:0.01';
-    document.body.appendChild(iframe);
-  }
 
   function startClipTimer(duration) {
     var start = Date.now();
