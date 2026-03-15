@@ -112,9 +112,9 @@ export default function ClipPicker() {
 
   if (!track) {
     return (
-      <div className="max-w-md mx-auto px-5 py-8">
+      <div className="w-full max-w-md mx-auto px-5 py-8">
         <p className="text-muted">No track selected.</p>
-        <button onClick={() => navigate('/send')} className="text-gold text-sm mt-2 font-semibold">← Back to search</button>
+        <button onClick={() => navigate('/send')} className="text-gold text-sm mt-2 font-semibold min-h-[44px]">← Back to search</button>
       </div>
     );
   }
@@ -122,26 +122,26 @@ export default function ClipPicker() {
   // Que'd confirmation screen (after generating link)
   if (sent) {
     return (
-      <div className="max-w-md mx-auto px-5 py-8 flex flex-col items-center min-h-screen">
-        <div className="w-full flex items-center mb-8">
-          <button onClick={() => navigate('/')} className="text-muted text-lg">←</button>
+      <div className="w-full max-w-md mx-auto px-5 flex flex-col items-center" style={{ minHeight: '100dvh', paddingTop: 'max(1.5rem, env(safe-area-inset-top))', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+        <div className="w-full flex items-center mb-6">
+          <button onClick={() => navigate('/')} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
         </div>
 
-        <h1 className="text-5xl font-extrabold text-ink tracking-tight mb-2">
+        <h1 className="text-4xl font-extrabold text-ink tracking-tight mb-1">
           Que'd<span className="text-gold">.</span>
         </h1>
-        <p className="text-muted text-sm mb-8">Send this blind clip.</p>
+        <p className="text-muted text-sm mb-6">Send this blind clip.</p>
 
         {/* Album art with checkmark */}
-        <div className="relative mb-10">
+        <div className="relative mb-8">
           <img
             src={track.albumArt}
             alt=""
-            className="w-48 h-48 rounded-3xl object-cover shadow-card-hover border-4 border-white"
+            className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white"
             style={{ transform: 'rotate(-3deg)' }}
           />
-          <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-full bg-ink border-4 border-white flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+          <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-ink border-4 border-white flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
               <path d="M3 8L6.5 11.5L13 5" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
@@ -152,7 +152,7 @@ export default function ClipPicker() {
         {/* Test Receiver View */}
         <button
           onClick={handleTestReceiver}
-          className="btn-gold w-full flex items-center justify-center gap-2 mb-3"
+          className="btn-gold w-full flex items-center justify-center gap-2 mb-3 min-h-[48px]"
         >
           <span>👁</span> Test Receiver View
         </button>
@@ -161,7 +161,7 @@ export default function ClipPicker() {
         <div className="flex gap-3 w-full mb-4">
           <button
             onClick={handleSms}
-            className="btn-primary flex-1 flex items-center justify-center gap-2"
+            className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -171,7 +171,7 @@ export default function ClipPicker() {
           </button>
           <button
             onClick={handleCopy}
-            className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all"
+            className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -184,7 +184,7 @@ export default function ClipPicker() {
         {/* Start over */}
         <button
           onClick={() => navigate('/send')}
-          className="text-xs font-bold text-muted uppercase tracking-wider py-3"
+          className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px]"
         >
           Start Over
         </button>
@@ -194,20 +194,20 @@ export default function ClipPicker() {
 
   // Track selection + clip picker screen
   return (
-    <div className="max-w-md mx-auto px-5 py-8 space-y-6">
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="text-muted text-lg">←</button>
+    <div className="w-full max-w-md mx-auto px-5 flex flex-col" style={{ minHeight: '100dvh', paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      <div className="flex items-center gap-4 py-2">
+        <button onClick={() => navigate(-1)} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
         <button
           onClick={() => navigate('/send')}
-          className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm"
+          className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm"
         >
           ✕
         </button>
       </div>
 
       {/* Song confirmation */}
-      <div className="card p-5 flex items-center gap-4">
-        <img src={track.albumArt} alt="" className="w-14 h-14 rounded-xl object-cover" />
+      <div className="card p-4 flex items-center gap-3 mt-3">
+        <img src={track.albumArt} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="font-bold text-ink truncate">{track.title}</div>
           <div className="text-muted text-sm truncate">{track.artist} · {track.albumName}</div>
@@ -216,11 +216,13 @@ export default function ClipPicker() {
       </div>
 
       {/* Mode toggle */}
-      <ModeToggle mode={mode} onModeChange={setMode} hasPreview={track.hasPreview} />
+      <div className="mt-5">
+        <ModeToggle mode={mode} onModeChange={setMode} hasPreview={track.hasPreview} />
+      </div>
 
       {/* Auto mode callout */}
       {mode === 'AUTO' && (
-        <div className="card p-4 border-mint/30">
+        <div className="card p-4 border-mint/30 mt-4">
           <p className="text-sm text-ink">
             <span className="font-semibold text-mint">Auto mode</span> — Spotify picks the best
             30-second preview clip (usually the chorus).
@@ -230,12 +232,12 @@ export default function ClipPicker() {
 
       {/* Pick mode waveform */}
       {mode === 'PICK' && (
-        <div className="space-y-4">
+        <div className="space-y-4 mt-4">
           <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
 
           <button
             onClick={handlePreview}
-            className="w-full card p-3 text-center text-sm font-semibold text-gold hover:bg-gold/5 transition-colors"
+            className="w-full card p-3 text-center text-sm font-semibold text-gold hover:bg-gold/5 transition-colors min-h-[44px]"
           >
             {previewing ? '⏸ Pause preview' : `▶ Preview ${formatTime(startSec)}–${formatTime(startSec + 30)}`}
           </button>
@@ -251,20 +253,22 @@ export default function ClipPicker() {
         </div>
       )}
 
+      <div className="flex-1" />
+
       {/* Recipient name input */}
-      <div className="relative">
+      <div className="relative mt-5">
         <input
           type="text"
           value={recipientName}
           onChange={(e) => setRecipientName(e.target.value)}
           placeholder="Recipient name (optional)"
-          className="w-full px-4 py-3 rounded-card border-2 border-gold/30 bg-white text-ink placeholder:text-muted text-center font-medium focus:outline-none focus:border-gold"
+          className="w-full px-4 py-3 rounded-card border-2 border-gold/30 bg-white text-ink placeholder:text-muted text-center font-medium focus:outline-none focus:border-gold min-h-[48px]"
         />
         <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-sky" />
       </div>
 
       {error && (
-        <div className="card p-4 border-coral/30">
+        <div className="card p-4 border-coral/30 mt-4">
           <p className="text-sm text-coral">{error}</p>
         </div>
       )}
@@ -273,7 +277,7 @@ export default function ClipPicker() {
       <button
         onClick={handleGenerate}
         disabled={sending}
-        className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
+        className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px] mt-4 mb-2"
       >
         {sending ? <div className="spinner" /> : (
           <>Generate Mystery Link ✦</>

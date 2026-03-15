@@ -4,18 +4,22 @@ const RECEIVER_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFF8E7">
 <title>Que. — The Blind Taste Test</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
-  -webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;color:#1A1A2E}
+  -webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;overflow-x:hidden;color:#1A1A2E;
+  -webkit-text-size-adjust:100%}
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-.container{max-width:420px;margin:0 auto;padding:24px 20px;position:relative;z-index:1;
-  display:flex;flex-direction:column;align-items:center;min-height:100vh}
+.container{max-width:100%;width:100%;margin:0 auto;
+  padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;min-height:100dvh}
 
 .blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
 .blob-1{top:-120px;right:-80px;width:400px;height:400px;
@@ -23,33 +27,33 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .blob-2{bottom:-100px;left:-60px;width:350px;height:350px;
   background:radial-gradient(circle,rgba(255,217,106,.12) 0%,transparent 70%)}
 
-.wordmark{font-size:20px;font-weight:800;color:#1A1A2E;letter-spacing:-.5px;margin-bottom:24px}
+.wordmark{font-size:18px;font-weight:800;color:#1A1A2E;letter-spacing:-.5px;margin-bottom:16px}
 .wordmark .dot{color:#F5A623}
 
-.from-tag{font-size:16px;font-weight:600;color:#1A1A2E;margin-bottom:32px}
+.from-tag{font-size:15px;font-weight:600;color:#1A1A2E;margin-bottom:24px;text-align:center;padding:0 16px}
 
-.orb-wrap{position:relative;width:200px;height:200px;margin-bottom:20px;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;user-select:none}
-.orb{width:200px;height:200px;border-radius:50%;
+.orb-wrap{position:relative;width:180px;height:180px;margin-bottom:16px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
+.orb{width:180px;height:180px;border-radius:50%;
   background:linear-gradient(135deg,#F5A623,#FFD96A);
   border:4px solid #fff;display:flex;align-items:center;justify-content:center;
   position:relative;z-index:2;transition:transform .3s ease;
   box-shadow:0 0 60px rgba(245,166,35,.2)}
 .orb:active{transform:scale(.96)}
-.orb-emoji{font-size:56px;transition:opacity .3s ease}
+.orb-emoji{font-size:48px;transition:opacity .3s ease}
 .orb-hint{position:absolute;bottom:-28px;left:0;right:0;text-align:center;
-  font-size:12px;color:#9CA3AF;font-weight:500}
+  font-size:13px;color:#9CA3AF;font-weight:600}
 
 .ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   border-radius:50%;border:1.5px solid rgba(245,166,35,.25);z-index:1;
   animation:pulse 2.5s ease-out infinite}
-.ring-1{width:230px;height:230px}
-.ring-2{width:260px;height:260px;animation-delay:.4s}
+.ring-1{width:210px;height:210px}
+.ring-2{width:240px;height:240px;animation-delay:.4s}
 @keyframes pulse{0%{transform:translate(-50%,-50%) scale(.95);opacity:.6}
   100%{transform:translate(-50%,-50%) scale(1.15);opacity:0}}
 
-.mystery{font-size:18px;font-weight:700;color:#9CA3AF;margin:24px 0 8px;letter-spacing:1px}
-.subtitle{font-size:12px;color:#9CA3AF;font-weight:500}
+.mystery{font-size:16px;font-weight:700;color:#9CA3AF;margin:20px 0 4px;letter-spacing:1px}
+.subtitle{font-size:11px;color:#9CA3AF;font-weight:500}
 
 .orb-bars{display:flex;align-items:center;gap:3px;height:60px;opacity:0;
   position:absolute;transition:opacity .4s ease}
@@ -58,19 +62,20 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   animation:wave 1.2s ease-in-out infinite alternate}
 @keyframes wave{0%{height:12px}100%{height:var(--h,40px)}}
 
-.scrubber{width:100%;max-width:280px;margin:16px 0;opacity:0;transition:opacity .3s ease}
+.scrubber{width:100%;max-width:280px;margin:12px 0;opacity:0;transition:opacity .3s ease}
 .scrubber.active{opacity:1}
 .scrub-track{width:100%;height:4px;background:#F0E6C8;border-radius:2px;overflow:hidden}
 .scrub-fill{height:100%;background:linear-gradient(90deg,#F5A623,#FFD96A);border-radius:2px;transition:width .3s linear}
 .scrub-times{display:flex;justify-content:space-between;margin-top:4px;
   font-size:11px;color:#9CA3AF;font-weight:500}
 
-.reactions{display:flex;gap:16px;margin:24px 0;opacity:0;transform:translateY(20px);
-  transition:opacity .4s ease,transform .4s ease}
+.reactions{display:flex;gap:12px;margin:20px 0;opacity:0;transform:translateY(20px);
+  transition:opacity .4s ease,transform .4s ease;width:100%;max-width:320px;justify-content:center}
 .reactions.active{opacity:1;transform:translateY(0)}
-.react-btn{border:none;border-radius:999px;padding:14px 36px;font-size:16px;font-weight:700;
+.react-btn{border:none;border-radius:999px;padding:14px 0;font-size:16px;font-weight:700;
   cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;
-  display:flex;align-items:center;gap:8px;font-family:inherit}
+  display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;
+  flex:1;min-height:48px;touch-action:manipulation}
 .react-btn:active{transform:scale(.95)}
 .btn-vibe{background:#10B981;color:#fff}
 .btn-vibe.selected{box-shadow:0 0 0 3px rgba(16,185,129,.4)}
@@ -78,30 +83,35 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .btn-nope.selected{box-shadow:0 0 0 3px rgba(249,115,22,.4)}
 
 .hint{font-size:12px;color:#9CA3AF;font-weight:500;text-align:center;
-  margin:8px 0;transition:opacity .3s ease}
+  margin:4px 0;transition:opacity .3s ease}
 
-.reveal{display:none;flex-direction:column;align-items:center;gap:8px;width:100%}
+.reveal{display:none;flex-direction:column;align-items:center;gap:8px;width:100%;
+  padding:0 16px}
 .reveal.active{display:flex}
 .reveal-label{font-size:14px;color:#9CA3AF;font-weight:600;
   opacity:0;animation:fadeUp .5s ease forwards}
-.album-art{width:200px;height:200px;border-radius:20px;object-fit:cover;
+.album-art{width:min(200px,50vw);height:min(200px,50vw);border-radius:20px;object-fit:cover;
   box-shadow:0 8px 40px rgba(0,0,0,.12);border:4px solid #fff;
   opacity:0;transform:scale(.7) rotate(-3deg);
   animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards;animation-delay:.15s}
-.reveal-title{font-size:28px;font-weight:800;color:#1A1A2E;text-align:center;
-  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.34s}
-.reveal-meta{font-size:16px;color:#9CA3AF;font-weight:500;text-align:center;
-  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.46s}
+.reveal-title{font-size:24px;font-weight:800;color:#1A1A2E;text-align:center;
+  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.34s;
+  overflow-wrap:break-word;word-break:break-word;max-width:100%}
+.reveal-meta{font-size:14px;color:#9CA3AF;font-weight:500;text-align:center;
+  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.46s;
+  overflow-wrap:break-word;word-break:break-word;max-width:100%}
 .reaction-badge{border-radius:999px;padding:10px 24px;font-size:14px;font-weight:700;
   opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.58s}
 .badge-vibe{background:rgba(16,185,129,.1);color:#10B981}
 .badge-nope{background:rgba(249,115,22,.1);color:#F97316}
 .spotify-cta{display:inline-flex;align-items:center;gap:8px;background:#1DB954;color:#fff;
   border-radius:999px;padding:14px 28px;font-size:14px;font-weight:700;text-decoration:none;
-  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.74s}
+  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.74s;
+  min-height:48px;touch-action:manipulation}
 .sendback-cta{display:inline-flex;align-items:center;gap:6px;background:#1A1A2E;color:#fff;
   border-radius:999px;padding:14px 28px;font-size:14px;font-weight:700;text-decoration:none;
-  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.88s}
+  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.88s;
+  min-height:48px;touch-action:manipulation;margin-bottom:16px}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes popIn{0%{opacity:0;transform:scale(.7) rotate(-3deg)}70%{opacity:1;transform:scale(1.06) rotate(-1deg)}
@@ -258,11 +268,13 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       $landing.style.display = 'flex';
       $fromTag.textContent = data.senderDisplayName + " que'd you a song \\u{1F440}";
 
-      // Use previewUrl Audio if available, otherwise Spotify embed handles playback
       if (data.previewUrl) {
         audio = new Audio();
         audio.preload = 'auto';
+        audio.setAttribute('playsinline', '');
+        audio.setAttribute('webkit-playsinline', '');
         audio.src = data.previewUrl;
+        audio.load();
       }
     })
     .catch(function(err) {
@@ -272,6 +284,32 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
         showError('\\u{1F635}', 'Something went wrong', 'Check your connection and try again.');
       }
     });
+
+  function startPlayback() {
+    playing = true;
+    $orbEmoji.style.opacity = '0';
+    $orbBars.classList.add('active');
+    $orbHint.textContent = '';
+    $scrubber.classList.add('active');
+    $reactions.classList.add('active');
+    $hint.textContent = 'artist reveals at the end';
+
+    if (audio) {
+      var playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(function() {
+          clipTimeout = setTimeout(function() {
+            if (audio && !audio.paused) { audio.pause(); }
+          }, 30000);
+        }).catch(function() {
+          setupEmbed();
+        });
+      }
+    } else {
+      setupEmbed();
+    }
+    startClipTimer(30);
+  }
 
   $orbWrap.addEventListener('click', function() {
     if (revealed) return;
@@ -290,24 +328,13 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       return;
     }
 
-    playing = true;
-    $orbEmoji.style.opacity = '0';
-    $orbBars.classList.add('active');
-    $orbHint.textContent = '';
-    $scrubber.classList.add('active');
-    $reactions.classList.add('active');
-    $hint.textContent = 'artist reveals at the end';
-
-    // Always use Spotify embed for playback (works for all tracks)
-    setupEmbed();
-    startClipTimer(30);
+    startPlayback();
   });
 
   function setupEmbed() {
     var iframe = document.createElement('iframe');
     var src = 'https://open.spotify.com/embed/track/' + vibeData.spotifyId +
       '?utm_source=generator&theme=0';
-    // PICK mode: start from user-chosen time. AUTO mode: start from beginning
     if (vibeData.mode === 'PICK' && vibeData.startSec) {
       src += '&t=' + vibeData.startSec;
     }
@@ -330,14 +357,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
         onClipEnd();
       }
     }, 250);
-  }
-
-  function updateProgress() {
-    if (!audio || audio.duration === 0) return;
-    var pct = (audio.currentTime / audio.duration) * 100;
-    $scrubFill.style.width = pct + '%';
-    $elapsed.textContent = formatTime(audio.currentTime);
-    $remaining.textContent = formatTime(Math.max(0, audio.duration - audio.currentTime));
   }
 
   window.react = function(type) {
