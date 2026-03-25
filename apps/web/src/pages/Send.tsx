@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Wordmark from '../components/Wordmark';
 import SearchInput from '../components/SearchInput';
 import TrackResult from '../components/TrackResult';
 import ArtistResult from '../components/ArtistResult';

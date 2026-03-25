@@ -22,8 +22,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  getMe: () => request<{ displayName: string; connected: boolean; accessToken: string }>('/auth/me'),
-  logout: () => request('/auth/logout', { method: 'POST' }),
   search: (q: string) => request<{ tracks: any[]; artists: any[] }>(`/spotify/search?q=${encodeURIComponent(q)}`),
   getTrack: (id: string) => request<any>(`/spotify/track/${id}`),
   getArtistAlbums: (id: string) => request<any[]>(`/spotify/artist/${id}/albums`),

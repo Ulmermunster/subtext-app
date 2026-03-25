@@ -1,5 +1,3 @@
-import { FastifyInstance } from 'fastify';
-
 const RECEIVER_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -447,11 +445,3 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 </html>`;
 
 export { RECEIVER_HTML };
-
-export async function receiverRoutes(app: FastifyInstance) {
-  app.get('/v/:id', async (_request, reply) => {
-    reply.header('Content-Type', 'text/html');
-    reply.header('Cache-Control', 'no-cache');
-    return reply.send(RECEIVER_HTML);
-  });
-}

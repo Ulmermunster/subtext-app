@@ -158,7 +158,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .error-title{font-size:20px;font-weight:700;margin-bottom:8px}
 .error-sub{font-size:14px;color:#9CA3AF}
 
-.vis-hidden{visibility:hidden;position:absolute;pointer-events:none}
 </style>
 </head>
 <body>
