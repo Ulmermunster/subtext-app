@@ -254,6 +254,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var clipTimeout = null, progressInterval = null;
   var API = location.origin;
   var useSpotifySDK = false, spotifyAccessToken = null, spotifyPlayer = null, spotifyDeviceId = null;
+  var isMobileBrowser = /Android|iPhone|iPad|iPod|Mobile|webOS/i.test(navigator.userAgent);
 
   var $loading = document.getElementById('loading');
   var $error = document.getElementById('error');
@@ -343,6 +344,12 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     });
 
   function checkSpotifySession() {
+    // Spotify Web Playback SDK is desktop-only — skip on mobile
+    if (isMobileBrowser) {
+      $sdkStatus.textContent = 'exact clip requires desktop \\u2014 playing preview';
+      return;
+    }
+
     fetch(API + '/auth/me', { credentials: 'include' })
       .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
       .then(function(me) {

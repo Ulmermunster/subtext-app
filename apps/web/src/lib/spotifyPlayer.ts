@@ -2,10 +2,22 @@ let player: any = null;
 let deviceId: string | null = null;
 let currentToken: string | null = null;
 
+function isMobile(): boolean {
+  return /Android|iPhone|iPad|iPod|Mobile|webOS/i.test(navigator.userAgent);
+}
+
+export { isMobile };
+
 export function initSpotifyPlayer(accessToken: string): Promise<string> {
   currentToken = accessToken;
 
   return new Promise((resolve, reject) => {
+    // Spotify Web Playback SDK does NOT work on mobile browsers
+    if (isMobile()) {
+      reject(new Error('MOBILE_NOT_SUPPORTED'));
+      return;
+    }
+
     if (player && deviceId) {
       resolve(deviceId);
       return;

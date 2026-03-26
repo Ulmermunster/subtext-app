@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
-import { initSpotifyPlayer, playTrack, pauseTrack, destroyPlayer } from '../lib/spotifyPlayer';
+import { initSpotifyPlayer, playTrack, pauseTrack, destroyPlayer, isMobile } from '../lib/spotifyPlayer';
 import WaveformPicker from '../components/WaveformPicker';
 
 const TRACK_STORAGE_KEY = 'que_pending_track';
@@ -48,20 +48,25 @@ export default function ClipPicker() {
     if (track) try { localStorage.setItem(TRACK_STORAGE_KEY, JSON.stringify(track)); } catch {}
   }, [track]);
 
-  // Init Spotify SDK when entering PICK mode with a logged-in user
+  const onMobile = isMobile();
+
+  // Init Spotify SDK when entering PICK mode with a logged-in user (desktop only)
   useEffect(() => {
-    if (mode === 'PICK' && spotifyUser) {
+    if (mode === 'PICK' && spotifyUser && !onMobile) {
       setSdkError('');
       initSpotifyPlayer(spotifyUser.accessToken)
         .then(() => setSdkReady(true))
         .catch((err) => {
-          setSdkError(err.message?.includes('Premium') ? 'Spotify Premium required for clip preview' : 'Could not load Spotify player');
+          const msg = err.message || '';
+          if (msg.includes('Premium')) setSdkError('Spotify Premium required for clip preview');
+          else if (msg.includes('MOBILE')) setSdkError('');
+          else setSdkError('Could not load Spotify player');
         });
     }
     return () => {
       if (previewTimeout.current) clearTimeout(previewTimeout.current);
     };
-  }, [mode, spotifyUser]);
+  }, [mode, spotifyUser, onMobile]);
 
   // Cleanup player on unmount
   useEffect(() => {
@@ -299,22 +304,29 @@ export default function ClipPicker() {
       {mode === 'PICK' && (
         <div className="card p-4 border-spotify/30 mt-3">
           <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
-          <button
-            onClick={handlePreview}
-            disabled={!sdkReady}
-            className="mt-3 w-full py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 min-h-[40px] bg-spotify/10 text-spotify hover:bg-spotify/20 disabled:opacity-40"
-          >
-            {!sdkReady && !sdkError ? 'Loading player...' : previewing ? (
-              <><span>⏸</span> Pause preview</>
-            ) : (
-              <><span>▶</span> Preview clip</>
-            )}
-          </button>
+          {!onMobile && (
+            <button
+              onClick={handlePreview}
+              disabled={!sdkReady}
+              className="mt-3 w-full py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 min-h-[40px] bg-spotify/10 text-spotify hover:bg-spotify/20 disabled:opacity-40"
+            >
+              {!sdkReady && !sdkError ? 'Loading player...' : previewing ? (
+                <><span>⏸</span> Pause preview</>
+              ) : (
+                <><span>▶</span> Preview clip</>
+              )}
+            </button>
+          )}
           {sdkError && (
             <p className="text-[11px] text-coral text-center mt-2">{sdkError}</p>
           )}
+          {onMobile && (
+            <p className="text-[11px] text-muted text-center mt-3">
+              Drag to select. Preview available on desktop.
+            </p>
+          )}
           <p className="text-[11px] text-muted text-center mt-2">
-            Receiver can sign into Spotify to hear this exact clip, or skip for default preview.
+            Receiver with Spotify Premium on desktop hears this exact clip. Others hear the default preview.
           </p>
         </div>
       )}
