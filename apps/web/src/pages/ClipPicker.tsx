@@ -1,10 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
-import { initSpotifyPlayer, playTrack, pauseTrack, destroyPlayer, isMobile } from '../lib/spotifyPlayer';
-import { findPlayableDevice, connectPlay, connectPause } from '../lib/spotifyConnect';
-import WaveformPicker from '../components/WaveformPicker';
 
 const TRACK_STORAGE_KEY = 'que_pending_track';
 
@@ -27,169 +24,14 @@ export default function ClipPicker() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // PICK mode state
-  const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
-  const [startSec, setStartSec] = useState(0);
-  const [spotifyUser, setSpotifyUser] = useState<{ displayName: string; accessToken: string } | null>(null);
-  const [previewing, setPreviewing] = useState(false);
-  const [playerReady, setPlayerReady] = useState(false);
-  const [playerError, setPlayerError] = useState('');
-  const previewTimeout = useRef<ReturnType<typeof setTimeout>>();
-  // Connect state (mobile)
-  const [connectDeviceId, setConnectDeviceId] = useState<string | null>(null);
-
-  const onMobile = isMobile();
-
-  // Check if already logged into Spotify
-  useEffect(() => {
-    api.getMe()
-      .then((me) => setSpotifyUser({ displayName: me.displayName, accessToken: me.accessToken }))
-      .catch(() => {});
-  }, []);
-
-  // Persist track in case of OAuth redirect
-  useEffect(() => {
-    if (track) try { localStorage.setItem(TRACK_STORAGE_KEY, JSON.stringify(track)); } catch {}
-  }, [track]);
-
-  // Init player when entering PICK mode
-  useEffect(() => {
-    if (mode !== 'PICK' || !spotifyUser) return;
-    setPlayerError('');
-
-    if (onMobile) {
-      // Mobile: find a Spotify device via Connect API
-      findPlayableDevice(spotifyUser.accessToken)
-        .then((devId) => {
-          if (devId) {
-            setConnectDeviceId(devId);
-            setPlayerReady(true);
-          } else {
-            setPlayerError('Open Spotify app on this device, then tap Preview');
-          }
-        })
-        .catch(() => setPlayerError('Could not find Spotify devices'));
-    } else {
-      // Desktop: use Web Playback SDK
-      initSpotifyPlayer(spotifyUser.accessToken)
-        .then(() => setPlayerReady(true))
-        .catch((err) => {
-          const msg = err.message || '';
-          if (msg.includes('Premium')) setPlayerError('Spotify Premium required');
-          else if (msg.includes('MOBILE')) setPlayerError('');
-          else setPlayerError('Could not load player');
-        });
-    }
-
-    return () => {
-      if (previewTimeout.current) clearTimeout(previewTimeout.current);
-    };
-  }, [mode, spotifyUser, onMobile]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => { destroyPlayer(); };
-  }, []);
-
-  const stopPreview = useCallback(async () => {
-    if (previewTimeout.current) clearTimeout(previewTimeout.current);
-    if (onMobile && connectDeviceId && spotifyUser) {
-      await connectPause(spotifyUser.accessToken, connectDeviceId);
-    } else {
-      await pauseTrack();
-    }
-    setPreviewing(false);
-  }, [onMobile, connectDeviceId, spotifyUser]);
-
-  const handleWindowChange = useCallback((sec: number) => {
-    setStartSec(sec);
-    // Stop preview when user drags to a new position
-    if (previewTimeout.current) clearTimeout(previewTimeout.current);
-    setPreviewing(false);
-    if (onMobile) {
-      // pause via connect if needed
-    } else {
-      pauseTrack().catch(() => {});
-    }
-  }, [onMobile]);
-
-  const handleSelectMode = (newMode: 'AUTO' | 'PICK') => {
-    if (newMode === 'PICK') {
-      if (spotifyUser) {
-        setMode('PICK');
-      } else {
-        window.location.href = '/auth/spotify?returnTo=/send/clip';
-      }
-    } else {
-      if (previewing) stopPreview();
-      setMode('AUTO');
-    }
-  };
-
-  const handlePreview = async () => {
-    if (!track || !spotifyUser || !playerReady) return;
-    if (previewing) {
-      await stopPreview();
-      return;
-    }
-    setPlayerError('');
-    try {
-      if (onMobile) {
-        // Retry device search if no device
-        let devId = connectDeviceId;
-        if (!devId) {
-          devId = await findPlayableDevice(spotifyUser.accessToken);
-          if (!devId) {
-            setPlayerError('Open the Spotify app first, then tap Preview again');
-            return;
-          }
-          setConnectDeviceId(devId);
-        }
-        await connectPlay(spotifyUser.accessToken, `spotify:track:${track.spotifyId}`, startSec * 1000, devId);
-      } else {
-        await playTrack(`spotify:track:${track.spotifyId}`, spotifyUser.accessToken, startSec * 1000);
-      }
-      setPreviewing(true);
-      previewTimeout.current = setTimeout(() => stopPreview(), 30000);
-    } catch (err: any) {
-      setPreviewing(false);
-      const msg = err.message || '';
-      if (msg === 'PREMIUM_REQUIRED') {
-        setPlayerError('Spotify Premium required');
-        setPlayerReady(false);
-      } else if (msg === 'NO_DEVICE') {
-        setPlayerError('Open the Spotify app first, then tap Preview again');
-        setConnectDeviceId(null);
-        setPlayerReady(false);
-      } else {
-        setPlayerError('Playback failed — try again');
-      }
-    }
-  };
-
-  const handleRetryDeviceSearch = async () => {
-    if (!spotifyUser) return;
-    setPlayerError('');
-    const devId = await findPlayableDevice(spotifyUser.accessToken);
-    if (devId) {
-      setConnectDeviceId(devId);
-      setPlayerReady(true);
-    } else {
-      setPlayerError('No Spotify device found. Open the Spotify app and try again.');
-    }
-  };
-
   const handleGenerate = async () => {
     if (!track) return;
-    if (previewing) await stopPreview();
-    destroyPlayer();
     setSending(true);
     setError('');
     try {
       const result = await api.createVibe({
         trackId: track.spotifyId,
-        mode,
-        startSec: mode === 'PICK' ? startSec : undefined,
+        mode: 'AUTO',
         senderDisplayName: senderName || undefined,
       });
       setVibeId(result.vibeId);
@@ -240,12 +82,7 @@ export default function ClipPicker() {
         <h1 className="text-4xl font-extrabold text-ink tracking-tight mb-1">
           Que'd<span className="text-gold">.</span>
         </h1>
-        <p className="text-muted text-sm mb-2">Send this blind clip.</p>
-        {mode === 'PICK' && (
-          <span className="text-xs font-semibold text-spotify bg-spotify/10 rounded-full px-3 py-1 mb-4">
-            Hand-picked clip
-          </span>
-        )}
+        <p className="text-muted text-sm mb-6">Send this blind clip.</p>
         <div className="relative mb-8">
           <img src={track.albumArt} alt="" className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white" style={{ transform: 'rotate(-3deg)' }} />
           <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-ink border-4 border-white flex items-center justify-center">
@@ -299,54 +136,11 @@ export default function ClipPicker() {
         </div>
       </div>
 
-      {/* Mode selection cards */}
-      <div className="flex gap-3 mt-5">
-        <button
-          onClick={() => handleSelectMode('AUTO')}
-          className={`flex-1 card p-3 text-left transition-all ${mode === 'AUTO' ? 'border-mint/50 ring-2 ring-mint/20' : 'opacity-60'}`}
-        >
-          <div className="text-lg mb-1">🎵</div>
-          <div className="font-semibold text-ink text-sm">Auto clip</div>
-          <div className="text-muted text-[11px] mt-0.5">Best 30s, no login</div>
-        </button>
-        <button
-          onClick={() => handleSelectMode('PICK')}
-          className={`flex-1 card p-3 text-left transition-all ${mode === 'PICK' ? 'border-spotify/50 ring-2 ring-spotify/20' : 'opacity-60'}`}
-        >
-          <div className="text-lg mb-1">✂️</div>
-          <div className="font-semibold text-ink text-sm">Pick moment</div>
-          <div className="text-muted text-[11px] mt-0.5">
-            {spotifyUser ? 'Choose exact 30s' : 'Spotify login'}
-          </div>
-        </button>
+      <div className="card p-4 mt-4 text-center">
+        <div className="text-lg mb-1">🎵</div>
+        <div className="font-semibold text-ink text-sm">Auto clip</div>
+        <div className="text-muted text-[11px] mt-0.5">Best 30 seconds selected automatically</div>
       </div>
-
-      {/* Waveform picker (PICK mode only) */}
-      {mode === 'PICK' && (
-        <div className="card p-4 border-spotify/30 mt-3">
-          <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
-          <button
-            onClick={playerReady ? handlePreview : handleRetryDeviceSearch}
-            className="mt-3 w-full py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 min-h-[40px] bg-spotify/10 text-spotify hover:bg-spotify/20 disabled:opacity-40"
-          >
-            {!playerReady && !playerError ? 'Connecting...' : previewing ? (
-              <><span>⏸</span> Pause preview</>
-            ) : !playerReady && playerError ? (
-              <><span>🔄</span> Retry</>
-            ) : (
-              <><span>▶</span> Preview clip{onMobile ? ' via Spotify' : ''}</>
-            )}
-          </button>
-          {playerError && (
-            <p className="text-[11px] text-coral text-center mt-2">{playerError}</p>
-          )}
-          <p className="text-[11px] text-muted text-center mt-2">
-            {onMobile
-              ? 'Plays through your Spotify app. Receiver needs Spotify Premium for exact clip.'
-              : 'Receiver with Spotify Premium hears this exact clip. Others hear default preview.'}
-          </p>
-        </div>
-      )}
 
       <div className="flex-1" />
 
