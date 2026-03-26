@@ -30,14 +30,11 @@ export default function ClipPicker() {
   const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
   const [startSec, setStartSec] = useState(0);
   const [spotifyUser, setSpotifyUser] = useState<{ displayName: string; accessToken: string } | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-
   // Check if already logged into Spotify
   useEffect(() => {
     api.getMe()
       .then((me) => setSpotifyUser({ displayName: me.displayName, accessToken: me.accessToken }))
-      .catch(() => {})
-      .finally(() => setCheckingAuth(false));
+      .catch(() => {});
   }, []);
 
   // Persist track in case of OAuth redirect
@@ -215,25 +212,23 @@ export default function ClipPicker() {
               30-second preview (usually the chorus). Your friend listens blind and reacts.
             </p>
           </div>
-          {!checkingAuth && (
-            <button
-              onClick={handlePickMode}
-              className="card p-4 mt-3 w-full text-left hover:shadow-card-hover transition-all flex items-center gap-3"
-            >
-              <div className="w-10 h-10 rounded-full bg-spotify/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">✂️</span>
+          <button
+            onClick={handlePickMode}
+            className="card p-4 mt-3 w-full text-left hover:shadow-card-hover transition-all flex items-center gap-3"
+          >
+            <div className="w-10 h-10 rounded-full bg-spotify/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg">✂️</span>
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold text-ink text-sm">Pick exact moment</div>
+              <div className="text-muted text-xs">
+                {spotifyUser
+                  ? 'Choose the exact 30 seconds to send'
+                  : 'Sign in to Spotify to choose the exact 30s clip'}
               </div>
-              <div className="flex-1">
-                <div className="font-semibold text-ink text-sm">Pick exact moment</div>
-                <div className="text-muted text-xs">
-                  {spotifyUser
-                    ? 'Choose the exact 30 seconds to send'
-                    : 'Sign in to Spotify to choose the exact 30s clip'}
-                </div>
-              </div>
-              <span className="text-gold text-sm font-bold">→</span>
-            </button>
-          )}
+            </div>
+            <span className="text-gold text-sm font-bold">→</span>
+          </button>
         </>
       ) : (
         <>
