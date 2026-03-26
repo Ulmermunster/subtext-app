@@ -34,8 +34,14 @@ export async function vibeRoutes(app: FastifyInstance) {
     }
 
     // Fetch track info using app-level credentials (no user login needed)
-    const token = await getClientToken(env.SPOTIFY_CLIENT_ID, env.SPOTIFY_CLIENT_SECRET);
-    const track = await getTrack(trackId, token);
+    let token, track;
+    try {
+      token = await getClientToken(env.SPOTIFY_CLIENT_ID, env.SPOTIFY_CLIENT_SECRET);
+      track = await getTrack(trackId, token);
+    } catch (err) {
+      request.log.error(err, 'Failed to fetch track from Spotify');
+      return reply.status(502).send({ error: 'Could not fetch track info' });
+    }
 
     const previewUrl = track.preview_url || null;
 

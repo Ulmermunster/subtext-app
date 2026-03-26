@@ -8,12 +8,18 @@ async function getAppToken() {
 
 export async function spotifyRoutes(app: FastifyInstance) {
   // All routes use client credentials — no user login needed
-  app.get('/spotify/search', async (request) => {
+  app.get('/spotify/search', async (request, reply) => {
     const { q, limit } = request.query as { q: string; limit?: string };
     if (!q) return { tracks: [], artists: [] };
 
-    const token = await getAppToken();
-    const data = await searchTracks(q, token, parseInt(limit || '8'));
+    let token, data;
+    try {
+      token = await getAppToken();
+      data = await searchTracks(q, token, parseInt(limit || '8') || 8);
+    } catch (err) {
+      request.log.error(err, 'Spotify search failed');
+      return reply.status(502).send({ error: 'Spotify API unavailable' });
+    }
 
     const tracks = (data.tracks?.items || []).map((t: any) => ({
       id: t.id,
@@ -39,10 +45,16 @@ export async function spotifyRoutes(app: FastifyInstance) {
     return { tracks, artists };
   });
 
-  app.get('/spotify/track/:id', async (request) => {
+  app.get('/spotify/track/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const token = await getAppToken();
-    const t = await getTrack(id, token);
+    let token, t;
+    try {
+      token = await getAppToken();
+      t = await getTrack(id, token);
+    } catch (err) {
+      request.log.error(err, 'Spotify track fetch failed');
+      return reply.status(502).send({ error: 'Spotify API unavailable' });
+    }
     return {
       id: t.id,
       title: t.name,
@@ -57,9 +69,14 @@ export async function spotifyRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get('/spotify/artist/:id/albums', async (request) => {
+  app.get('/spotify/artist/:id/albums', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const token = await getAppToken();
-    return getArtistAlbums(id, token);
+    try {
+      const token = await getAppToken();
+      return await getArtistAlbums(id, token);
+    } catch (err) {
+      request.log.error(err, 'Spotify artist albums fetch failed');
+      return reply.status(502).send({ error: 'Spotify API unavailable' });
+    }
   });
 }

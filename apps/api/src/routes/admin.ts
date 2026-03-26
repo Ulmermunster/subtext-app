@@ -1,11 +1,15 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
 function requireAdmin(request: any, reply: any, done: () => void) {
+  if (!ADMIN_SECRET) {
+    reply.status(503).send({ error: 'Admin not configured' });
+    return;
+  }
   const auth = request.headers['x-admin-secret'] || request.query?.secret;
-  if (!ADMIN_SECRET || auth !== ADMIN_SECRET) {
+  if (auth !== ADMIN_SECRET) {
     reply.status(401).send({ error: 'Unauthorized' });
     return;
   }
