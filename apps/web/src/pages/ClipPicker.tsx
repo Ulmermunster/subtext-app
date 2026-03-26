@@ -101,6 +101,10 @@ export default function ClipPicker() {
 
   const handleGenerate = async () => {
     if (!track) return;
+    // Stop any playing preview
+    if (previewing) { await pauseTrack(); setPreviewing(false); }
+    if (previewTimeout.current) clearTimeout(previewTimeout.current);
+    destroyPlayer();
     setSending(true);
     setError('');
     try {
