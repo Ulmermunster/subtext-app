@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ModeToggle from '../components/ModeToggle';
-import WaveformPicker from '../components/WaveformPicker';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
-import { initSpotifyPlayer, playTrack, pauseTrack, destroyPlayer } from '../lib/spotifyPlayer';
+import WaveformPicker from '../components/WaveformPicker';
+
+const TRACK_STORAGE_KEY = 'que_pending_track';
 
 function formatDuration(ms: number) {
   const min = Math.floor(ms / 60000);
@@ -12,62 +12,46 @@ function formatDuration(ms: number) {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-function formatTime(sec: number) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
 export default function ClipPicker() {
   const location = useLocation();
   const navigate = useNavigate();
-  const track = (location.state as any)?.track;
-  const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
-  const [startSec, setStartSec] = useState(0);
+  // Track from React state, or localStorage after OAuth redirect
+  const track = (location.state as any)?.track || (() => {
+    try { const r = localStorage.getItem(TRACK_STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+  })();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [vibeId, setVibeId] = useState('');
   const [senderName, setSenderName] = useState('');
-  const [recipientName, setRecipientName] = useState('');
   const [error, setError] = useState('');
-  const [previewing, setPreviewing] = useState(false);
-  const [premiumError, setPremiumError] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [copied, setCopied] = useState(false);
 
+  // PICK mode state
+  const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
+  const [startSec, setStartSec] = useState(0);
+  const [spotifyUser, setSpotifyUser] = useState<{ displayName: string; accessToken: string } | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Check if already logged into Spotify
   useEffect(() => {
-    api.getMe().then((u) => {
-      setUser(u);
-      setSenderName(u.displayName || '');
-    }).catch(() => {});
-    return () => destroyPlayer();
+    api.getMe()
+      .then((me) => setSpotifyUser({ displayName: me.displayName, accessToken: me.accessToken }))
+      .catch(() => {})
+      .finally(() => setCheckingAuth(false));
   }, []);
 
-  const handleWindowChange = useCallback((sec: number) => {
-    setStartSec(sec);
-  }, []);
+  // Persist track in case of OAuth redirect
+  useEffect(() => {
+    if (track) try { localStorage.setItem(TRACK_STORAGE_KEY, JSON.stringify(track)); } catch {}
+  }, [track]);
 
-  const handlePreview = async () => {
-    if (!user?.accessToken) return;
-    try {
-      if (previewing) {
-        await pauseTrack();
-        setPreviewing(false);
-        return;
-      }
-      await initSpotifyPlayer(user.accessToken);
-      await playTrack(`spotify:track:${track.spotifyId}`, user.accessToken, startSec * 1000);
-      setPreviewing(true);
-      setTimeout(async () => {
-        await pauseTrack();
-        setPreviewing(false);
-      }, 30000);
-    } catch (err: any) {
-      if (err.message?.includes('Premium') || err.message?.includes('NOT_PREMIUM')) {
-        setPremiumError(true);
-      } else {
-        console.error('Preview error:', err);
-      }
+  const handleWindowChange = useCallback((sec: number) => setStartSec(sec), []);
+
+  const handlePickMode = () => {
+    if (spotifyUser) {
+      setMode('PICK');
+    } else {
+      window.location.href = '/auth/spotify?returnTo=/send/clip';
     }
   };
 
@@ -80,9 +64,11 @@ export default function ClipPicker() {
         trackId: track.spotifyId,
         mode,
         startSec: mode === 'PICK' ? startSec : undefined,
+        senderDisplayName: senderName || undefined,
       });
       setVibeId(result.vibeId);
       setSent(true);
+      try { localStorage.removeItem(TRACK_STORAGE_KEY); } catch {}
     } catch (err: any) {
       if (err.body?.error === 'no_preview') {
         setError(err.body.message);
@@ -95,12 +81,12 @@ export default function ClipPicker() {
   };
 
   const handleSms = () => {
-    const displayName = senderName || user?.displayName || 'Someone';
+    const displayName = senderName || 'Someone';
     openSms(displayName, vibeId, window.location.origin);
   };
 
   const handleCopy = async () => {
-    const displayName = senderName || user?.displayName || 'Someone';
+    const displayName = senderName || 'Someone';
     await copyLink(displayName, vibeId, window.location.origin);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -112,9 +98,9 @@ export default function ClipPicker() {
 
   if (!track) {
     return (
-      <div className="max-w-md mx-auto px-5 py-8">
+      <div className="w-full max-w-md mx-auto px-5 py-8">
         <p className="text-muted">No track selected.</p>
-        <button onClick={() => navigate('/send')} className="text-gold text-sm mt-2 font-semibold">← Back to search</button>
+        <button onClick={() => navigate('/send')} className="text-gold text-sm mt-2 font-semibold min-h-[44px]">← Back to search</button>
       </div>
     );
   }
@@ -122,26 +108,31 @@ export default function ClipPicker() {
   // Que'd confirmation screen (after generating link)
   if (sent) {
     return (
-      <div className="max-w-md mx-auto px-5 py-8 flex flex-col items-center min-h-screen">
-        <div className="w-full flex items-center mb-8">
-          <button onClick={() => navigate('/')} className="text-muted text-lg">←</button>
+      <div className="w-full max-w-md mx-auto px-5 flex flex-col items-center" style={{ minHeight: '100dvh', paddingTop: 'max(1.5rem, env(safe-area-inset-top))', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+        <div className="w-full flex items-center mb-6">
+          <button onClick={() => navigate('/')} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
         </div>
 
-        <h1 className="text-5xl font-extrabold text-ink tracking-tight mb-2">
+        <h1 className="text-4xl font-extrabold text-ink tracking-tight mb-1">
           Que'd<span className="text-gold">.</span>
         </h1>
-        <p className="text-muted text-sm mb-8">Send this blind clip.</p>
+        <p className="text-muted text-sm mb-2">Send this blind clip.</p>
+        {mode === 'PICK' && (
+          <span className="text-xs font-semibold text-spotify bg-spotify/10 rounded-full px-3 py-1 mb-4">
+            Hand-picked clip
+          </span>
+        )}
 
         {/* Album art with checkmark */}
-        <div className="relative mb-10">
+        <div className="relative mb-8">
           <img
             src={track.albumArt}
             alt=""
-            className="w-48 h-48 rounded-3xl object-cover shadow-card-hover border-4 border-white"
+            className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white"
             style={{ transform: 'rotate(-3deg)' }}
           />
-          <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-full bg-ink border-4 border-white flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+          <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-ink border-4 border-white flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
               <path d="M3 8L6.5 11.5L13 5" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
@@ -152,7 +143,7 @@ export default function ClipPicker() {
         {/* Test Receiver View */}
         <button
           onClick={handleTestReceiver}
-          className="btn-gold w-full flex items-center justify-center gap-2 mb-3"
+          className="btn-gold w-full flex items-center justify-center gap-2 mb-3 min-h-[48px]"
         >
           <span>👁</span> Test Receiver View
         </button>
@@ -161,7 +152,7 @@ export default function ClipPicker() {
         <div className="flex gap-3 w-full mb-4">
           <button
             onClick={handleSms}
-            className="btn-primary flex-1 flex items-center justify-center gap-2"
+            className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -171,7 +162,7 @@ export default function ClipPicker() {
           </button>
           <button
             onClick={handleCopy}
-            className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all"
+            className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -184,7 +175,7 @@ export default function ClipPicker() {
         {/* Start over */}
         <button
           onClick={() => navigate('/send')}
-          className="text-xs font-bold text-muted uppercase tracking-wider py-3"
+          className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px]"
         >
           Start Over
         </button>
@@ -192,22 +183,22 @@ export default function ClipPicker() {
     );
   }
 
-  // Track selection + clip picker screen
+  // Track confirmation screen
   return (
-    <div className="max-w-md mx-auto px-5 py-8 space-y-6">
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="text-muted text-lg">←</button>
+    <div className="w-full max-w-md mx-auto px-5 flex flex-col" style={{ minHeight: '100dvh', paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      <div className="flex items-center gap-4 py-2">
+        <button onClick={() => navigate(-1)} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
         <button
           onClick={() => navigate('/send')}
-          className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm"
+          className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm"
         >
           ✕
         </button>
       </div>
 
       {/* Song confirmation */}
-      <div className="card p-5 flex items-center gap-4">
-        <img src={track.albumArt} alt="" className="w-14 h-14 rounded-xl object-cover" />
+      <div className="card p-4 flex items-center gap-3 mt-3">
+        <img src={track.albumArt} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="font-bold text-ink truncate">{track.title}</div>
           <div className="text-muted text-sm truncate">{track.artist} · {track.albumName}</div>
@@ -215,56 +206,71 @@ export default function ClipPicker() {
         </div>
       </div>
 
-      {/* Mode toggle */}
-      <ModeToggle mode={mode} onModeChange={setMode} hasPreview={track.hasPreview} />
-
-      {/* Auto mode callout */}
-      {mode === 'AUTO' && (
-        <div className="card p-4 border-mint/30">
-          <p className="text-sm text-ink">
-            <span className="font-semibold text-mint">Auto mode</span> — Spotify picks the best
-            30-second preview clip (usually the chorus).
-          </p>
-        </div>
-      )}
-
-      {/* Pick mode waveform */}
-      {mode === 'PICK' && (
-        <div className="space-y-4">
-          <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
-
-          <button
-            onClick={handlePreview}
-            className="w-full card p-3 text-center text-sm font-semibold text-gold hover:bg-gold/5 transition-colors"
-          >
-            {previewing ? '⏸ Pause preview' : `▶ Preview ${formatTime(startSec)}–${formatTime(startSec + 30)}`}
-          </button>
-
-          {premiumError && (
-            <div className="card p-4 border-gold/30">
-              <p className="text-sm text-ink">
-                <span className="font-semibold text-gold">Spotify Premium needed to preview.</span>{' '}
-                Your friend will still hear the clip!
-              </p>
-            </div>
+      {/* Mode selection */}
+      {mode === 'AUTO' ? (
+        <>
+          <div className="card p-4 border-mint/30 mt-5">
+            <p className="text-sm text-ink">
+              <span className="font-semibold text-mint">Auto clip</span> — sends the best
+              30-second preview (usually the chorus). Your friend listens blind and reacts.
+            </p>
+          </div>
+          {!checkingAuth && (
+            <button
+              onClick={handlePickMode}
+              className="card p-4 mt-3 w-full text-left hover:shadow-card-hover transition-all flex items-center gap-3"
+            >
+              <div className="w-10 h-10 rounded-full bg-spotify/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-lg">✂️</span>
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-ink text-sm">Pick exact moment</div>
+                <div className="text-muted text-xs">
+                  {spotifyUser
+                    ? 'Choose the exact 30 seconds to send'
+                    : 'Sign in to Spotify to choose the exact 30s clip'}
+                </div>
+              </div>
+              <span className="text-gold text-sm font-bold">→</span>
+            </button>
           )}
-        </div>
+        </>
+      ) : (
+        <>
+          <div className="card p-4 border-spotify/30 mt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">✂️</span>
+              <span className="font-semibold text-spotify text-sm">Pick your 30 seconds</span>
+            </div>
+            <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
+          </div>
+          <button onClick={() => setMode('AUTO')} className="text-xs font-semibold text-muted mt-2 py-2 min-h-[44px]">
+            ← Switch back to auto clip
+          </button>
+          <div className="card p-3 mt-2 bg-gold/5 border-gold/20">
+            <p className="text-xs text-muted">
+              Your friend can sign into Spotify to hear this exact clip, or listen to the default preview without signing in.
+            </p>
+          </div>
+        </>
       )}
 
-      {/* Recipient name input */}
-      <div className="relative">
+      <div className="flex-1" />
+
+      {/* Sender name input */}
+      <div className="relative mt-5">
         <input
           type="text"
-          value={recipientName}
-          onChange={(e) => setRecipientName(e.target.value)}
-          placeholder="Recipient name (optional)"
-          className="w-full px-4 py-3 rounded-card border-2 border-gold/30 bg-white text-ink placeholder:text-muted text-center font-medium focus:outline-none focus:border-gold"
+          value={senderName}
+          onChange={(e) => setSenderName(e.target.value)}
+          placeholder="Your name"
+          className="w-full px-4 py-3 rounded-card border-2 border-gold/30 bg-white text-ink placeholder:text-muted text-center font-medium focus:outline-none focus:border-gold min-h-[48px]"
         />
         <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-sky" />
       </div>
 
       {error && (
-        <div className="card p-4 border-coral/30">
+        <div className="card p-4 border-coral/30 mt-4">
           <p className="text-sm text-coral">{error}</p>
         </div>
       )}
@@ -273,7 +279,7 @@ export default function ClipPicker() {
       <button
         onClick={handleGenerate}
         disabled={sending}
-        className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
+        className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px] mt-4 mb-2"
       >
         {sending ? <div className="spinner" /> : (
           <>Generate Mystery Link ✦</>

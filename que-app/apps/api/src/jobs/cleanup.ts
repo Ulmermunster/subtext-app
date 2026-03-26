@@ -4,11 +4,11 @@ export function startCleanupJob() {
   // Run every hour
   setInterval(async () => {
     try {
-      const result = await prisma.queToken.deleteMany({
+      const result = await prisma.vibeToken.deleteMany({
         where: { expiresAt: { lt: new Date() } },
       });
       if (result.count > 0) {
-        console.log(`Cleanup: deleted ${result.count} expired clips`);
+        console.log(`Cleanup: deleted ${result.count} expired vibes`);
       }
     } catch (err) {
       console.error('Cleanup job error:', err);

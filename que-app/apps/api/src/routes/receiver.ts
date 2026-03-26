@@ -1,21 +1,23 @@
-import { FastifyInstance } from 'fastify';
-
 const RECEIVER_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFF8E7">
 <title>Que. — The Blind Taste Test</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
-  -webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;color:#1A1A2E}
+  -webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;overflow-x:hidden;color:#1A1A2E;
+  -webkit-text-size-adjust:100%}
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-.container{max-width:420px;margin:0 auto;padding:24px 20px;position:relative;z-index:1;
-  display:flex;flex-direction:column;align-items:center;min-height:100vh}
+.container{max-width:100%;width:100%;margin:0 auto;
+  padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;min-height:100dvh}
 
 .blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
 .blob-1{top:-120px;right:-80px;width:400px;height:400px;
@@ -23,33 +25,33 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .blob-2{bottom:-100px;left:-60px;width:350px;height:350px;
   background:radial-gradient(circle,rgba(255,217,106,.12) 0%,transparent 70%)}
 
-.wordmark{font-size:20px;font-weight:800;color:#1A1A2E;letter-spacing:-.5px;margin-bottom:24px}
+.wordmark{font-size:18px;font-weight:800;color:#1A1A2E;letter-spacing:-.5px;margin-bottom:16px}
 .wordmark .dot{color:#F5A623}
 
-.from-tag{font-size:16px;font-weight:600;color:#1A1A2E;margin-bottom:32px}
+.from-tag{font-size:15px;font-weight:600;color:#1A1A2E;margin-bottom:24px;text-align:center;padding:0 16px}
 
-.orb-wrap{position:relative;width:200px;height:200px;margin-bottom:20px;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;user-select:none}
-.orb{width:200px;height:200px;border-radius:50%;
+.orb-wrap{position:relative;width:180px;height:180px;margin-bottom:16px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
+.orb{width:180px;height:180px;border-radius:50%;
   background:linear-gradient(135deg,#F5A623,#FFD96A);
   border:4px solid #fff;display:flex;align-items:center;justify-content:center;
   position:relative;z-index:2;transition:transform .3s ease;
   box-shadow:0 0 60px rgba(245,166,35,.2)}
 .orb:active{transform:scale(.96)}
-.orb-emoji{font-size:56px;transition:opacity .3s ease}
+.orb-emoji{font-size:48px;transition:opacity .3s ease}
 .orb-hint{position:absolute;bottom:-28px;left:0;right:0;text-align:center;
-  font-size:12px;color:#9CA3AF;font-weight:500}
+  font-size:13px;color:#9CA3AF;font-weight:600}
 
 .ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   border-radius:50%;border:1.5px solid rgba(245,166,35,.25);z-index:1;
   animation:pulse 2.5s ease-out infinite}
-.ring-1{width:230px;height:230px}
-.ring-2{width:260px;height:260px;animation-delay:.4s}
+.ring-1{width:210px;height:210px}
+.ring-2{width:240px;height:240px;animation-delay:.4s}
 @keyframes pulse{0%{transform:translate(-50%,-50%) scale(.95);opacity:.6}
   100%{transform:translate(-50%,-50%) scale(1.15);opacity:0}}
 
-.mystery{font-size:18px;font-weight:700;color:#9CA3AF;margin:24px 0 8px;letter-spacing:1px}
-.subtitle{font-size:12px;color:#9CA3AF;font-weight:500}
+.mystery{font-size:16px;font-weight:700;color:#9CA3AF;margin:20px 0 4px;letter-spacing:1px}
+.subtitle{font-size:11px;color:#9CA3AF;font-weight:500}
 
 .orb-bars{display:flex;align-items:center;gap:3px;height:60px;opacity:0;
   position:absolute;transition:opacity .4s ease}
@@ -58,19 +60,20 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   animation:wave 1.2s ease-in-out infinite alternate}
 @keyframes wave{0%{height:12px}100%{height:var(--h,40px)}}
 
-.scrubber{width:100%;max-width:280px;margin:16px 0;opacity:0;transition:opacity .3s ease}
+.scrubber{width:100%;max-width:280px;margin:12px 0;opacity:0;transition:opacity .3s ease}
 .scrubber.active{opacity:1}
 .scrub-track{width:100%;height:4px;background:#F0E6C8;border-radius:2px;overflow:hidden}
 .scrub-fill{height:100%;background:linear-gradient(90deg,#F5A623,#FFD96A);border-radius:2px;transition:width .3s linear}
 .scrub-times{display:flex;justify-content:space-between;margin-top:4px;
   font-size:11px;color:#9CA3AF;font-weight:500}
 
-.reactions{display:flex;gap:16px;margin:24px 0;opacity:0;transform:translateY(20px);
-  transition:opacity .4s ease,transform .4s ease}
+.reactions{display:flex;gap:12px;margin:20px 0;opacity:0;transform:translateY(20px);
+  transition:opacity .4s ease,transform .4s ease;width:100%;max-width:320px;justify-content:center}
 .reactions.active{opacity:1;transform:translateY(0)}
-.react-btn{border:none;border-radius:999px;padding:14px 36px;font-size:16px;font-weight:700;
+.react-btn{border:none;border-radius:999px;padding:14px 0;font-size:16px;font-weight:700;
   cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;
-  display:flex;align-items:center;gap:8px;font-family:inherit}
+  display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;
+  flex:1;min-height:48px;touch-action:manipulation}
 .react-btn:active{transform:scale(.95)}
 .btn-vibe{background:#10B981;color:#fff}
 .btn-vibe.selected{box-shadow:0 0 0 3px rgba(16,185,129,.4)}
@@ -78,30 +81,35 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .btn-nope.selected{box-shadow:0 0 0 3px rgba(249,115,22,.4)}
 
 .hint{font-size:12px;color:#9CA3AF;font-weight:500;text-align:center;
-  margin:8px 0;transition:opacity .3s ease}
+  margin:4px 0;transition:opacity .3s ease}
 
-.reveal{display:none;flex-direction:column;align-items:center;gap:8px;width:100%}
+.reveal{display:none;flex-direction:column;align-items:center;gap:8px;width:100%;
+  padding:0 16px}
 .reveal.active{display:flex}
 .reveal-label{font-size:14px;color:#9CA3AF;font-weight:600;
   opacity:0;animation:fadeUp .5s ease forwards}
-.album-art{width:200px;height:200px;border-radius:20px;object-fit:cover;
+.album-art{width:min(200px,50vw);height:min(200px,50vw);border-radius:20px;object-fit:cover;
   box-shadow:0 8px 40px rgba(0,0,0,.12);border:4px solid #fff;
   opacity:0;transform:scale(.7) rotate(-3deg);
   animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards;animation-delay:.15s}
-.reveal-title{font-size:28px;font-weight:800;color:#1A1A2E;text-align:center;
-  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.34s}
-.reveal-meta{font-size:16px;color:#9CA3AF;font-weight:500;text-align:center;
-  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.46s}
+.reveal-title{font-size:24px;font-weight:800;color:#1A1A2E;text-align:center;
+  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.34s;
+  overflow-wrap:break-word;word-break:break-word;max-width:100%}
+.reveal-meta{font-size:14px;color:#9CA3AF;font-weight:500;text-align:center;
+  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.46s;
+  overflow-wrap:break-word;word-break:break-word;max-width:100%}
 .reaction-badge{border-radius:999px;padding:10px 24px;font-size:14px;font-weight:700;
   opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.58s}
 .badge-vibe{background:rgba(16,185,129,.1);color:#10B981}
 .badge-nope{background:rgba(249,115,22,.1);color:#F97316}
 .spotify-cta{display:inline-flex;align-items:center;gap:8px;background:#1DB954;color:#fff;
   border-radius:999px;padding:14px 28px;font-size:14px;font-weight:700;text-decoration:none;
-  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.74s}
+  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.74s;
+  min-height:48px;touch-action:manipulation}
 .sendback-cta{display:inline-flex;align-items:center;gap:6px;background:#1A1A2E;color:#fff;
   border-radius:999px;padding:14px 28px;font-size:14px;font-weight:700;text-decoration:none;
-  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.88s}
+  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.88s;
+  min-height:48px;touch-action:manipulation;margin-bottom:16px}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes popIn{0%{opacity:0;transform:scale(.7) rotate(-3deg)}70%{opacity:1;transform:scale(1.06) rotate(-1deg)}
@@ -114,7 +122,19 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .error-title{font-size:20px;font-weight:700;margin-bottom:8px}
 .error-sub{font-size:14px;color:#9CA3AF}
 
-.hidden{display:none!important}
+.spotify-prompt{display:none;flex-direction:column;align-items:center;gap:10px;
+  width:100%;max-width:320px;margin:12px 0;animation:fadeUp .4s ease forwards}
+.spotify-prompt.active{display:flex}
+.spotify-prompt-text{font-size:12px;color:#9CA3AF;font-weight:500;text-align:center}
+.spotify-prompt-badge{font-size:11px;font-weight:600;color:#1DB954;
+  background:rgba(29,185,84,.1);border-radius:999px;padding:4px 12px}
+.btn-spotify-login{display:inline-flex;align-items:center;gap:8px;background:#1DB954;color:#fff;
+  border-radius:999px;padding:12px 24px;font-size:13px;font-weight:700;border:none;cursor:pointer;
+  font-family:inherit;min-height:44px;touch-action:manipulation;transition:transform .15s ease}
+.btn-spotify-login:active{transform:scale(.96)}
+.btn-skip{background:none;border:none;color:#9CA3AF;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:inherit;padding:8px;min-height:44px;touch-action:manipulation}
+.sdk-status{font-size:11px;color:#9CA3AF;font-weight:500;text-align:center;margin:4px 0}
 </style>
 </head>
 <body>
@@ -129,13 +149,13 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
   </div>
 
-  <div id="error" class="error-state hidden">
-    <div class="error-emoji" id="errorEmoji">\u{1F4A8}</div>
+  <div id="error" class="error-state" style="display:none">
+    <div class="error-emoji" id="errorEmoji"></div>
     <div class="error-title" id="errorTitle">This clip has expired</div>
     <div class="error-sub" id="errorSub">Mystery clips only last 72 hours.</div>
   </div>
 
-  <div id="landing" class="hidden" style="display:none;flex-direction:column;align-items:center;width:100%">
+  <div id="landing" style="display:none;flex-direction:column;align-items:center;width:100%">
     <div class="wordmark">Que<span class="dot">.</span></div>
     <div class="from-tag" id="fromTag"></div>
     <div class="orb-wrap" id="orbWrap">
@@ -164,6 +184,17 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     </div>
 
     <div class="hint" id="hint"></div>
+
+    <div class="spotify-prompt" id="spotifyPrompt">
+      <div class="spotify-prompt-badge">\\u2702 Hand-picked clip</div>
+      <div class="spotify-prompt-text">Sign in to Spotify to hear the exact moment they chose</div>
+      <button class="btn-spotify-login" id="btnSpotifyLogin">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        Sign in to Spotify
+      </button>
+      <button class="btn-skip" id="btnSkipSpotify">or just play the preview</button>
+    </div>
+    <div class="sdk-status" id="sdkStatus"></div>
   </div>
 
   <div id="revealSection" class="reveal">
@@ -184,9 +215,9 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 <script>
 (function(){
   var vibeId, vibeData, audio, currentReaction = null, playing = false, revealed = false;
-  var clipStartTime = 0, clipTimeout = null, progressInterval = null;
-  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  var clipTimeout = null, progressInterval = null;
   var API = location.origin;
+  var useSpotifySDK = false, spotifyAccessToken = null, spotifyPlayer = null, spotifyDeviceId = null;
 
   var $loading = document.getElementById('loading');
   var $error = document.getElementById('error');
@@ -212,11 +243,15 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var $revealBadge = document.getElementById('revealBadge');
   var $spotifyCta = document.getElementById('spotifyCta');
   var $sendbackCta = document.getElementById('sendbackCta');
+  var $spotifyPrompt = document.getElementById('spotifyPrompt');
+  var $btnSpotifyLogin = document.getElementById('btnSpotifyLogin');
+  var $btnSkipSpotify = document.getElementById('btnSkipSpotify');
+  var $sdkStatus = document.getElementById('sdkStatus');
 
   function showError(emoji, title, sub) {
-    $loading.classList.add('hidden');
+    $loading.style.display = 'none';
     $landing.style.display = 'none';
-    $error.classList.remove('hidden');
+    $error.style.display = 'block';
     document.getElementById('errorEmoji').textContent = emoji;
     document.getElementById('errorTitle').textContent = title;
     document.getElementById('errorSub').textContent = sub;
@@ -254,15 +289,13 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     })
     .then(function(data) {
       vibeData = data;
-      $loading.classList.add('hidden');
+      $loading.style.display = 'none';
       $landing.style.display = 'flex';
       $fromTag.textContent = data.senderDisplayName + " que'd you a song \\u{1F440}";
 
-      // Use previewUrl Audio if available, otherwise Spotify embed handles playback
-      if (data.previewUrl) {
-        audio = new Audio();
-        audio.preload = 'auto';
-        audio.src = data.previewUrl;
+      // If PICK mode, check for Spotify session and show prompt
+      if (data.mode === 'PICK' && data.startSec != null) {
+        checkSpotifySession();
       }
     })
     .catch(function(err) {
@@ -273,23 +306,59 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       }
     });
 
-  $orbWrap.addEventListener('click', function() {
-    if (revealed) return;
-    if (!vibeData) return;
+  function checkSpotifySession() {
+    fetch(API + '/auth/me', { credentials: 'include' })
+      .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function(me) {
+        spotifyAccessToken = me.accessToken;
+        $sdkStatus.textContent = 'Spotify connected \\u2014 loading player...';
+        initSpotifySDK();
+      })
+      .catch(function() {
+        // Not logged in — show prompt
+        $spotifyPrompt.classList.add('active');
+        $btnSpotifyLogin.addEventListener('click', function() {
+          window.location.href = '/auth/spotify?returnTo=' + encodeURIComponent(location.pathname);
+        });
+        $btnSkipSpotify.addEventListener('click', function() {
+          $spotifyPrompt.classList.remove('active');
+          $sdkStatus.textContent = '';
+        });
+      });
+  }
 
-    if (playing) {
-      if (audio) {
-        if (audio.paused) {
-          audio.play();
-          $orbBars.classList.add('active');
-        } else {
-          audio.pause();
-          $orbBars.classList.remove('active');
-        }
-      }
-      return;
-    }
+  function initSpotifySDK() {
+    var script = document.createElement('script');
+    script.src = 'https://sdk.scdn.co/spotify-player.js';
+    document.body.appendChild(script);
 
+    window.onSpotifyWebPlaybackSDKReady = function() {
+      spotifyPlayer = new Spotify.Player({
+        name: 'Que Player',
+        getOAuthToken: function(cb) { cb(spotifyAccessToken); },
+        volume: 0.8
+      });
+      spotifyPlayer.addListener('ready', function(data) {
+        spotifyDeviceId = data.device_id;
+        useSpotifySDK = true;
+        $spotifyPrompt.classList.remove('active');
+        $sdkStatus.textContent = 'exact clip ready \\u2014 tap to play';
+        $orbHint.textContent = 'tap to play exact clip';
+      });
+      spotifyPlayer.addListener('initialization_error', function() { sdkFallback(); });
+      spotifyPlayer.addListener('authentication_error', function() { sdkFallback(); });
+      spotifyPlayer.connect();
+    };
+  }
+
+  function sdkFallback() {
+    useSpotifySDK = false;
+    $sdkStatus.textContent = 'could not load Spotify player \\u2014 playing preview instead';
+    $spotifyPrompt.classList.remove('active');
+    $orbHint.textContent = 'tap to play';
+  }
+
+  function startPlayback() {
     playing = true;
     $orbEmoji.style.opacity = '0';
     $orbBars.classList.add('active');
@@ -297,25 +366,68 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $scrubber.classList.add('active');
     $reactions.classList.add('active');
     $hint.textContent = 'artist reveals at the end';
+    $sdkStatus.textContent = '';
 
-    // Always use Spotify embed for playback (works for all tracks)
-    setupEmbed();
-    startClipTimer(30);
-  });
-
-  function setupEmbed() {
-    var iframe = document.createElement('iframe');
-    var src = 'https://open.spotify.com/embed/track/' + vibeData.spotifyId +
-      '?utm_source=generator&theme=0';
-    // PICK mode: start from user-chosen time. AUTO mode: start from beginning
-    if (vibeData.mode === 'PICK' && vibeData.startSec) {
-      src += '&t=' + vibeData.startSec;
+    if (useSpotifySDK && spotifyDeviceId && vibeData.spotifyId) {
+      // Play via Spotify SDK from the exact startSec
+      var posMs = (vibeData.startSec || 0) * 1000;
+      fetch('https://api.spotify.com/v1/me/player/play?device_id=' + spotifyDeviceId, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + spotifyAccessToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uris: ['spotify:track:' + vibeData.spotifyId], position_ms: posMs })
+      }).then(function() {
+        clipTimeout = setTimeout(function() {
+          if (spotifyPlayer) spotifyPlayer.pause();
+        }, 30000);
+      }).catch(function() {
+        $hint.textContent = 'Spotify playback failed \\u2014 trying preview...';
+        useSpotifySDK = false;
+        playPreviewAudio();
+      });
+      startClipTimer(30);
+    } else {
+      playPreviewAudio();
     }
-    iframe.src = src;
-    iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:300px;height:80px;border:0;opacity:0.01';
-    document.body.appendChild(iframe);
   }
+
+  function playPreviewAudio() {
+    var audioUrl = API + '/vibes/' + vibeId + '/audio';
+    audio = new Audio();
+    audio.setAttribute('playsinline', '');
+    audio.setAttribute('webkit-playsinline', '');
+    audio.crossOrigin = 'anonymous';
+    audio.src = audioUrl;
+    document.body.appendChild(audio);
+    audio.play().then(function() {
+      clipTimeout = setTimeout(function() {
+        if (audio && !audio.paused) { audio.pause(); }
+      }, 30000);
+    }).catch(function() {
+      $hint.textContent = 'could not play audio \\u2014 try opening in browser';
+    });
+    startClipTimer(30);
+  }
+
+  $orbWrap.addEventListener('click', function() {
+    if (revealed) return;
+    if (!vibeData) return;
+
+    if (playing) {
+      if (useSpotifySDK && spotifyPlayer) {
+        spotifyPlayer.togglePlay();
+        spotifyPlayer.getCurrentState().then(function(state) {
+          if (state && state.paused) { $orbBars.classList.remove('active'); }
+          else { $orbBars.classList.add('active'); }
+        });
+      } else if (audio) {
+        if (audio.paused) { audio.play(); $orbBars.classList.add('active'); }
+        else { audio.pause(); $orbBars.classList.remove('active'); }
+      }
+      return;
+    }
+
+    startPlayback();
+  });
 
   function startClipTimer(duration) {
     var start = Date.now();
@@ -330,14 +442,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
         onClipEnd();
       }
     }, 250);
-  }
-
-  function updateProgress() {
-    if (!audio || audio.duration === 0) return;
-    var pct = (audio.currentTime / audio.duration) * 100;
-    $scrubFill.style.width = pct + '%';
-    $elapsed.textContent = formatTime(audio.currentTime);
-    $remaining.textContent = formatTime(Math.max(0, audio.duration - audio.currentTime));
   }
 
   window.react = function(type) {
@@ -360,6 +464,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     clearTimeout(clipTimeout);
     clearInterval(progressInterval);
     if (audio) { try { audio.pause(); } catch(e){} }
+    if (spotifyPlayer) { try { spotifyPlayer.pause(); } catch(e){} }
     $orbBars.classList.remove('active');
 
     setTimeout(function() { triggerReveal(); }, 400);
@@ -451,11 +556,3 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 </html>`;
 
 export { RECEIVER_HTML };
-
-export async function receiverRoutes(app: FastifyInstance) {
-  app.get('/v/:id', async (_request, reply) => {
-    reply.header('Content-Type', 'text/html');
-    reply.header('Cache-Control', 'no-cache');
-    return reply.send(RECEIVER_HTML);
-  });
-}

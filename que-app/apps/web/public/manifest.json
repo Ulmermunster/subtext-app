@@ -1,19 +1,19 @@
 {
-  "name": "Que.",
-  "short_name": "Que",
-  "description": "The blind taste test — share songs as mystery clips",
+  "name": "Just Vibes",
+  "short_name": "Just Vibes",
+  "description": "Share songs as blind listening experiences",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#FFF8E7",
-  "background_color": "#FFF8E7",
+  "theme_color": "#F6F4FF",
+  "background_color": "#F6F4FF",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23F5A623'/><text x='96' y='135' text-anchor='middle' font-size='120' font-weight='800' fill='%231A1A2E' font-family='system-ui'>Q</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%237C3AED'/><text x='96' y='120' text-anchor='middle' font-size='100'>🎵</text></svg>",
       "sizes": "192x192",
       "type": "image/svg+xml"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23F5A623'/><text x='256' y='360' text-anchor='middle' font-size='320' font-weight='800' fill='%231A1A2E' font-family='system-ui'>Q</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%237C3AED'/><text x='256' y='320' text-anchor='middle' font-size='260'>🎵</text></svg>",
       "sizes": "512x512",
       "type": "image/svg+xml"
     }

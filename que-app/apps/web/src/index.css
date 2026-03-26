@@ -7,7 +7,9 @@ body {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   margin: 0;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Warm ambient blobs */
@@ -121,4 +123,27 @@ body {
   background: linear-gradient(90deg, #F5A623, #FFD96A);
   border-radius: 2px;
   margin-top: 4px;
+}
+
+/* Orb pulse animation */
+@keyframes orb-ping {
+  0% { transform: scale(0.95); opacity: 0.6; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+.animate-orb-ping {
+  animation: orb-ping 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+/* Fade in */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.6s ease forwards;
+  animation-delay: 0.3s;
+  opacity: 0;
 }

@@ -1,77 +1,84 @@
-import { Link } from 'react-router-dom';
-import Wordmark from '../components/Wordmark';
-
-const STEPS = [
-  { icon: '🎧', label: 'PICK', number: 1 },
-  { icon: '📨', label: 'SEND', number: 2 },
-  { icon: '🙈', label: 'BLIND', number: 3 },
-  { icon: '✨', label: 'REVEAL', number: null },
-];
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
-  return (
-    <div className="max-w-md mx-auto px-5 py-8 flex flex-col items-center min-h-screen">
-      {/* Back arrow placeholder */}
-      <div className="w-full flex items-center mb-8">
-        <div className="w-8" />
-      </div>
+  const navigate = useNavigate();
 
+  return (
+    <div
+      className="w-full max-w-md mx-auto px-5 flex flex-col items-center justify-center"
+      style={{
+        minHeight: '100dvh',
+        paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+      }}
+    >
       {/* Wordmark */}
-      <div className="text-center mb-16">
+      <div className="text-center mb-4">
         <h1 className="text-4xl font-extrabold text-ink tracking-tight">
           Que<span className="text-gold">.</span>
         </h1>
-        <p className="text-xs font-semibold text-muted uppercase tracking-[0.2em] mt-1">
+        <p className="text-[11px] font-semibold text-muted uppercase tracking-[0.25em] mt-1">
           The Blind Taste Test
         </p>
       </div>
 
-      {/* Q Logo Orb */}
-      <div className="relative mb-16">
-        {/* Outer glow ring */}
-        <div className="absolute inset-[-20px] rounded-full bg-gold/10" />
-        {/* White border ring */}
-        <div className="absolute inset-[-4px] rounded-full bg-white shadow-glow" />
-        {/* Gold gradient orb */}
-        <div className="relative w-48 h-48 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center">
-          {/* Sparkle icon */}
-          <span className="absolute -top-1 -right-1 text-gold text-2xl">✦</span>
-          {/* Q letter */}
-          <span className="text-7xl font-extrabold text-ink/80">Q</span>
-        </div>
-      </div>
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Step indicators at bottom */}
-      <div className="w-full card p-4 mb-6">
-        <div className="flex items-center justify-between">
-          {STEPS.map((step, i) => (
-            <div key={step.label} className="flex items-center">
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center text-lg">
-                  {step.icon}
-                </div>
-                <span className="text-[10px] font-bold text-ink uppercase tracking-wider">
-                  {step.number ? `${step.number}. ` : ''}{step.label}
-                </span>
-              </div>
-              {i < STEPS.length - 1 && (
-                <div className="w-6 h-0.5 bg-gold/30 mx-1 mt-[-14px]" />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* CTA */}
-      <Link
-        to="/send"
-        className="btn-primary block text-center w-full"
+      {/* Pulsing Q Orb — main CTA */}
+      <button
+        onClick={() => navigate('/send')}
+        className="relative group my-8 focus:outline-none"
+        aria-label="Send a Que"
       >
-        Que a Song +
-      </Link>
+        {/* Pulse rings */}
+        <span className="absolute inset-[-24px] rounded-full border-[1.5px] border-gold/20 animate-orb-ping" />
+        <span className="absolute inset-[-40px] rounded-full border border-gold/10 animate-orb-ping animation-delay-400" />
+
+        {/* Outer glow */}
+        <span className="absolute inset-[-6px] rounded-full bg-gradient-to-br from-gold/15 to-gold-light/10 blur-sm group-active:scale-95 transition-transform" />
+
+        {/* White ring */}
+        <span className="absolute inset-[-4px] rounded-full bg-white shadow-glow" />
+
+        {/* Gold orb */}
+        <span className="relative flex items-center justify-center w-44 h-44 rounded-full bg-gradient-to-br from-gold to-gold-light shadow-glow group-hover:shadow-[0_0_80px_rgba(245,166,35,.35)] group-active:scale-[0.96] transition-all duration-200">
+          {/* Sparkle */}
+          <span className="absolute -top-1 -right-1 text-gold text-xl opacity-80">✦</span>
+          {/* Q */}
+          <span className="text-7xl font-extrabold text-ink/80 select-none">Q</span>
+        </span>
+      </button>
+
+      {/* Hint text */}
+      <p className="text-xs font-medium text-muted/70 mb-10 animate-fade-in">
+        tap to send a song
+      </p>
+
+      {/* How it works — compact step pills */}
+      <div className="w-full max-w-xs">
+        <div className="flex items-center justify-between gap-1">
+          <StepPill emoji="🎧" label="Pick" />
+          <Dot />
+          <StepPill emoji="📨" label="Send" />
+          <Dot />
+          <StepPill emoji="🙈" label="Blind" />
+          <Dot />
+          <StepPill emoji="✨" label="Reveal" />
+        </div>
+      </div>
     </div>
   );
+}
+
+function StepPill({ emoji, label }: { emoji: string; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-sm">
+        {emoji}
+      </span>
+      <span className="text-[9px] font-bold text-muted uppercase tracking-wider">{label}</span>
+    </div>
+  );
+}
+
+function Dot() {
+  return <span className="w-1 h-1 rounded-full bg-gold/30 mb-4" />;
 }

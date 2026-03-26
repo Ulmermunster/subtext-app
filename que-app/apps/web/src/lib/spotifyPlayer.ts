@@ -17,7 +17,7 @@ export function initSpotifyPlayer(accessToken: string): Promise<string> {
 
     (window as any).onSpotifyWebPlaybackSDKReady = () => {
       player = new (window as any).Spotify.Player({
-        name: 'Que Preview',
+        name: 'Just Vibes Preview',
         getOAuthToken: (cb: (token: string) => void) => cb(accessToken),
         volume: 0.8,
       });

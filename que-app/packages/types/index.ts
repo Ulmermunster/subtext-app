@@ -1,4 +1,4 @@
-export type QueMode = 'AUTO' | 'PICK';
+export type VibeMode = 'AUTO' | 'PICK';
 export type Reaction = 'VIBE' | 'NOPE';
 
 export interface Track {
@@ -30,26 +30,26 @@ export interface Album {
   tracks: Track[];
 }
 
-export interface CreateQueRequest {
+export interface CreateVibeRequest {
   trackId: string;
-  mode: QueMode;
+  mode: VibeMode;
   startSec?: number;
 }
 
-export interface CreateQueResponse {
-  queId: string;
+export interface CreateVibeResponse {
+  vibeId: string;
   shareUrl: string;
 }
 
-export interface QuePublicData {
-  mode: QueMode;
+export interface VibePublicData {
+  mode: VibeMode;
   startSec: number | null;
   previewUrl: string | null;
   spotifyId: string;
   senderDisplayName: string;
 }
 
-export interface QueRevealData {
+export interface VibeRevealData {
   title: string;
   artist: string;
   albumName: string;
