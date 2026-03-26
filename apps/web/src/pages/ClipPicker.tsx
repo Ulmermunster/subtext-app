@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
+import { initSpotifyPlayer, playTrack, pauseTrack, destroyPlayer } from '../lib/spotifyPlayer';
 import WaveformPicker from '../components/WaveformPicker';
 
 const TRACK_STORAGE_KEY = 'que_pending_track';
@@ -30,6 +31,10 @@ export default function ClipPicker() {
   const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
   const [startSec, setStartSec] = useState(0);
   const [spotifyUser, setSpotifyUser] = useState<{ displayName: string; accessToken: string } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [sdkReady, setSdkReady] = useState(false);
+  const previewTimeout = useRef<ReturnType<typeof setTimeout>>();
+
   // Check if already logged into Spotify
   useEffect(() => {
     api.getMe()
@@ -42,14 +47,56 @@ export default function ClipPicker() {
     if (track) try { localStorage.setItem(TRACK_STORAGE_KEY, JSON.stringify(track)); } catch {}
   }, [track]);
 
+  // Init Spotify SDK when entering PICK mode with a logged-in user
+  useEffect(() => {
+    if (mode === 'PICK' && spotifyUser) {
+      initSpotifyPlayer(spotifyUser.accessToken)
+        .then(() => setSdkReady(true))
+        .catch(() => {});
+    }
+    return () => {
+      if (previewTimeout.current) clearTimeout(previewTimeout.current);
+    };
+  }, [mode, spotifyUser]);
+
+  // Cleanup player on unmount
+  useEffect(() => {
+    return () => { destroyPlayer(); };
+  }, []);
+
   const handleWindowChange = useCallback((sec: number) => setStartSec(sec), []);
 
-  const handlePickMode = () => {
-    if (spotifyUser) {
-      setMode('PICK');
+  const handleSelectMode = (newMode: 'AUTO' | 'PICK') => {
+    if (newMode === 'PICK') {
+      if (spotifyUser) {
+        setMode('PICK');
+      } else {
+        window.location.href = '/auth/spotify?returnTo=/send/clip';
+      }
     } else {
-      window.location.href = '/auth/spotify?returnTo=/send/clip';
+      // Stop any preview when switching to AUTO
+      if (previewing) { pauseTrack(); setPreviewing(false); }
+      if (previewTimeout.current) clearTimeout(previewTimeout.current);
+      setMode('AUTO');
     }
+  };
+
+  const handlePreview = async () => {
+    if (!track || !spotifyUser || !sdkReady) return;
+    if (previewing) {
+      await pauseTrack();
+      setPreviewing(false);
+      if (previewTimeout.current) clearTimeout(previewTimeout.current);
+      return;
+    }
+    try {
+      await playTrack(`spotify:track:${track.spotifyId}`, spotifyUser.accessToken, startSec * 1000);
+      setPreviewing(true);
+      previewTimeout.current = setTimeout(async () => {
+        await pauseTrack();
+        setPreviewing(false);
+      }, 30000);
+    } catch { /* SDK not available */ }
   };
 
   const handleGenerate = async () => {
@@ -203,51 +250,47 @@ export default function ClipPicker() {
         </div>
       </div>
 
-      {/* Mode selection */}
-      {mode === 'AUTO' ? (
-        <>
-          <div className="card p-4 border-mint/30 mt-5">
-            <p className="text-sm text-ink">
-              <span className="font-semibold text-mint">Auto clip</span> — sends the best
-              30-second preview (usually the chorus). Your friend listens blind and reacts.
-            </p>
+      {/* Mode selection cards */}
+      <div className="flex gap-3 mt-5">
+        <button
+          onClick={() => handleSelectMode('AUTO')}
+          className={`flex-1 card p-3 text-left transition-all ${mode === 'AUTO' ? 'border-mint/50 ring-2 ring-mint/20' : 'opacity-60'}`}
+        >
+          <div className="text-lg mb-1">🎵</div>
+          <div className="font-semibold text-ink text-sm">Auto clip</div>
+          <div className="text-muted text-[11px] mt-0.5">Best 30s, no login</div>
+        </button>
+        <button
+          onClick={() => handleSelectMode('PICK')}
+          className={`flex-1 card p-3 text-left transition-all ${mode === 'PICK' ? 'border-spotify/50 ring-2 ring-spotify/20' : 'opacity-60'}`}
+        >
+          <div className="text-lg mb-1">✂️</div>
+          <div className="font-semibold text-ink text-sm">Pick moment</div>
+          <div className="text-muted text-[11px] mt-0.5">
+            {spotifyUser ? 'Choose exact 30s' : 'Spotify login'}
           </div>
+        </button>
+      </div>
+
+      {/* Waveform picker (PICK mode only) */}
+      {mode === 'PICK' && (
+        <div className="card p-4 border-spotify/30 mt-3">
+          <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
           <button
-            onClick={handlePickMode}
-            className="card p-4 mt-3 w-full text-left hover:shadow-card-hover transition-all flex items-center gap-3"
+            onClick={handlePreview}
+            disabled={!sdkReady}
+            className="mt-3 w-full py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 min-h-[40px] bg-spotify/10 text-spotify hover:bg-spotify/20 disabled:opacity-40"
           >
-            <div className="w-10 h-10 rounded-full bg-spotify/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg">✂️</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-semibold text-ink text-sm">Pick exact moment</div>
-              <div className="text-muted text-xs">
-                {spotifyUser
-                  ? 'Choose the exact 30 seconds to send'
-                  : 'Sign in to Spotify to choose the exact 30s clip'}
-              </div>
-            </div>
-            <span className="text-gold text-sm font-bold">→</span>
+            {!sdkReady ? 'Loading player...' : previewing ? (
+              <><span>⏸</span> Pause preview</>
+            ) : (
+              <><span>▶</span> Preview clip</>
+            )}
           </button>
-        </>
-      ) : (
-        <>
-          <div className="card p-4 border-spotify/30 mt-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">✂️</span>
-              <span className="font-semibold text-spotify text-sm">Pick your 30 seconds</span>
-            </div>
-            <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
-          </div>
-          <button onClick={() => setMode('AUTO')} className="text-xs font-semibold text-muted mt-2 py-2 min-h-[44px]">
-            ← Switch back to auto clip
-          </button>
-          <div className="card p-3 mt-2 bg-gold/5 border-gold/20">
-            <p className="text-xs text-muted">
-              Your friend can sign into Spotify to hear this exact clip, or listen to the default preview without signing in.
-            </p>
-          </div>
-        </>
+          <p className="text-[11px] text-muted text-center mt-2">
+            Receiver can sign into Spotify to hear this exact clip, or skip for default preview.
+          </p>
+        </div>
       )}
 
       <div className="flex-1" />
