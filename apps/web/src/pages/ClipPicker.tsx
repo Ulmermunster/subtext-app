@@ -33,6 +33,7 @@ export default function ClipPicker() {
   const [spotifyUser, setSpotifyUser] = useState<{ displayName: string; accessToken: string } | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
+  const [sdkError, setSdkError] = useState('');
   const previewTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   // Check if already logged into Spotify
@@ -50,9 +51,12 @@ export default function ClipPicker() {
   // Init Spotify SDK when entering PICK mode with a logged-in user
   useEffect(() => {
     if (mode === 'PICK' && spotifyUser) {
+      setSdkError('');
       initSpotifyPlayer(spotifyUser.accessToken)
         .then(() => setSdkReady(true))
-        .catch(() => {});
+        .catch((err) => {
+          setSdkError(err.message?.includes('Premium') ? 'Spotify Premium required for clip preview' : 'Could not load Spotify player');
+        });
     }
     return () => {
       if (previewTimeout.current) clearTimeout(previewTimeout.current);
@@ -64,7 +68,13 @@ export default function ClipPicker() {
     return () => { destroyPlayer(); };
   }, []);
 
-  const handleWindowChange = useCallback((sec: number) => setStartSec(sec), []);
+  const handleWindowChange = useCallback((sec: number) => {
+    setStartSec(sec);
+    // Stop preview when user drags to a new position
+    if (previewTimeout.current) clearTimeout(previewTimeout.current);
+    setPreviewing(false);
+    pauseTrack().catch(() => {});
+  }, []);
 
   const handleSelectMode = (newMode: 'AUTO' | 'PICK') => {
     if (newMode === 'PICK') {
@@ -89,6 +99,7 @@ export default function ClipPicker() {
       if (previewTimeout.current) clearTimeout(previewTimeout.current);
       return;
     }
+    setSdkError('');
     try {
       await playTrack(`spotify:track:${track.spotifyId}`, spotifyUser.accessToken, startSec * 1000);
       setPreviewing(true);
@@ -96,7 +107,15 @@ export default function ClipPicker() {
         await pauseTrack();
         setPreviewing(false);
       }, 30000);
-    } catch { /* SDK not available */ }
+    } catch (err: any) {
+      setPreviewing(false);
+      if (err.message === 'PREMIUM_REQUIRED') {
+        setSdkError('Spotify Premium required to preview clips');
+        setSdkReady(false);
+      } else {
+        setSdkError('Playback failed — try again');
+      }
+    }
   };
 
   const handleGenerate = async () => {
@@ -285,12 +304,15 @@ export default function ClipPicker() {
             disabled={!sdkReady}
             className="mt-3 w-full py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 min-h-[40px] bg-spotify/10 text-spotify hover:bg-spotify/20 disabled:opacity-40"
           >
-            {!sdkReady ? 'Loading player...' : previewing ? (
+            {!sdkReady && !sdkError ? 'Loading player...' : previewing ? (
               <><span>⏸</span> Pause preview</>
             ) : (
               <><span>▶</span> Preview clip</>
             )}
           </button>
+          {sdkError && (
+            <p className="text-[11px] text-coral text-center mt-2">{sdkError}</p>
+          )}
           <p className="text-[11px] text-muted text-center mt-2">
             Receiver can sign into Spotify to hear this exact clip, or skip for default preview.
           </p>

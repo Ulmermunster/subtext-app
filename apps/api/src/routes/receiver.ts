@@ -347,6 +347,17 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       });
       spotifyPlayer.addListener('initialization_error', function() { sdkFallback(); });
       spotifyPlayer.addListener('authentication_error', function() { sdkFallback(); });
+      spotifyPlayer.addListener('account_error', function() {
+        sdkFallback();
+        $sdkStatus.textContent = 'Spotify Premium required \\u2014 will play preview instead';
+      });
+      spotifyPlayer.addListener('playback_error', function() {
+        if (playing && useSpotifySDK) {
+          $hint.textContent = 'playback interrupted \\u2014 switching to preview...';
+          useSpotifySDK = false;
+          playPreviewAudio();
+        }
+      });
       spotifyPlayer.connect();
     };
   }
@@ -375,13 +386,22 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
         method: 'PUT',
         headers: { 'Authorization': 'Bearer ' + spotifyAccessToken, 'Content-Type': 'application/json' },
         body: JSON.stringify({ uris: ['spotify:track:' + vibeData.spotifyId], position_ms: posMs })
-      }).then(function() {
+      }).then(function(res) {
+        if (!res.ok) {
+          throw new Error(res.status);
+        }
         clipTimeout = setTimeout(function() {
           if (spotifyPlayer) spotifyPlayer.pause();
         }, 30000);
-      }).catch(function() {
-        $hint.textContent = 'Spotify playback failed \\u2014 trying preview...';
+      }).catch(function(err) {
+        var msg = err && err.message;
+        if (msg === '403') {
+          $hint.textContent = 'Spotify Premium required \\u2014 playing preview...';
+        } else {
+          $hint.textContent = 'Spotify playback failed \\u2014 playing preview...';
+        }
         useSpotifySDK = false;
+        if (spotifyPlayer) { try { spotifyPlayer.disconnect(); } catch(e){} }
         playPreviewAudio();
       });
       startClipTimer(30);
