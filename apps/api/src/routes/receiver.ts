@@ -121,6 +121,20 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .error-emoji{font-size:48px;margin-bottom:16px}
 .error-title{font-size:20px;font-weight:700;margin-bottom:8px}
 .error-sub{font-size:14px;color:#9CA3AF}
+
+.spotify-prompt{display:none;flex-direction:column;align-items:center;gap:10px;
+  width:100%;max-width:320px;margin:12px 0;animation:fadeUp .4s ease forwards}
+.spotify-prompt.active{display:flex}
+.spotify-prompt-text{font-size:12px;color:#9CA3AF;font-weight:500;text-align:center}
+.spotify-prompt-badge{font-size:11px;font-weight:600;color:#1DB954;
+  background:rgba(29,185,84,.1);border-radius:999px;padding:4px 12px}
+.btn-spotify-login{display:inline-flex;align-items:center;gap:8px;background:#1DB954;color:#fff;
+  border-radius:999px;padding:12px 24px;font-size:13px;font-weight:700;border:none;cursor:pointer;
+  font-family:inherit;min-height:44px;touch-action:manipulation;transition:transform .15s ease}
+.btn-spotify-login:active{transform:scale(.96)}
+.btn-skip{background:none;border:none;color:#9CA3AF;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:inherit;padding:8px;min-height:44px;touch-action:manipulation}
+.sdk-status{font-size:11px;color:#9CA3AF;font-weight:500;text-align:center;margin:4px 0}
 </style>
 </head>
 <body>
@@ -170,6 +184,17 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     </div>
 
     <div class="hint" id="hint"></div>
+
+    <div class="spotify-prompt" id="spotifyPrompt">
+      <div class="spotify-prompt-badge">\\u2702 Hand-picked clip</div>
+      <div class="spotify-prompt-text">Sign in to Spotify to hear the exact moment they chose</div>
+      <button class="btn-spotify-login" id="btnSpotifyLogin">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        Sign in to Spotify
+      </button>
+      <button class="btn-skip" id="btnSkipSpotify">or just play the preview</button>
+    </div>
+    <div class="sdk-status" id="sdkStatus"></div>
   </div>
 
   <div id="revealSection" class="reveal">
@@ -192,6 +217,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var vibeId, vibeData, audio, currentReaction = null, playing = false, revealed = false;
   var clipTimeout = null, progressInterval = null;
   var API = location.origin;
+  var useSpotifySDK = false, spotifyAccessToken = null, spotifyPlayer = null, spotifyDeviceId = null;
 
   var $loading = document.getElementById('loading');
   var $error = document.getElementById('error');
@@ -217,6 +243,10 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var $revealBadge = document.getElementById('revealBadge');
   var $spotifyCta = document.getElementById('spotifyCta');
   var $sendbackCta = document.getElementById('sendbackCta');
+  var $spotifyPrompt = document.getElementById('spotifyPrompt');
+  var $btnSpotifyLogin = document.getElementById('btnSpotifyLogin');
+  var $btnSkipSpotify = document.getElementById('btnSkipSpotify');
+  var $sdkStatus = document.getElementById('sdkStatus');
 
   function showError(emoji, title, sub) {
     $loading.style.display = 'none';
@@ -263,6 +293,10 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       $landing.style.display = 'flex';
       $fromTag.textContent = data.senderDisplayName + " que'd you a song \\u{1F440}";
 
+      // If PICK mode, check for Spotify session and show prompt
+      if (data.mode === 'PICK' && data.startSec != null) {
+        checkSpotifySession();
+      }
     })
     .catch(function(err) {
       if (err.message === '404') {
@@ -272,6 +306,58 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       }
     });
 
+  function checkSpotifySession() {
+    fetch(API + '/auth/me', { credentials: 'include' })
+      .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function(me) {
+        spotifyAccessToken = me.accessToken;
+        $sdkStatus.textContent = 'Spotify connected \\u2014 loading player...';
+        initSpotifySDK();
+      })
+      .catch(function() {
+        // Not logged in — show prompt
+        $spotifyPrompt.classList.add('active');
+        $btnSpotifyLogin.addEventListener('click', function() {
+          window.location.href = '/auth/spotify?returnTo=' + encodeURIComponent(location.pathname);
+        });
+        $btnSkipSpotify.addEventListener('click', function() {
+          $spotifyPrompt.classList.remove('active');
+          $sdkStatus.textContent = '';
+        });
+      });
+  }
+
+  function initSpotifySDK() {
+    var script = document.createElement('script');
+    script.src = 'https://sdk.scdn.co/spotify-player.js';
+    document.body.appendChild(script);
+
+    window.onSpotifyWebPlaybackSDKReady = function() {
+      spotifyPlayer = new Spotify.Player({
+        name: 'Que Player',
+        getOAuthToken: function(cb) { cb(spotifyAccessToken); },
+        volume: 0.8
+      });
+      spotifyPlayer.addListener('ready', function(data) {
+        spotifyDeviceId = data.device_id;
+        useSpotifySDK = true;
+        $spotifyPrompt.classList.remove('active');
+        $sdkStatus.textContent = 'exact clip ready \\u2014 tap to play';
+        $orbHint.textContent = 'tap to play exact clip';
+      });
+      spotifyPlayer.addListener('initialization_error', function() { sdkFallback(); });
+      spotifyPlayer.addListener('authentication_error', function() { sdkFallback(); });
+      spotifyPlayer.connect();
+    };
+  }
+
+  function sdkFallback() {
+    useSpotifySDK = false;
+    $sdkStatus.textContent = 'could not load Spotify player \\u2014 playing preview instead';
+    $spotifyPrompt.classList.remove('active');
+    $orbHint.textContent = 'tap to play';
+  }
+
   function startPlayback() {
     playing = true;
     $orbEmoji.style.opacity = '0';
@@ -280,8 +366,31 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $scrubber.classList.add('active');
     $reactions.classList.add('active');
     $hint.textContent = 'artist reveals at the end';
+    $sdkStatus.textContent = '';
 
-    // Same-origin audio proxy — works on every mobile browser
+    if (useSpotifySDK && spotifyDeviceId && vibeData.spotifyId) {
+      // Play via Spotify SDK from the exact startSec
+      var posMs = (vibeData.startSec || 0) * 1000;
+      fetch('https://api.spotify.com/v1/me/player/play?device_id=' + spotifyDeviceId, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + spotifyAccessToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uris: ['spotify:track:' + vibeData.spotifyId], position_ms: posMs })
+      }).then(function() {
+        clipTimeout = setTimeout(function() {
+          if (spotifyPlayer) spotifyPlayer.pause();
+        }, 30000);
+      }).catch(function() {
+        $hint.textContent = 'Spotify playback failed \\u2014 trying preview...';
+        useSpotifySDK = false;
+        playPreviewAudio();
+      });
+      startClipTimer(30);
+    } else {
+      playPreviewAudio();
+    }
+  }
+
+  function playPreviewAudio() {
     var audioUrl = API + '/vibes/' + vibeId + '/audio';
     audio = new Audio();
     audio.setAttribute('playsinline', '');
@@ -293,8 +402,8 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       clipTimeout = setTimeout(function() {
         if (audio && !audio.paused) { audio.pause(); }
       }, 30000);
-    }).catch(function(e) {
-      $hint.textContent = 'could not play audio — try opening in browser';
+    }).catch(function() {
+      $hint.textContent = 'could not play audio \\u2014 try opening in browser';
     });
     startClipTimer(30);
   }
@@ -304,14 +413,15 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     if (!vibeData) return;
 
     if (playing) {
-      if (audio) {
-        if (audio.paused) {
-          audio.play();
-          $orbBars.classList.add('active');
-        } else {
-          audio.pause();
-          $orbBars.classList.remove('active');
-        }
+      if (useSpotifySDK && spotifyPlayer) {
+        spotifyPlayer.togglePlay();
+        spotifyPlayer.getCurrentState().then(function(state) {
+          if (state && state.paused) { $orbBars.classList.remove('active'); }
+          else { $orbBars.classList.add('active'); }
+        });
+      } else if (audio) {
+        if (audio.paused) { audio.play(); $orbBars.classList.add('active'); }
+        else { audio.pause(); $orbBars.classList.remove('active'); }
       }
       return;
     }
@@ -354,6 +464,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     clearTimeout(clipTimeout);
     clearInterval(progressInterval);
     if (audio) { try { audio.pause(); } catch(e){} }
+    if (spotifyPlayer) { try { spotifyPlayer.pause(); } catch(e){} }
     $orbBars.classList.remove('active');
 
     setTimeout(function() { triggerReveal(); }, 400);

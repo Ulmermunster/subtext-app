@@ -9,10 +9,15 @@ import { requireSession } from '../middleware/session.js';
 
 const SCOPES = 'streaming user-read-email user-read-private user-read-playback-state';
 
+// Allowed returnTo prefixes (prevent open redirect)
+const ALLOWED_RETURN_PREFIXES = ['/send', '/v/'];
+
 export async function authRoutes(app: FastifyInstance) {
   app.get('/auth/spotify', async (request, reply) => {
+    const { returnTo } = request.query as { returnTo?: string };
     const state = randomBytes(16).toString('hex');
-    await redis.set(`oauth:state:${state}`, '1', 'EX', 600);
+    const safeReturnTo = returnTo && ALLOWED_RETURN_PREFIXES.some(p => returnTo.startsWith(p)) ? returnTo : null;
+    await redis.set(`oauth:state:${state}`, JSON.stringify({ v: 1, returnTo: safeReturnTo }), 'EX', 600);
 
     const params = new URLSearchParams({
       response_type: 'code',
@@ -32,9 +37,11 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.redirect(`${env.APP_URL}?error=spotify_denied`);
     }
 
-    if (!state || !(await redis.get(`oauth:state:${state}`))) {
+    const stateRaw = state ? await redis.get(`oauth:state:${state}`) : null;
+    if (!state || !stateRaw) {
       return reply.status(400).send({ error: 'Invalid state' });
     }
+    const stateData = JSON.parse(stateRaw) as { v: number; returnTo: string | null };
     await redis.del(`oauth:state:${state}`);
 
     if (!code) {
@@ -87,7 +94,8 @@ export async function authRoutes(app: FastifyInstance) {
       maxAge: 30 * 24 * 60 * 60,
     });
 
-    return reply.redirect(`${env.APP_URL}/send`);
+    const redirectPath = stateData.returnTo || '/send';
+    return reply.redirect(`${env.APP_URL}${redirectPath}`);
   });
 
   app.get('/auth/me', { preHandler: [requireSession] }, async (request) => {

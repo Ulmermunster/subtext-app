@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
+import WaveformPicker from '../components/WaveformPicker';
+
+const TRACK_STORAGE_KEY = 'que_pending_track';
 
 function formatDuration(ms: number) {
   const min = Math.floor(ms / 60000);
@@ -12,13 +15,45 @@ function formatDuration(ms: number) {
 export default function ClipPicker() {
   const location = useLocation();
   const navigate = useNavigate();
-  const track = (location.state as any)?.track;
+  // Track from React state, or localStorage after OAuth redirect
+  const track = (location.state as any)?.track || (() => {
+    try { const r = localStorage.getItem(TRACK_STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+  })();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [vibeId, setVibeId] = useState('');
   const [senderName, setSenderName] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // PICK mode state
+  const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
+  const [startSec, setStartSec] = useState(0);
+  const [spotifyUser, setSpotifyUser] = useState<{ displayName: string; accessToken: string } | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Check if already logged into Spotify
+  useEffect(() => {
+    api.getMe()
+      .then((me) => setSpotifyUser({ displayName: me.displayName, accessToken: me.accessToken }))
+      .catch(() => {})
+      .finally(() => setCheckingAuth(false));
+  }, []);
+
+  // Persist track in case of OAuth redirect
+  useEffect(() => {
+    if (track) try { localStorage.setItem(TRACK_STORAGE_KEY, JSON.stringify(track)); } catch {}
+  }, [track]);
+
+  const handleWindowChange = useCallback((sec: number) => setStartSec(sec), []);
+
+  const handlePickMode = () => {
+    if (spotifyUser) {
+      setMode('PICK');
+    } else {
+      window.location.href = '/auth/spotify?returnTo=/send/clip';
+    }
+  };
 
   const handleGenerate = async () => {
     if (!track) return;
@@ -27,11 +62,13 @@ export default function ClipPicker() {
     try {
       const result = await api.createVibe({
         trackId: track.spotifyId,
-        mode: 'AUTO',
+        mode,
+        startSec: mode === 'PICK' ? startSec : undefined,
         senderDisplayName: senderName || undefined,
       });
       setVibeId(result.vibeId);
       setSent(true);
+      try { localStorage.removeItem(TRACK_STORAGE_KEY); } catch {}
     } catch (err: any) {
       if (err.body?.error === 'no_preview') {
         setError(err.body.message);
@@ -79,7 +116,12 @@ export default function ClipPicker() {
         <h1 className="text-4xl font-extrabold text-ink tracking-tight mb-1">
           Que'd<span className="text-gold">.</span>
         </h1>
-        <p className="text-muted text-sm mb-6">Send this blind clip.</p>
+        <p className="text-muted text-sm mb-2">Send this blind clip.</p>
+        {mode === 'PICK' && (
+          <span className="text-xs font-semibold text-spotify bg-spotify/10 rounded-full px-3 py-1 mb-4">
+            Hand-picked clip
+          </span>
+        )}
 
         {/* Album art with checkmark */}
         <div className="relative mb-8">
@@ -164,13 +206,54 @@ export default function ClipPicker() {
         </div>
       </div>
 
-      {/* Auto mode info */}
-      <div className="card p-4 border-mint/30 mt-5">
-        <p className="text-sm text-ink">
-          <span className="font-semibold text-mint">Auto clip</span> — sends the best
-          30-second preview (usually the chorus). Your friend listens blind and reacts.
-        </p>
-      </div>
+      {/* Mode selection */}
+      {mode === 'AUTO' ? (
+        <>
+          <div className="card p-4 border-mint/30 mt-5">
+            <p className="text-sm text-ink">
+              <span className="font-semibold text-mint">Auto clip</span> — sends the best
+              30-second preview (usually the chorus). Your friend listens blind and reacts.
+            </p>
+          </div>
+          {!checkingAuth && (
+            <button
+              onClick={handlePickMode}
+              className="card p-4 mt-3 w-full text-left hover:shadow-card-hover transition-all flex items-center gap-3"
+            >
+              <div className="w-10 h-10 rounded-full bg-spotify/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-lg">✂️</span>
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-ink text-sm">Pick exact moment</div>
+                <div className="text-muted text-xs">
+                  {spotifyUser
+                    ? 'Choose the exact 30 seconds to send'
+                    : 'Sign in to Spotify to choose the exact 30s clip'}
+                </div>
+              </div>
+              <span className="text-gold text-sm font-bold">→</span>
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="card p-4 border-spotify/30 mt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">✂️</span>
+              <span className="font-semibold text-spotify text-sm">Pick your 30 seconds</span>
+            </div>
+            <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
+          </div>
+          <button onClick={() => setMode('AUTO')} className="text-xs font-semibold text-muted mt-2 py-2 min-h-[44px]">
+            ← Switch back to auto clip
+          </button>
+          <div className="card p-3 mt-2 bg-gold/5 border-gold/20">
+            <p className="text-xs text-muted">
+              Your friend can sign into Spotify to hear this exact clip, or listen to the default preview without signing in.
+            </p>
+          </div>
+        </>
+      )}
 
       <div className="flex-1" />
 
