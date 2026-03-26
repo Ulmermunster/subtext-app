@@ -13,6 +13,7 @@ import { redis, checkRedisHealth } from './lib/redis.js';
 import { authRoutes } from './routes/auth.js';
 import { spotifyRoutes } from './routes/spotify.js';
 import { vibeRoutes } from './routes/vibes.js';
+import { adminRoutes } from './routes/admin.js';
 import { RECEIVER_HTML } from './routes/receiver.js';
 import { startCleanupJob } from './jobs/cleanup.js';
 
@@ -41,6 +42,7 @@ await app.register(rateLimit, {
 await app.register(authRoutes);
 await app.register(spotifyRoutes);
 await app.register(vibeRoutes);
+await app.register(adminRoutes);
 
 // Receiver route — registered DIRECTLY on app, not through a plugin
 app.get('/v/:id', async (_request, reply) => {
@@ -86,7 +88,7 @@ if (fs.existsSync(webDistPath)) {
 
     // API routes should 404, not serve the SPA
     if (url.startsWith('/vibes/') || url.startsWith('/auth/') ||
-        url.startsWith('/spotify/') || url.startsWith('/health')) {
+        url.startsWith('/spotify/') || url.startsWith('/admin/') || url.startsWith('/health')) {
       return reply.status(404).send({ error: 'Not found' });
     }
 

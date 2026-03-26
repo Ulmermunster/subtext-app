@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { customAlphabet } from 'nanoid';
 import { prisma } from '../lib/prisma.js';
 import { getTrack, getClientToken } from '../lib/spotify.js';
+import { geolocateIp, getClientIp } from '../lib/geo.js';
 import { env } from '../config.js';
 
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
@@ -41,6 +42,10 @@ export async function vibeRoutes(app: FastifyInstance) {
     const vibeId = nanoid();
     const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours
 
+    // Capture sender location (non-blocking)
+    const senderIp = getClientIp(request);
+    const geo = await geolocateIp(senderIp).catch(() => ({ city: null, country: null }));
+
     await prisma.vibeToken.create({
       data: {
         id: vibeId,
@@ -54,6 +59,9 @@ export async function vibeRoutes(app: FastifyInstance) {
         mode,
         startSec: startSec ?? null,
         senderDisplayName: senderDisplayName || 'Someone',
+        senderIp: senderIp || null,
+        senderCity: geo.city,
+        senderCountry: geo.country,
         expiresAt,
       },
     });
@@ -73,13 +81,19 @@ export async function vibeRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Vibe not found or expired' });
     }
 
-    // Mark as played on first access
+    // Mark as played on first access + capture receiver location
     if (!vibe.playedAt) {
+      const receiverIp = getClientIp(request);
+      const receiverGeo = await geolocateIp(receiverIp).catch(() => ({ city: null, country: null }));
+
       await prisma.vibeToken.update({
         where: { id },
         data: {
           playedAt: new Date(),
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // extend to 7 days
+          receiverIp: receiverIp || null,
+          receiverCity: receiverGeo.city,
+          receiverCountry: receiverGeo.country,
         },
       });
     }

@@ -20,6 +20,12 @@ model VibeToken {
   mode              String    // AUTO | PICK
   startSec          Int?
   senderDisplayName String
+  senderIp          String?
+  senderCity        String?
+  senderCountry     String?
+  receiverIp        String?
+  receiverCity      String?
+  receiverCountry   String?
   createdAt         DateTime  @default(now())
   expiresAt         DateTime
   playedAt          DateTime?
