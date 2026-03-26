@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
 import { initSpotifyPlayer, playTrack, pauseTrack, destroyPlayer, isMobile } from '../lib/spotifyPlayer';
+import { findPlayableDevice, connectPlay, connectPause } from '../lib/spotifyConnect';
 import WaveformPicker from '../components/WaveformPicker';
 
 const TRACK_STORAGE_KEY = 'que_pending_track';
@@ -16,7 +17,6 @@ function formatDuration(ms: number) {
 export default function ClipPicker() {
   const location = useLocation();
   const navigate = useNavigate();
-  // Track from React state, or localStorage after OAuth redirect
   const track = (location.state as any)?.track || (() => {
     try { const r = localStorage.getItem(TRACK_STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
   })();
@@ -32,9 +32,13 @@ export default function ClipPicker() {
   const [startSec, setStartSec] = useState(0);
   const [spotifyUser, setSpotifyUser] = useState<{ displayName: string; accessToken: string } | null>(null);
   const [previewing, setPreviewing] = useState(false);
-  const [sdkReady, setSdkReady] = useState(false);
-  const [sdkError, setSdkError] = useState('');
+  const [playerReady, setPlayerReady] = useState(false);
+  const [playerError, setPlayerError] = useState('');
   const previewTimeout = useRef<ReturnType<typeof setTimeout>>();
+  // Connect state (mobile)
+  const [connectDeviceId, setConnectDeviceId] = useState<string | null>(null);
+
+  const onMobile = isMobile();
 
   // Check if already logged into Spotify
   useEffect(() => {
@@ -48,38 +52,66 @@ export default function ClipPicker() {
     if (track) try { localStorage.setItem(TRACK_STORAGE_KEY, JSON.stringify(track)); } catch {}
   }, [track]);
 
-  const onMobile = isMobile();
-
-  // Init Spotify SDK when entering PICK mode with a logged-in user (desktop only)
+  // Init player when entering PICK mode
   useEffect(() => {
-    if (mode === 'PICK' && spotifyUser && !onMobile) {
-      setSdkError('');
+    if (mode !== 'PICK' || !spotifyUser) return;
+    setPlayerError('');
+
+    if (onMobile) {
+      // Mobile: find a Spotify device via Connect API
+      findPlayableDevice(spotifyUser.accessToken)
+        .then((devId) => {
+          if (devId) {
+            setConnectDeviceId(devId);
+            setPlayerReady(true);
+          } else {
+            setPlayerError('Open Spotify app on this device, then tap Preview');
+          }
+        })
+        .catch(() => setPlayerError('Could not find Spotify devices'));
+    } else {
+      // Desktop: use Web Playback SDK
       initSpotifyPlayer(spotifyUser.accessToken)
-        .then(() => setSdkReady(true))
+        .then(() => setPlayerReady(true))
         .catch((err) => {
           const msg = err.message || '';
-          if (msg.includes('Premium')) setSdkError('Spotify Premium required for clip preview');
-          else if (msg.includes('MOBILE')) setSdkError('');
-          else setSdkError('Could not load Spotify player');
+          if (msg.includes('Premium')) setPlayerError('Spotify Premium required');
+          else if (msg.includes('MOBILE')) setPlayerError('');
+          else setPlayerError('Could not load player');
         });
     }
+
     return () => {
       if (previewTimeout.current) clearTimeout(previewTimeout.current);
     };
   }, [mode, spotifyUser, onMobile]);
 
-  // Cleanup player on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => { destroyPlayer(); };
   }, []);
+
+  const stopPreview = useCallback(async () => {
+    if (previewTimeout.current) clearTimeout(previewTimeout.current);
+    if (onMobile && connectDeviceId && spotifyUser) {
+      await connectPause(spotifyUser.accessToken, connectDeviceId);
+    } else {
+      await pauseTrack();
+    }
+    setPreviewing(false);
+  }, [onMobile, connectDeviceId, spotifyUser]);
 
   const handleWindowChange = useCallback((sec: number) => {
     setStartSec(sec);
     // Stop preview when user drags to a new position
     if (previewTimeout.current) clearTimeout(previewTimeout.current);
     setPreviewing(false);
-    pauseTrack().catch(() => {});
-  }, []);
+    if (onMobile) {
+      // pause via connect if needed
+    } else {
+      pauseTrack().catch(() => {});
+    }
+  }, [onMobile]);
 
   const handleSelectMode = (newMode: 'AUTO' | 'PICK') => {
     if (newMode === 'PICK') {
@@ -89,45 +121,67 @@ export default function ClipPicker() {
         window.location.href = '/auth/spotify?returnTo=/send/clip';
       }
     } else {
-      // Stop any preview when switching to AUTO
-      if (previewing) { pauseTrack(); setPreviewing(false); }
-      if (previewTimeout.current) clearTimeout(previewTimeout.current);
+      if (previewing) stopPreview();
       setMode('AUTO');
     }
   };
 
   const handlePreview = async () => {
-    if (!track || !spotifyUser || !sdkReady) return;
+    if (!track || !spotifyUser || !playerReady) return;
     if (previewing) {
-      await pauseTrack();
-      setPreviewing(false);
-      if (previewTimeout.current) clearTimeout(previewTimeout.current);
+      await stopPreview();
       return;
     }
-    setSdkError('');
+    setPlayerError('');
     try {
-      await playTrack(`spotify:track:${track.spotifyId}`, spotifyUser.accessToken, startSec * 1000);
+      if (onMobile) {
+        // Retry device search if no device
+        let devId = connectDeviceId;
+        if (!devId) {
+          devId = await findPlayableDevice(spotifyUser.accessToken);
+          if (!devId) {
+            setPlayerError('Open the Spotify app first, then tap Preview again');
+            return;
+          }
+          setConnectDeviceId(devId);
+        }
+        await connectPlay(spotifyUser.accessToken, `spotify:track:${track.spotifyId}`, startSec * 1000, devId);
+      } else {
+        await playTrack(`spotify:track:${track.spotifyId}`, spotifyUser.accessToken, startSec * 1000);
+      }
       setPreviewing(true);
-      previewTimeout.current = setTimeout(async () => {
-        await pauseTrack();
-        setPreviewing(false);
-      }, 30000);
+      previewTimeout.current = setTimeout(() => stopPreview(), 30000);
     } catch (err: any) {
       setPreviewing(false);
-      if (err.message === 'PREMIUM_REQUIRED') {
-        setSdkError('Spotify Premium required to preview clips');
-        setSdkReady(false);
+      const msg = err.message || '';
+      if (msg === 'PREMIUM_REQUIRED') {
+        setPlayerError('Spotify Premium required');
+        setPlayerReady(false);
+      } else if (msg === 'NO_DEVICE') {
+        setPlayerError('Open the Spotify app first, then tap Preview again');
+        setConnectDeviceId(null);
+        setPlayerReady(false);
       } else {
-        setSdkError('Playback failed — try again');
+        setPlayerError('Playback failed — try again');
       }
+    }
+  };
+
+  const handleRetryDeviceSearch = async () => {
+    if (!spotifyUser) return;
+    setPlayerError('');
+    const devId = await findPlayableDevice(spotifyUser.accessToken);
+    if (devId) {
+      setConnectDeviceId(devId);
+      setPlayerReady(true);
+    } else {
+      setPlayerError('No Spotify device found. Open the Spotify app and try again.');
     }
   };
 
   const handleGenerate = async () => {
     if (!track) return;
-    // Stop any playing preview
-    if (previewing) { await pauseTrack(); setPreviewing(false); }
-    if (previewTimeout.current) clearTimeout(previewTimeout.current);
+    if (previewing) await stopPreview();
     destroyPlayer();
     setSending(true);
     setError('');
@@ -177,14 +231,12 @@ export default function ClipPicker() {
     );
   }
 
-  // Que'd confirmation screen (after generating link)
   if (sent) {
     return (
       <div className="w-full max-w-md mx-auto px-5 flex flex-col items-center" style={{ minHeight: '100dvh', paddingTop: 'max(1.5rem, env(safe-area-inset-top))', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
         <div className="w-full flex items-center mb-6">
           <button onClick={() => navigate('/')} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
         </div>
-
         <h1 className="text-4xl font-extrabold text-ink tracking-tight mb-1">
           Que'd<span className="text-gold">.</span>
         </h1>
@@ -194,48 +246,27 @@ export default function ClipPicker() {
             Hand-picked clip
           </span>
         )}
-
-        {/* Album art with checkmark */}
         <div className="relative mb-8">
-          <img
-            src={track.albumArt}
-            alt=""
-            className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white"
-            style={{ transform: 'rotate(-3deg)' }}
-          />
+          <img src={track.albumArt} alt="" className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white" style={{ transform: 'rotate(-3deg)' }} />
           <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-ink border-4 border-white flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
               <path d="M3 8L6.5 11.5L13 5" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
         </div>
-
         <div className="flex-1" />
-
-        {/* Test Receiver View */}
-        <button
-          onClick={handleTestReceiver}
-          className="btn-gold w-full flex items-center justify-center gap-2 mb-3 min-h-[48px]"
-        >
+        <button onClick={handleTestReceiver} className="btn-gold w-full flex items-center justify-center gap-2 mb-3 min-h-[48px]">
           <span>👁</span> Test Receiver View
         </button>
-
-        {/* SMS + Copy buttons */}
         <div className="flex gap-3 w-full mb-4">
-          <button
-            onClick={handleSms}
-            className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]"
-          >
+          <button onClick={handleSms} className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
             SMS
           </button>
-          <button
-            onClick={handleCopy}
-            className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]"
-          >
+          <button onClick={handleCopy} className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -243,32 +274,22 @@ export default function ClipPicker() {
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
-
-        {/* Start over */}
-        <button
-          onClick={() => navigate('/send')}
-          className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px]"
-        >
+        <button onClick={() => navigate('/send')} className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px]">
           Start Over
         </button>
       </div>
     );
   }
 
-  // Track confirmation screen
   return (
     <div className="w-full max-w-md mx-auto px-5 flex flex-col" style={{ minHeight: '100dvh', paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
       <div className="flex items-center gap-4 py-2">
         <button onClick={() => navigate(-1)} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
-        <button
-          onClick={() => navigate('/send')}
-          className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm"
-        >
+        <button onClick={() => navigate('/send')} className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm">
           ✕
         </button>
       </div>
 
-      {/* Song confirmation */}
       <div className="card p-4 flex items-center gap-3 mt-3">
         <img src={track.albumArt} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
         <div className="flex-1 min-w-0">
@@ -304,36 +325,31 @@ export default function ClipPicker() {
       {mode === 'PICK' && (
         <div className="card p-4 border-spotify/30 mt-3">
           <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
-          {!onMobile && (
-            <button
-              onClick={handlePreview}
-              disabled={!sdkReady}
-              className="mt-3 w-full py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 min-h-[40px] bg-spotify/10 text-spotify hover:bg-spotify/20 disabled:opacity-40"
-            >
-              {!sdkReady && !sdkError ? 'Loading player...' : previewing ? (
-                <><span>⏸</span> Pause preview</>
-              ) : (
-                <><span>▶</span> Preview clip</>
-              )}
-            </button>
-          )}
-          {sdkError && (
-            <p className="text-[11px] text-coral text-center mt-2">{sdkError}</p>
-          )}
-          {onMobile && (
-            <p className="text-[11px] text-muted text-center mt-3">
-              Drag to select. Preview available on desktop.
-            </p>
+          <button
+            onClick={playerReady ? handlePreview : handleRetryDeviceSearch}
+            className="mt-3 w-full py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 min-h-[40px] bg-spotify/10 text-spotify hover:bg-spotify/20 disabled:opacity-40"
+          >
+            {!playerReady && !playerError ? 'Connecting...' : previewing ? (
+              <><span>⏸</span> Pause preview</>
+            ) : !playerReady && playerError ? (
+              <><span>🔄</span> Retry</>
+            ) : (
+              <><span>▶</span> Preview clip{onMobile ? ' via Spotify' : ''}</>
+            )}
+          </button>
+          {playerError && (
+            <p className="text-[11px] text-coral text-center mt-2">{playerError}</p>
           )}
           <p className="text-[11px] text-muted text-center mt-2">
-            Receiver with Spotify Premium on desktop hears this exact clip. Others hear the default preview.
+            {onMobile
+              ? 'Plays through your Spotify app. Receiver needs Spotify Premium for exact clip.'
+              : 'Receiver with Spotify Premium hears this exact clip. Others hear default preview.'}
           </p>
         </div>
       )}
 
       <div className="flex-1" />
 
-      {/* Sender name input */}
       <div className="relative mt-5">
         <input
           type="text"
@@ -351,7 +367,6 @@ export default function ClipPicker() {
         </div>
       )}
 
-      {/* Generate CTA */}
       <button
         onClick={handleGenerate}
         disabled={sending}

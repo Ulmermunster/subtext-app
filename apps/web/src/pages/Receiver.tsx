@@ -343,22 +343,22 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       }
     });
 
-  function checkSpotifySession() {
-    // Spotify Web Playback SDK is desktop-only — skip on mobile
-    if (isMobileBrowser) {
-      $sdkStatus.textContent = 'exact clip requires desktop \\u2014 playing preview';
-      return;
-    }
+  var useSpotifyConnect = false, connectDeviceId = null;
 
+  function checkSpotifySession() {
     fetch(API + '/auth/me', { credentials: 'include' })
       .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
       .then(function(me) {
         spotifyAccessToken = me.accessToken;
-        $sdkStatus.textContent = 'Spotify connected \\u2014 loading player...';
-        initSpotifySDK();
+        if (isMobileBrowser) {
+          $sdkStatus.textContent = 'finding Spotify device...';
+          initSpotifyConnect();
+        } else {
+          $sdkStatus.textContent = 'Spotify connected \\u2014 loading player...';
+          initSpotifySDK();
+        }
       })
       .catch(function() {
-        // Not logged in — show prompt
         $spotifyPrompt.classList.add('active');
         $btnSpotifyLogin.addEventListener('click', function() {
           window.location.href = '/auth/spotify?returnTo=' + encodeURIComponent(location.pathname);
@@ -368,6 +368,41 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
           $sdkStatus.textContent = '';
         });
       });
+  }
+
+  function initSpotifyConnect() {
+    fetch('https://api.spotify.com/v1/me/player/devices', {
+      headers: { 'Authorization': 'Bearer ' + spotifyAccessToken }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var devices = data.devices || [];
+      var device = null;
+      for (var i = 0; i < devices.length; i++) {
+        if (devices[i].is_active) { device = devices[i]; break; }
+      }
+      if (!device) {
+        for (var i = 0; i < devices.length; i++) {
+          if (devices[i].type === 'Smartphone') { device = devices[i]; break; }
+        }
+      }
+      if (!device && devices.length > 0) device = devices[0];
+
+      if (device) {
+        connectDeviceId = device.id;
+        useSpotifyConnect = true;
+        $spotifyPrompt.classList.remove('active');
+        $sdkStatus.textContent = 'exact clip ready via ' + device.name;
+        $orbHint.textContent = 'tap to play exact clip';
+      } else {
+        $sdkStatus.textContent = 'open Spotify app for exact clip';
+        $orbHint.textContent = 'tap to play preview';
+      }
+    })
+    .catch(function() {
+      $sdkStatus.textContent = '';
+      $orbHint.textContent = 'tap to play';
+    });
   }
 
   function initSpotifySDK() {
@@ -422,35 +457,54 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $hint.textContent = 'artist reveals at the end';
     $sdkStatus.textContent = '';
 
+    var posMs = (vibeData.startSec || 0) * 1000;
+    var spotifyUri = 'spotify:track:' + vibeData.spotifyId;
+
     if (useSpotifySDK && spotifyDeviceId && vibeData.spotifyId) {
-      // Play via Spotify SDK from the exact startSec
-      var posMs = (vibeData.startSec || 0) * 1000;
       fetch('https://api.spotify.com/v1/me/player/play?device_id=' + spotifyDeviceId, {
         method: 'PUT',
         headers: { 'Authorization': 'Bearer ' + spotifyAccessToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uris: ['spotify:track:' + vibeData.spotifyId], position_ms: posMs })
+        body: JSON.stringify({ uris: [spotifyUri], position_ms: posMs })
       }).then(function(res) {
-        if (!res.ok) {
-          throw new Error(res.status);
-        }
+        if (!res.ok) throw new Error(res.status);
         clipTimeout = setTimeout(function() {
           if (spotifyPlayer) spotifyPlayer.pause();
         }, 30000);
       }).catch(function(err) {
         var msg = err && err.message;
-        if (msg === '403') {
-          $hint.textContent = 'Spotify Premium required \\u2014 playing preview...';
-        } else {
-          $hint.textContent = 'Spotify playback failed \\u2014 playing preview...';
-        }
+        $hint.textContent = (msg === '403' ? 'Spotify Premium required' : 'Spotify failed') + ' \\u2014 playing preview...';
         useSpotifySDK = false;
         if (spotifyPlayer) { try { spotifyPlayer.disconnect(); } catch(e){} }
         playPreviewAudio();
       });
       startClipTimer(30);
-    } else {
-      playPreviewAudio();
+      return;
     }
+
+    if (useSpotifyConnect && connectDeviceId && vibeData.spotifyId) {
+      fetch('https://api.spotify.com/v1/me/player/play?device_id=' + connectDeviceId, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + spotifyAccessToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uris: [spotifyUri], position_ms: posMs })
+      }).then(function(res) {
+        if (!res.ok) throw new Error(res.status);
+        clipTimeout = setTimeout(function() {
+          fetch('https://api.spotify.com/v1/me/player/pause?device_id=' + connectDeviceId, {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + spotifyAccessToken }
+          }).catch(function(){});
+        }, 30000);
+      }).catch(function(err) {
+        var msg = err && err.message;
+        $hint.textContent = (msg === '403' ? 'Spotify Premium required' : 'Spotify failed') + ' \\u2014 playing preview...';
+        useSpotifyConnect = false;
+        playPreviewAudio();
+      });
+      startClipTimer(30);
+      return;
+    }
+
+    playPreviewAudio();
   }
 
   function playPreviewAudio() {
@@ -471,6 +525,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     startClipTimer(30);
   }
 
+  var connectPaused = false;
   $orbWrap.addEventListener('click', function() {
     if (revealed) return;
     if (!vibeData) return;
@@ -482,6 +537,16 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
           if (state && state.paused) { $orbBars.classList.remove('active'); }
           else { $orbBars.classList.add('active'); }
         });
+      } else if (useSpotifyConnect && connectDeviceId) {
+        if (connectPaused) {
+          fetch('https://api.spotify.com/v1/me/player/play?device_id=' + connectDeviceId, {
+            method: 'PUT', headers: { 'Authorization': 'Bearer ' + spotifyAccessToken }
+          }).then(function() { connectPaused = false; $orbBars.classList.add('active'); });
+        } else {
+          fetch('https://api.spotify.com/v1/me/player/pause?device_id=' + connectDeviceId, {
+            method: 'PUT', headers: { 'Authorization': 'Bearer ' + spotifyAccessToken }
+          }).then(function() { connectPaused = true; $orbBars.classList.remove('active'); });
+        }
       } else if (audio) {
         if (audio.paused) { audio.play(); $orbBars.classList.add('active'); }
         else { audio.pause(); $orbBars.classList.remove('active'); }
@@ -528,6 +593,11 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     clearInterval(progressInterval);
     if (audio) { try { audio.pause(); } catch(e){} }
     if (spotifyPlayer) { try { spotifyPlayer.pause(); } catch(e){} }
+    if (useSpotifyConnect && connectDeviceId) {
+      fetch('https://api.spotify.com/v1/me/player/pause?device_id=' + connectDeviceId, {
+        method: 'PUT', headers: { 'Authorization': 'Bearer ' + spotifyAccessToken }
+      }).catch(function(){});
+    }
     $orbBars.classList.remove('active');
 
     setTimeout(function() { triggerReveal(); }, 400);
