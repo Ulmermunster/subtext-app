@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { searchTracks, getTrack, getArtistAlbums, getClientToken } from '../lib/spotify.js';
+import { searchTracks, getTrack, getArtistAlbums, getAlbumTracks, getClientToken } from '../lib/spotify.js';
 import { env } from '../config.js';
 
 async function getAppToken() {
@@ -76,6 +76,17 @@ export async function spotifyRoutes(app: FastifyInstance) {
       return await getArtistAlbums(id, token);
     } catch (err) {
       request.log.error(err, 'Spotify artist albums fetch failed');
+      return reply.status(502).send({ error: 'Spotify API unavailable' });
+    }
+  });
+
+  app.get('/spotify/album/:id/tracks', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      const token = await getAppToken();
+      return await getAlbumTracks(id, token);
+    } catch (err) {
+      request.log.error(err, 'Spotify album tracks fetch failed');
       return reply.status(502).send({ error: 'Spotify API unavailable' });
     }
   });

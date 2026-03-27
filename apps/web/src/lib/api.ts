@@ -26,6 +26,7 @@ export const api = {
   search: (q: string) => request<{ tracks: any[]; artists: any[] }>(`/spotify/search?q=${encodeURIComponent(q)}`),
   getTrack: (id: string) => request<any>(`/spotify/track/${id}`),
   getArtistAlbums: (id: string) => request<any[]>(`/spotify/artist/${id}/albums`),
+  getAlbumTracks: (id: string) => request<any>(`/spotify/album/${id}/tracks`),
   createVibe: (body: { trackId: string; mode: string; startSec?: number; senderDisplayName?: string }) =>
     request<{ vibeId: string; shareUrl: string }>('/vibes/create', {
       method: 'POST',

@@ -11,18 +11,39 @@ export default function ArtistCatalog() {
   const artist = (location.state as any)?.artist;
   const [albums, setAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [expandedAlbum, setExpandedAlbum] = useState<string | null>(null);
+  const [albumTracks, setAlbumTracks] = useState<Record<string, any[]>>({});
+  const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     api.getArtistAlbums(id)
-      .then((data) => {
-        setAlbums(data);
-        if (data.length > 0) setExpandedAlbum(data[0].id);
-      })
-      .catch(console.error)
+      .then((data) => setAlbums(data))
+      .catch(() => setError('Could not load discography'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleExpandAlbum = async (albumId: string) => {
+    if (expandedAlbum === albumId) {
+      setExpandedAlbum(null);
+      return;
+    }
+    setExpandedAlbum(albumId);
+
+    // Already loaded
+    if (albumTracks[albumId]) return;
+
+    setLoadingTracks(albumId);
+    try {
+      const data = await api.getAlbumTracks(albumId);
+      setAlbumTracks((prev) => ({ ...prev, [albumId]: data.tracks }));
+    } catch {
+      setAlbumTracks((prev) => ({ ...prev, [albumId]: [] }));
+    } finally {
+      setLoadingTracks(null);
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto px-5 py-8 space-y-6">
@@ -54,12 +75,19 @@ export default function ArtistCatalog() {
         <div className="flex justify-center py-8">
           <div className="spinner" />
         </div>
+      ) : error ? (
+        <div className="card p-4 text-center">
+          <p className="text-sm text-coral">{error}</p>
+          <button onClick={() => window.location.reload()} className="text-gold text-sm font-semibold mt-2">Try again</button>
+        </div>
+      ) : albums.length === 0 ? (
+        <p className="text-muted text-sm text-center py-4">No albums found</p>
       ) : (
         <div className="space-y-3">
           {albums.map((album) => (
             <div key={album.id} className="card overflow-hidden">
               <button
-                onClick={() => setExpandedAlbum(expandedAlbum === album.id ? null : album.id)}
+                onClick={() => handleExpandAlbum(album.id)}
                 className="w-full p-4 flex items-center gap-3 text-left hover:bg-gold/5 transition-colors"
               >
                 {album.image ? (
@@ -70,22 +98,30 @@ export default function ArtistCatalog() {
                 <div className="flex-1">
                   <div className="font-semibold text-ink text-sm">{album.name}</div>
                   <div className="text-muted text-xs">
-                    {album.releaseDate?.slice(0, 4)} · {album.tracks?.length || 0} tracks
+                    {album.releaseDate?.slice(0, 4)} · {album.totalTracks} tracks
                   </div>
                 </div>
                 <span className={`text-muted transition-transform ${expandedAlbum === album.id ? 'rotate-180' : ''}`}>
                   ▾
                 </span>
               </button>
-              {expandedAlbum === album.id && album.tracks && (
+              {expandedAlbum === album.id && (
                 <div className="px-2 pb-2 border-t border-border">
-                  {album.tracks.map((track: any) => (
-                    <TrackResult
-                      key={track.id}
-                      track={track}
-                      onSelect={() => navigate('/send/clip', { state: { track } })}
-                    />
-                  ))}
+                  {loadingTracks === album.id ? (
+                    <div className="flex justify-center py-4">
+                      <div className="spinner" />
+                    </div>
+                  ) : albumTracks[album.id]?.length ? (
+                    albumTracks[album.id].map((track: any) => (
+                      <TrackResult
+                        key={track.id}
+                        track={track}
+                        onSelect={() => navigate('/send/clip', { state: { track } })}
+                      />
+                    ))
+                  ) : albumTracks[album.id] ? (
+                    <p className="text-muted text-xs text-center py-3">No tracks available</p>
+                  ) : null}
                 </div>
               )}
             </div>
