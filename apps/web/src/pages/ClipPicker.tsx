@@ -60,10 +60,6 @@ export default function ClipPicker() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleTestReceiver = () => {
-    window.open(`${window.location.origin}/v/${vibeId}`, '_blank');
-  };
-
   if (!track) {
     return (
       <div className="w-full max-w-md mx-auto px-5 py-8">
@@ -92,9 +88,6 @@ export default function ClipPicker() {
           </div>
         </div>
         <div className="flex-1" />
-        <button onClick={handleTestReceiver} className="btn-gold w-full flex items-center justify-center gap-2 mb-3 min-h-[48px]">
-          <span>👁</span> Test Receiver View
-        </button>
         <div className="flex gap-3 w-full mb-4">
           <button onClick={handleSms} className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
