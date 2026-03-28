@@ -15,7 +15,8 @@ export default function SearchInput({ onSearch, isLoading }: Props) {
       timer.current = setTimeout(() => onSearch(value.trim()), 380);
     }
     return () => clearTimeout(timer.current);
-  }, [value, onSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   return (
     <div>

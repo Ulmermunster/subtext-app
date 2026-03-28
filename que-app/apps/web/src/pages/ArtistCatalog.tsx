@@ -41,8 +41,8 @@ export default function ArtistCatalog() {
     }
     setExpandedAlbum(albumId);
 
-    // Already loaded
-    if (albumTracks[albumId]) return;
+    // Already loaded or currently loading
+    if (albumTracks[albumId] || loadingTracks) return;
 
     setLoadingTracks(albumId);
     try {

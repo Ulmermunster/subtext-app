@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface Props {
   artist: {
     id: string;
@@ -8,7 +10,7 @@ interface Props {
   onSelect: () => void;
 }
 
-export default function ArtistResult({ artist, onSelect }: Props) {
+export default memo(function ArtistResult({ artist, onSelect }: Props) {
   return (
     <button
       onClick={onSelect}
@@ -30,4 +32,4 @@ export default function ArtistResult({ artist, onSelect }: Props) {
       <span className="text-gold text-sm font-bold">→</span>
     </button>
   );
-}
+});

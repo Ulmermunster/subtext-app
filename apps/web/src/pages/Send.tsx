@@ -11,28 +11,30 @@ export default function Send() {
   const [tracks, setTracks] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
   const [searched, setSearched] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
   const handleSearch = useCallback(async (query: string) => {
     setSearchLoading(true);
+    setSearchError('');
     try {
       const data = await api.search(query);
       setTracks(data.tracks);
       setArtists(data.artists);
       setSearched(true);
     } catch {
-      // show nothing
+      setSearchError('Search failed. Try again.');
     } finally {
       setSearchLoading(false);
     }
   }, []);
 
-  const handleTrackSelect = (track: any) => {
+  const handleTrackSelect = useCallback((track: any) => {
     navigate('/send/clip', { state: { track } });
-  };
+  }, [navigate]);
 
-  const handleArtistSelect = (artist: any) => {
+  const handleArtistSelect = useCallback((artist: any) => {
     navigate(`/send/artist/${artist.id}`, { state: { artist } });
-  };
+  }, [navigate]);
 
   return (
     <div className="w-full max-w-md mx-auto px-5 flex flex-col" style={{ minHeight: '100dvh', paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
@@ -63,7 +65,11 @@ export default function Send() {
         </div>
       )}
 
-      {!searchLoading && searched && tracks.length === 0 && artists.length === 0 && (
+      {searchError && (
+        <p className="text-center text-coral text-sm mt-4">{searchError}</p>
+      )}
+
+      {!searchLoading && searched && tracks.length === 0 && artists.length === 0 && !searchError && (
         <div className="card p-6 text-center space-y-2 mt-4">
           <p className="text-muted text-sm">No results found</p>
           <p className="text-xs text-muted">
