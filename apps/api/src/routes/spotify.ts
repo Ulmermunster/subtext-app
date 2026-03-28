@@ -36,7 +36,8 @@ export async function spotifyRoutes(app: FastifyInstance) {
     let token, data;
     try {
       token = await getAppToken();
-      data = await searchTracks(q, token, parseInt(limit || '8') || 8);
+      const safeLimit = Math.min(Math.max(parseInt(limit || '8', 10) || 8, 1), 50);
+      data = await searchTracks(q, token, safeLimit);
     } catch (err) {
       request.log.error(err, 'Spotify search failed');
       return reply.status(502).send({ error: 'Spotify API unavailable' });

@@ -27,8 +27,8 @@ export default function ArtistCatalog() {
       setAlbums(data);
     } catch (err: any) {
       console.error('[ArtistCatalog] Failed to load albums:', err);
-      const detail = err.body?.detail || err.message || 'Unknown error';
-      setError(`Could not load discography: ${detail}`);
+      // Log full details for debugging but show friendly message to user
+      setError("Couldn't load albums. Tap to retry.");
     } finally {
       setLoading(false);
     }

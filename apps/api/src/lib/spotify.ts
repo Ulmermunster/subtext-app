@@ -28,19 +28,46 @@ export async function getClientToken(clientId: string, clientSecret: string): Pr
   return data.access_token;
 }
 
+/** Validate and clamp a limit parameter to Spotify's allowed range */
+function safeLimit(limit: number | string | undefined, defaultVal = 20, max = 50): number {
+  return Math.min(Math.max(parseInt(String(limit), 10) || defaultVal, 1), max);
+}
+
+const RETRYABLE_STATUSES = new Set([429, 500, 502, 503]);
+
 export async function spotifyFetch(path: string, accessToken: string, options?: RequestInit) {
-  const res = await fetch(`${SPOTIFY_API}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      ...options?.headers,
-    },
-  });
-  if (!res.ok) {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(`${SPOTIFY_API}${path}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...options?.headers,
+      },
+    });
+
+    if (res.ok) {
+      return res.json();
+    }
+
     const body = await res.text();
-    throw Object.assign(new Error(`Spotify API ${res.status}: ${body}`), { status: res.status });
+    lastError = Object.assign(new Error(`Spotify API ${res.status}: ${body}`), { status: res.status });
+
+    // Only retry on transient errors, and only once
+    if (attempt === 0 && RETRYABLE_STATUSES.has(res.status)) {
+      // If rate-limited, respect Retry-After header
+      const retryAfter = res.headers.get('Retry-After');
+      const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 1000;
+      console.warn(`[Spotify] ${res.status} on ${path}, retrying in ${waitMs}ms`);
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+
+    break;
   }
-  return res.json();
+
+  throw lastError!;
 }
 
 export async function exchangeCode(code: string, redirectUri: string, clientId: string, clientSecret: string) {
@@ -98,19 +125,20 @@ export async function getMe(accessToken: string) {
 }
 
 export async function searchTracks(query: string, accessToken: string, limit = 8) {
+  const validLimit = safeLimit(limit, 8, 50);
   return spotifyFetch(
-    `/search?q=${encodeURIComponent(query)}&type=track,artist&limit=${limit}`,
+    `/search?q=${encodeURIComponent(query)}&type=track,artist&limit=${validLimit}&market=US`,
     accessToken
   );
 }
 
 export async function getTrack(trackId: string, accessToken: string) {
-  return spotifyFetch(`/tracks/${trackId}`, accessToken);
+  return spotifyFetch(`/tracks/${trackId}?market=US`, accessToken);
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
   const allItems: any[] = [];
-  let url: string | null = `/artists/${artistId}/albums?include_groups=album,single&limit=20&market=US`;
+  let url: string | null = `/artists/${artistId}/albums?include_groups=album,single&limit=${safeLimit(20, 20, 20)}&market=US`;
 
   // Paginate (max 5 pages = 100 albums)
   for (let page = 0; url && page < 5; page++) {
@@ -130,7 +158,7 @@ export async function getArtistAlbums(artistId: string, accessToken: string) {
 }
 
 export async function getAlbumTracks(albumId: string, accessToken: string) {
-  const data: any = await spotifyFetch(`/albums/${albumId}`, accessToken);
+  const data: any = await spotifyFetch(`/albums/${albumId}?market=US`, accessToken);
   return {
     id: data.id,
     name: data.name,
