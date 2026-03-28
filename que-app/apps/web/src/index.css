@@ -44,8 +44,13 @@ body {
   background: rgba(255,251,240,0.85);
   border-radius: 20px;
   border: 1.5px solid #F0E6C8;
-  box-shadow: 0 2px 16px rgba(200,170,80,.08);
+  box-shadow: 0 2px 12px rgba(160,140,60,.06), 0 4px 24px rgba(200,170,80,.10);
   backdrop-filter: blur(8px);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.card:active {
+  transform: scale(0.985);
+  box-shadow: 0 1px 8px rgba(160,140,60,.04), 0 2px 12px rgba(200,170,80,.07);
 }
 
 /* Primary button - dark navy */

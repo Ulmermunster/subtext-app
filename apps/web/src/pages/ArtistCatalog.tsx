@@ -98,7 +98,7 @@ export default function ArtistCatalog() {
             <div key={album.id} className="card overflow-hidden">
               <button
                 onClick={() => handleExpandAlbum(album.id)}
-                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gold/5 transition-colors"
+                className="w-full p-4 flex items-center gap-3 text-left hover:bg-gold/5 active:bg-gold/10 active:scale-[0.985] transition-all"
               >
                 {album.image ? (
                   <img src={album.image} alt="" loading="lazy" className="w-12 h-12 rounded-lg object-cover" />

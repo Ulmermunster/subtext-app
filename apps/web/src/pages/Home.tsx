@@ -48,7 +48,7 @@ export default function Home() {
       </button>
 
       {/* Hint text */}
-      <p className="text-xs font-medium text-muted/70 mb-10 animate-fade-in">
+      <p className="text-xs font-medium text-muted mb-10 animate-fade-in">
         tap to send a song
       </p>
 

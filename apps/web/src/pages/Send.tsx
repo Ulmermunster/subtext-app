@@ -43,7 +43,7 @@ export default function Send() {
         <button onClick={() => navigate('/')} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
         <button
           onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm"
+          className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm active:scale-95 transition-transform"
         >
           ✕
         </button>
@@ -57,11 +57,10 @@ export default function Send() {
         <p className="text-center text-gold text-sm font-medium mt-4">searching...</p>
       )}
 
-      {/* Empty state with Q watermark */}
+      {/* Empty state */}
       {!searchLoading && !searched && (
-        <div className="flex flex-col items-center justify-center flex-1 gap-4">
-          <span className="text-8xl font-extrabold text-gold/15">Q</span>
-          <p className="text-xs text-muted">Search to Que a 30s clip.</p>
+        <div className="flex flex-col items-center justify-center flex-1">
+          <p className="text-sm text-muted">Search for a song or artist</p>
         </div>
       )}
 
