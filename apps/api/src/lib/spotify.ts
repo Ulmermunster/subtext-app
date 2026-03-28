@@ -109,13 +109,18 @@ export async function getTrack(trackId: string, accessToken: string) {
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
-  const data: any = await spotifyFetch(
-    `/artists/${artistId}/albums?include_groups=album,single&limit=50&market=US`,
-    accessToken
-  );
-  const items = data.items || [];
+  const allItems: any[] = [];
+  let url: string | null = `/artists/${artistId}/albums?include_groups=album,single&limit=20&market=US`;
 
-  return items.map((album: any) => ({
+  // Paginate (max 5 pages = 100 albums)
+  for (let page = 0; url && page < 5; page++) {
+    const data: any = await spotifyFetch(url, accessToken);
+    allItems.push(...(data.items || []));
+    // Spotify returns full URL in `next`; strip the base to use with spotifyFetch
+    url = data.next ? data.next.replace('https://api.spotify.com/v1', '') : null;
+  }
+
+  return allItems.map((album: any) => ({
     id: album.id,
     name: album.name,
     releaseDate: album.release_date,
