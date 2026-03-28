@@ -21,13 +21,9 @@ export default function ArtistCatalog() {
     setLoading(true);
     setError('');
     try {
-      console.log('[ArtistCatalog] Fetching albums for artist:', id);
       const data = await api.getArtistAlbums(id);
-      console.log('[ArtistCatalog] Got albums:', data.length);
       setAlbums(data);
-    } catch (err: any) {
-      console.error('[ArtistCatalog] Failed to load albums:', err);
-      // Log full details for debugging but show friendly message to user
+    } catch {
       setError("Couldn't load albums. Tap to retry.");
     } finally {
       setLoading(false);
@@ -105,7 +101,7 @@ export default function ArtistCatalog() {
                 className="w-full p-4 flex items-center gap-3 text-left hover:bg-gold/5 transition-colors"
               >
                 {album.image ? (
-                  <img src={album.image} alt="" className="w-12 h-12 rounded-lg object-cover" />
+                  <img src={album.image} alt="" loading="lazy" className="w-12 h-12 rounded-lg object-cover" />
                 ) : (
                   <div className="w-12 h-12 rounded-lg bg-gold/10 flex items-center justify-center">💿</div>
                 )}

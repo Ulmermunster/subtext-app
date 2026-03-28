@@ -15,7 +15,7 @@ export default function ArtistResult({ artist, onSelect }: Props) {
       className="w-full flex items-center gap-4 p-4 rounded-card card hover:shadow-card-hover transition-all text-left mb-3"
     >
       {artist.image ? (
-        <img src={artist.image} alt="" className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
+        <img src={artist.image} alt="" loading="lazy" className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
       ) : (
         <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center text-2xl flex-shrink-0">
           🎤

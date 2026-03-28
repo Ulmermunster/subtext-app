@@ -25,6 +25,7 @@ export default function TrackResult({ track, onSelect, selected }: Props) {
       <img
         src={track.albumArt}
         alt=""
+        loading="lazy"
         className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
       />
       <div className="flex-1 min-w-0">

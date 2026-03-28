@@ -30,7 +30,6 @@ export async function getClientToken(clientId: string, clientSecret: string): Pr
 
 export async function spotifyFetch(path: string, accessToken: string) {
   const url = `${SPOTIFY_API}${path}`;
-  console.log(`[Spotify] GET ${url}`);
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -38,12 +37,9 @@ export async function spotifyFetch(path: string, accessToken: string) {
 
   if (!res.ok) {
     const body = await res.text();
-    console.error(`[Spotify] ${res.status} ${res.statusText}: ${body}`);
 
-    // Retry once on 429 (rate limit)
     if (res.status === 429) {
       const retryAfter = parseInt(res.headers.get('Retry-After') || '2', 10);
-      console.warn(`[Spotify] Rate limited, waiting ${retryAfter}s`);
       await new Promise((r) => setTimeout(r, retryAfter * 1000));
       const retry = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -114,7 +110,6 @@ export async function getMe(accessToken: string) {
 }
 
 export async function searchTracks(query: string, accessToken: string, limit = 8) {
-  // Spotify Feb 2026: Dev Mode search limit max is 10
   const safeLimit = Math.min(Math.max(Math.floor(limit) || 8, 1), 10);
   return spotifyFetch(
     `/search?q=${encodeURIComponent(query)}&type=track,artist&limit=${safeLimit}&market=US`,
@@ -127,23 +122,29 @@ export async function getTrack(trackId: string, accessToken: string) {
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
-  // Spotify Feb 2026: Dev Mode limit max is 10. Paginate to get full discography.
-  const allItems: any[] = [];
-  let offset = 0;
-  const limit = 10;
+  // First page to get total count
+  const first: any = await spotifyFetch(
+    `/artists/${artistId}/albums?include_groups=album%2Csingle&limit=10&offset=0&market=US`,
+    accessToken
+  );
 
-  for (let page = 0; page < 10; page++) {
-    const data: any = await spotifyFetch(
-      `/artists/${artistId}/albums?include_groups=album%2Csingle&limit=${limit}&offset=${offset}&market=US`,
-      accessToken
+  const allItems = [...(first.items || [])];
+  const total = first.total || 0;
+
+  // Fetch remaining pages in parallel (limit=10 per page, max 100 total)
+  if (total > 10) {
+    const remaining = Math.min(total, 100) - 10;
+    const pages = Math.ceil(remaining / 10);
+    const fetches = Array.from({ length: pages }, (_, i) =>
+      spotifyFetch(
+        `/artists/${artistId}/albums?include_groups=album%2Csingle&limit=10&offset=${(i + 1) * 10}&market=US`,
+        accessToken
+      )
     );
-
-    const items = data.items || [];
-    allItems.push(...items);
-
-    // Stop if we got fewer than limit (last page) or no next URL
-    if (items.length < limit || !data.next) break;
-    offset += limit;
+    const results = await Promise.all(fetches);
+    for (const page of results) {
+      allItems.push(...(page.items || []));
+    }
   }
 
   return allItems.map((album: any) => ({

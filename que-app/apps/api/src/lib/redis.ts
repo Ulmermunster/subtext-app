@@ -2,16 +2,23 @@ import Redis from 'ioredis';
 import { env } from '../config.js';
 
 export const redis = new Redis(env.REDIS_URL, {
-  maxRetriesPerRequest: 3,
-  connectTimeout: 5000,
+  maxRetriesPerRequest: 1,
+  connectTimeout: 3000,
+  commandTimeout: 3000,
   retryStrategy(times) {
-    if (times > 5) return null;
-    return Math.min(times * 200, 2000);
+    if (times > 3) return null; // give up after 3 attempts
+    return Math.min(times * 500, 3000);
   },
+  enableOfflineQueue: false, // don't queue commands when disconnected
 });
 
+// Only log once per error type to avoid spam
+let lastErrorMsg = '';
 redis.on('error', (err) => {
-  console.warn('[Redis] Connection error:', err.message);
+  if (err.message !== lastErrorMsg) {
+    console.warn('[Redis]', err.message);
+    lastErrorMsg = err.message;
+  }
 });
 
 export async function checkRedisHealth(): Promise<void> {
@@ -21,9 +28,8 @@ export async function checkRedisHealth(): Promise<void> {
       console.log('Redis connected');
       return;
     }
-  } catch (err: any) {
-    console.warn('[Redis] Health check failed:', err.message);
+  } catch {
+    // non-fatal
   }
-  // Don't crash the app — Redis is used for sessions/cleanup, not critical path
-  console.warn('[Redis] Continuing without healthy Redis connection');
+  console.warn('[Redis] Unavailable — app will run without caching');
 }

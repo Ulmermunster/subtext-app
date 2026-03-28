@@ -15,12 +15,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Request failed' }));
-    const err = Object.assign(new Error(body.error || body.message || `HTTP ${res.status}`), {
+    throw Object.assign(new Error(body.error || body.message || `HTTP ${res.status}`), {
       status: res.status,
       body,
     });
-    console.error(`[API] ${options?.method || 'GET'} ${path} → ${res.status}`, body);
-    throw err;
   }
 
   return res.json();
