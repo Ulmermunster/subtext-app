@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
-import WaveformPicker from '../components/WaveformPicker';
 
 const TRACK_STORAGE_KEY = 'que_pending_track';
 
@@ -15,7 +14,6 @@ function formatDuration(ms: number) {
 export default function ClipPicker() {
   const location = useLocation();
   const navigate = useNavigate();
-  // Track from React state, or localStorage after OAuth redirect
   const track = (location.state as any)?.track || (() => {
     try { const r = localStorage.getItem(TRACK_STORAGE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
   })();
@@ -26,35 +24,6 @@ export default function ClipPicker() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // PICK mode state
-  const [mode, setMode] = useState<'AUTO' | 'PICK'>('AUTO');
-  const [startSec, setStartSec] = useState(0);
-  const [spotifyUser, setSpotifyUser] = useState<{ displayName: string; accessToken: string } | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-
-  // Check if already logged into Spotify
-  useEffect(() => {
-    api.getMe()
-      .then((me) => setSpotifyUser({ displayName: me.displayName, accessToken: me.accessToken }))
-      .catch(() => {})
-      .finally(() => setCheckingAuth(false));
-  }, []);
-
-  // Persist track in case of OAuth redirect
-  useEffect(() => {
-    if (track) try { localStorage.setItem(TRACK_STORAGE_KEY, JSON.stringify(track)); } catch {}
-  }, [track]);
-
-  const handleWindowChange = useCallback((sec: number) => setStartSec(sec), []);
-
-  const handlePickMode = () => {
-    if (spotifyUser) {
-      setMode('PICK');
-    } else {
-      window.location.href = '/auth/spotify?returnTo=/send/clip';
-    }
-  };
-
   const handleGenerate = async () => {
     if (!track) return;
     setSending(true);
@@ -62,8 +31,7 @@ export default function ClipPicker() {
     try {
       const result = await api.createVibe({
         trackId: track.spotifyId,
-        mode,
-        startSec: mode === 'PICK' ? startSec : undefined,
+        mode: 'AUTO',
         senderDisplayName: senderName || undefined,
       });
       setVibeId(result.vibeId);
@@ -92,10 +60,6 @@ export default function ClipPicker() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleTestReceiver = () => {
-    window.open(`${window.location.origin}/v/${vibeId}`, '_blank');
-  };
-
   if (!track) {
     return (
       <div className="w-full max-w-md mx-auto px-5 py-8">
@@ -105,65 +69,34 @@ export default function ClipPicker() {
     );
   }
 
-  // Que'd confirmation screen (after generating link)
   if (sent) {
     return (
       <div className="w-full max-w-md mx-auto px-5 flex flex-col items-center" style={{ minHeight: '100dvh', paddingTop: 'max(1.5rem, env(safe-area-inset-top))', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
         <div className="w-full flex items-center mb-6">
           <button onClick={() => navigate('/')} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
         </div>
-
         <h1 className="text-4xl font-extrabold text-ink tracking-tight mb-1">
           Que'd<span className="text-gold">.</span>
         </h1>
-        <p className="text-muted text-sm mb-2">Send this blind clip.</p>
-        {mode === 'PICK' && (
-          <span className="text-xs font-semibold text-spotify bg-spotify/10 rounded-full px-3 py-1 mb-4">
-            Hand-picked clip
-          </span>
-        )}
-
-        {/* Album art with checkmark */}
+        <p className="text-muted text-sm mb-6">Send this blind clip.</p>
         <div className="relative mb-8">
-          <img
-            src={track.albumArt}
-            alt=""
-            className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white"
-            style={{ transform: 'rotate(-3deg)' }}
-          />
+          <img src={track.albumArt} alt="" className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white" style={{ transform: 'rotate(-3deg)' }} />
           <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-ink border-4 border-white flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
               <path d="M3 8L6.5 11.5L13 5" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
         </div>
-
         <div className="flex-1" />
-
-        {/* Test Receiver View */}
-        <button
-          onClick={handleTestReceiver}
-          className="btn-gold w-full flex items-center justify-center gap-2 mb-3 min-h-[48px]"
-        >
-          <span>👁</span> Test Receiver View
-        </button>
-
-        {/* SMS + Copy buttons */}
         <div className="flex gap-3 w-full mb-4">
-          <button
-            onClick={handleSms}
-            className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]"
-          >
+          <button onClick={handleSms} className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
             SMS
           </button>
-          <button
-            onClick={handleCopy}
-            className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]"
-          >
+          <button onClick={handleCopy} className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -171,32 +104,22 @@ export default function ClipPicker() {
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
-
-        {/* Start over */}
-        <button
-          onClick={() => navigate('/send')}
-          className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px]"
-        >
+        <button onClick={() => navigate('/send')} className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px]">
           Start Over
         </button>
       </div>
     );
   }
 
-  // Track confirmation screen
   return (
     <div className="w-full max-w-md mx-auto px-5 flex flex-col" style={{ minHeight: '100dvh', paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
       <div className="flex items-center gap-4 py-2">
         <button onClick={() => navigate(-1)} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
-        <button
-          onClick={() => navigate('/send')}
-          className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm"
-        >
+        <button onClick={() => navigate('/send')} className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm">
           ✕
         </button>
       </div>
 
-      {/* Song confirmation */}
       <div className="card p-4 flex items-center gap-3 mt-3">
         <img src={track.albumArt} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
         <div className="flex-1 min-w-0">
@@ -206,58 +129,14 @@ export default function ClipPicker() {
         </div>
       </div>
 
-      {/* Mode selection */}
-      {mode === 'AUTO' ? (
-        <>
-          <div className="card p-4 border-mint/30 mt-5">
-            <p className="text-sm text-ink">
-              <span className="font-semibold text-mint">Auto clip</span> — sends the best
-              30-second preview (usually the chorus). Your friend listens blind and reacts.
-            </p>
-          </div>
-          {!checkingAuth && (
-            <button
-              onClick={handlePickMode}
-              className="card p-4 mt-3 w-full text-left hover:shadow-card-hover transition-all flex items-center gap-3"
-            >
-              <div className="w-10 h-10 rounded-full bg-spotify/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">✂️</span>
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold text-ink text-sm">Pick exact moment</div>
-                <div className="text-muted text-xs">
-                  {spotifyUser
-                    ? 'Choose the exact 30 seconds to send'
-                    : 'Sign in to Spotify to choose the exact 30s clip'}
-                </div>
-              </div>
-              <span className="text-gold text-sm font-bold">→</span>
-            </button>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="card p-4 border-spotify/30 mt-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">✂️</span>
-              <span className="font-semibold text-spotify text-sm">Pick your 30 seconds</span>
-            </div>
-            <WaveformPicker durationMs={track.duration} onWindowChange={handleWindowChange} />
-          </div>
-          <button onClick={() => setMode('AUTO')} className="text-xs font-semibold text-muted mt-2 py-2 min-h-[44px]">
-            ← Switch back to auto clip
-          </button>
-          <div className="card p-3 mt-2 bg-gold/5 border-gold/20">
-            <p className="text-xs text-muted">
-              Your friend can sign into Spotify to hear this exact clip, or listen to the default preview without signing in.
-            </p>
-          </div>
-        </>
-      )}
+      <div className="card p-4 mt-4 text-center">
+        <div className="text-lg mb-1">🎵</div>
+        <div className="font-semibold text-ink text-sm">Auto clip</div>
+        <div className="text-muted text-[11px] mt-0.5">Best 30 seconds selected automatically</div>
+      </div>
 
       <div className="flex-1" />
 
-      {/* Sender name input */}
       <div className="relative mt-5">
         <input
           type="text"
@@ -275,7 +154,6 @@ export default function ClipPicker() {
         </div>
       )}
 
-      {/* Generate CTA */}
       <button
         onClick={handleGenerate}
         disabled={sending}

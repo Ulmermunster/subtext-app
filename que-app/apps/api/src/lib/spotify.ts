@@ -28,18 +28,34 @@ export async function getClientToken(clientId: string, clientSecret: string): Pr
   return data.access_token;
 }
 
-export async function spotifyFetch(path: string, accessToken: string, options?: RequestInit) {
-  const res = await fetch(`${SPOTIFY_API}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      ...options?.headers,
-    },
+export async function spotifyFetch(path: string, accessToken: string) {
+  const url = `${SPOTIFY_API}${path}`;
+  console.log(`[Spotify] GET ${url}`);
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
+
   if (!res.ok) {
     const body = await res.text();
+    console.error(`[Spotify] ${res.status} ${res.statusText}: ${body}`);
+
+    // Retry once on 429 (rate limit)
+    if (res.status === 429) {
+      const retryAfter = parseInt(res.headers.get('Retry-After') || '2', 10);
+      console.warn(`[Spotify] Rate limited, waiting ${retryAfter}s`);
+      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+      const retry = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (retry.ok) return retry.json();
+      const retryBody = await retry.text();
+      throw Object.assign(new Error(`Spotify API ${retry.status}: ${retryBody}`), { status: retry.status });
+    }
+
     throw Object.assign(new Error(`Spotify API ${res.status}: ${body}`), { status: res.status });
   }
+
   return res.json();
 }
 
@@ -98,50 +114,64 @@ export async function getMe(accessToken: string) {
 }
 
 export async function searchTracks(query: string, accessToken: string, limit = 8) {
+  // Spotify Feb 2026: Dev Mode search limit max is 10
+  const safeLimit = Math.min(Math.max(Math.floor(limit) || 8, 1), 10);
   return spotifyFetch(
-    `/search?q=${encodeURIComponent(query)}&type=track,artist&limit=${limit}`,
+    `/search?q=${encodeURIComponent(query)}&type=track,artist&limit=${safeLimit}&market=US`,
     accessToken
   );
 }
 
 export async function getTrack(trackId: string, accessToken: string) {
-  return spotifyFetch(`/tracks/${trackId}`, accessToken);
+  return spotifyFetch(`/tracks/${trackId}?market=US`, accessToken);
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
-  const albums: any[] = [];
-  let url: string | null = `/artists/${artistId}/albums?include_groups=album,single&limit=50`;
+  // Spotify Feb 2026: Dev Mode limit max is 10. Paginate to get full discography.
+  const allItems: any[] = [];
+  let offset = 0;
+  const limit = 10;
 
-  while (url) {
-    const data: any = await spotifyFetch(url, accessToken);
-    albums.push(...data.items);
-    url = data.next ? data.next.replace(SPOTIFY_API, '') : null;
+  for (let page = 0; page < 10; page++) {
+    const data: any = await spotifyFetch(
+      `/artists/${artistId}/albums?include_groups=album%2Csingle&limit=${limit}&offset=${offset}&market=US`,
+      accessToken
+    );
+
+    const items = data.items || [];
+    allItems.push(...items);
+
+    // Stop if we got fewer than limit (last page) or no next URL
+    if (items.length < limit || !data.next) break;
+    offset += limit;
   }
 
-  // Fetch tracks for each album
-  const albumsWithTracks = await Promise.all(
-    albums.map(async (album) => {
-      const tracksData: any = await spotifyFetch(`/albums/${album.id}/tracks?limit=50`, accessToken);
-      return {
-        id: album.id,
-        name: album.name,
-        releaseDate: album.release_date,
-        image: album.images?.[0]?.url || null,
-        tracks: tracksData.items.map((t: any) => ({
-          id: t.id,
-          title: t.name,
-          artist: t.artists.map((a: any) => a.name).join(', '),
-          artistId: t.artists[0]?.id || '',
-          albumName: album.name,
-          albumArt: album.images?.[0]?.url || '',
-          duration: t.duration_ms,
-          previewUrl: t.preview_url || null,
-          spotifyId: t.id,
-          hasPreview: !!t.preview_url,
-        })),
-      };
-    })
-  );
+  return allItems.map((album: any) => ({
+    id: album.id,
+    name: album.name,
+    releaseDate: album.release_date,
+    image: album.images?.[0]?.url || null,
+    totalTracks: album.total_tracks || 0,
+  }));
+}
 
-  return albumsWithTracks;
+export async function getAlbumTracks(albumId: string, accessToken: string) {
+  const data: any = await spotifyFetch(`/albums/${albumId}?market=US`, accessToken);
+  return {
+    id: data.id,
+    name: data.name,
+    image: data.images?.[0]?.url || null,
+    tracks: (data.tracks?.items || []).map((t: any) => ({
+      id: t.id,
+      title: t.name,
+      artist: t.artists.map((a: any) => a.name).join(', '),
+      artistId: t.artists[0]?.id || '',
+      albumName: data.name,
+      albumArt: data.images?.[0]?.url || '',
+      duration: t.duration_ms,
+      previewUrl: t.preview_url || null,
+      spotifyId: t.id,
+      hasPreview: !!t.preview_url,
+    })),
+  };
 }

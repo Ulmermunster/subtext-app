@@ -7,7 +7,7 @@ import { encrypt, decrypt } from '../lib/crypto.js';
 import { exchangeCode, getMe } from '../lib/spotify.js';
 import { requireSession } from '../middleware/session.js';
 
-const SCOPES = 'streaming user-read-email user-read-private user-read-playback-state';
+const SCOPES = 'user-read-email user-read-private';
 
 // Allowed returnTo prefixes (prevent open redirect)
 const ALLOWED_RETURN_PREFIXES = ['/send', '/v/'];
@@ -41,29 +41,39 @@ export async function authRoutes(app: FastifyInstance) {
     if (!state || !stateRaw) {
       return reply.status(400).send({ error: 'Invalid state' });
     }
-    const stateData = JSON.parse(stateRaw) as { v: number; returnTo: string | null };
+    let stateData: { v: number; returnTo: string | null };
+    try {
+      stateData = JSON.parse(stateRaw);
+    } catch {
+      return reply.status(400).send({ error: 'Invalid state data' });
+    }
     await redis.del(`oauth:state:${state}`);
 
     if (!code) {
       return reply.status(400).send({ error: 'Missing code' });
     }
 
-    const tokens = await exchangeCode(
-      code,
-      env.SPOTIFY_REDIRECT_URI,
-      env.SPOTIFY_CLIENT_ID,
-      env.SPOTIFY_CLIENT_SECRET
-    );
+    let tokens, me;
+    try {
+      tokens = await exchangeCode(
+        code,
+        env.SPOTIFY_REDIRECT_URI,
+        env.SPOTIFY_CLIENT_ID,
+        env.SPOTIFY_CLIENT_SECRET
+      );
+      me = await getMe(tokens.access_token);
+    } catch (err) {
+      request.log.error(err, 'Spotify auth failed');
+      return reply.redirect(`${env.APP_URL}?error=spotify_auth_failed`);
+    }
 
-    const me = await getMe(tokens.access_token);
     const sessionId = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
     const tokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
     // Store in DB
-    await prisma.session.upsert({
-      where: { id: sessionId },
-      create: {
+    await prisma.session.create({
+      data: {
         id: sessionId,
         spotifyAccessToken: encrypt(tokens.access_token),
         spotifyRefreshToken: encrypt(tokens.refresh_token),
@@ -72,7 +82,6 @@ export async function authRoutes(app: FastifyInstance) {
         tokenExpiresAt,
         expiresAt,
       },
-      update: {},
     });
 
     // Store in Redis

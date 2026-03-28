@@ -1,6 +1,8 @@
 export function openSms(senderName: string, vibeId: string, appUrl: string) {
   const message = `🎵 ${senderName} que'd you a song.\n\nNo artist. No title. Just listen and react.\n\n→ ${appUrl}/v/${vibeId}`;
-  window.location.href = `sms:?body=${encodeURIComponent(message)}`;
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const sep = isIOS ? '&' : '?';
+  window.location.href = `sms:${sep}body=${encodeURIComponent(message)}`;
 }
 
 export async function copyLink(senderName: string, vibeId: string, appUrl: string) {
