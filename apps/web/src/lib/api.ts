@@ -1,21 +1,26 @@
 const API_BASE = '';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { ...options?.headers as Record<string, string> };
+  // Only set Content-Type for requests with a body (POST, PUT, PATCH)
+  if (options?.body) {
+    headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw Object.assign(new Error(body.error || body.message || `HTTP ${res.status}`), {
+    const err = Object.assign(new Error(body.error || body.message || `HTTP ${res.status}`), {
       status: res.status,
       body,
     });
+    console.error(`[API] ${options?.method || 'GET'} ${path} → ${res.status}`, body);
+    throw err;
   }
 
   return res.json();

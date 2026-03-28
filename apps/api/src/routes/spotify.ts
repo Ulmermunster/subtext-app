@@ -1,9 +1,30 @@
 import { FastifyInstance } from 'fastify';
 import { searchTracks, getTrack, getArtistAlbums, getAlbumTracks, getClientToken } from '../lib/spotify.js';
 import { env } from '../config.js';
+import { redis } from '../lib/redis.js';
+
+const CACHE_TTL = 3600; // 1 hour
 
 async function getAppToken() {
   return getClientToken(env.SPOTIFY_CLIENT_ID, env.SPOTIFY_CLIENT_SECRET);
+}
+
+async function getCached<T>(key: string): Promise<T | null> {
+  try {
+    const cached = await redis.get(key);
+    if (cached) return JSON.parse(cached);
+  } catch (err) {
+    console.warn('[Cache] Read failed:', err);
+  }
+  return null;
+}
+
+async function setCache(key: string, data: unknown, ttl = CACHE_TTL): Promise<void> {
+  try {
+    await redis.set(key, JSON.stringify(data), 'EX', ttl);
+  } catch (err) {
+    console.warn('[Cache] Write failed:', err);
+  }
 }
 
 export async function spotifyRoutes(app: FastifyInstance) {
@@ -47,6 +68,12 @@ export async function spotifyRoutes(app: FastifyInstance) {
 
   app.get('/spotify/track/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
+
+    // Check cache
+    const cacheKey = `spotify:track:${id}`;
+    const cached = await getCached<any>(cacheKey);
+    if (cached) return cached;
+
     let token, t;
     try {
       token = await getAppToken();
@@ -55,7 +82,7 @@ export async function spotifyRoutes(app: FastifyInstance) {
       request.log.error(err, 'Spotify track fetch failed');
       return reply.status(502).send({ error: 'Spotify API unavailable' });
     }
-    return {
+    const result = {
       id: t.id,
       title: t.name,
       artist: t.artists.map((a: any) => a.name).join(', '),
@@ -67,27 +94,66 @@ export async function spotifyRoutes(app: FastifyInstance) {
       spotifyId: t.id,
       hasPreview: !!t.preview_url,
     };
+    await setCache(cacheKey, result);
+    return result;
   });
 
   app.get('/spotify/artist/:id/albums', async (request, reply) => {
     const { id } = request.params as { id: string };
+    request.log.info({ artistId: id }, 'Fetching artist albums');
+
+    // Check cache
+    const cacheKey = `spotify:artist:${id}:albums`;
+    const cached = await getCached<any[]>(cacheKey);
+    if (cached) {
+      request.log.info({ artistId: id, count: cached.length }, 'Artist albums from cache');
+      return cached;
+    }
+
     try {
       const token = await getAppToken();
-      return await getArtistAlbums(id, token);
-    } catch (err) {
-      request.log.error(err, 'Spotify artist albums fetch failed');
-      return reply.status(502).send({ error: 'Spotify API unavailable' });
+      request.log.info({ artistId: id, tokenLength: token.length }, 'Got client token, calling Spotify');
+      const albums = await getArtistAlbums(id, token);
+      request.log.info({ artistId: id, count: albums.length }, 'Artist albums fetched successfully');
+      await setCache(cacheKey, albums);
+      return albums;
+    } catch (err: any) {
+      request.log.error({
+        artistId: id,
+        error: err.message,
+        status: err.status,
+        stack: err.stack,
+      }, 'Spotify artist albums fetch failed');
+      return reply.status(502).send({
+        error: 'Could not load artist discography',
+        detail: err.message,
+      });
     }
   });
 
   app.get('/spotify/album/:id/tracks', async (request, reply) => {
     const { id } = request.params as { id: string };
+
+    // Check cache
+    const cacheKey = `spotify:album:${id}:tracks`;
+    const cached = await getCached<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       const token = await getAppToken();
-      return await getAlbumTracks(id, token);
-    } catch (err) {
-      request.log.error(err, 'Spotify album tracks fetch failed');
-      return reply.status(502).send({ error: 'Spotify API unavailable' });
+      const result = await getAlbumTracks(id, token);
+      await setCache(cacheKey, result);
+      return result;
+    } catch (err: any) {
+      request.log.error({
+        albumId: id,
+        error: err.message,
+        status: err.status,
+      }, 'Spotify album tracks fetch failed');
+      return reply.status(502).send({
+        error: 'Could not load album tracks',
+        detail: err.message,
+      });
     }
   });
 }

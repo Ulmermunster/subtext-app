@@ -34,6 +34,9 @@ export default function TrackResult({ track, onSelect, selected }: Props) {
         <div className={`text-xs truncate ${selected ? 'text-gold' : 'text-muted'}`}>
           {track.artist}
         </div>
+        {!track.hasPreview && (
+          <div className="text-[10px] text-coral mt-0.5">No preview available</div>
+        )}
       </div>
       {selected && (
         <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center flex-shrink-0">

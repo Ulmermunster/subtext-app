@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Wordmark from '../components/Wordmark';
 import TrackResult from '../components/TrackResult';
@@ -16,13 +16,27 @@ export default function ArtistCatalog() {
   const [albumTracks, setAlbumTracks] = useState<Record<string, any[]>>({});
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchAlbums = useCallback(async () => {
     if (!id) return;
-    api.getArtistAlbums(id)
-      .then((data) => setAlbums(data))
-      .catch(() => setError('Could not load discography'))
-      .finally(() => setLoading(false));
+    setLoading(true);
+    setError('');
+    try {
+      console.log('[ArtistCatalog] Fetching albums for artist:', id);
+      const data = await api.getArtistAlbums(id);
+      console.log('[ArtistCatalog] Got albums:', data.length);
+      setAlbums(data);
+    } catch (err: any) {
+      console.error('[ArtistCatalog] Failed to load albums:', err);
+      const detail = err.body?.detail || err.message || 'Unknown error';
+      setError(`Could not load discography: ${detail}`);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchAlbums();
+  }, [fetchAlbums]);
 
   const handleExpandAlbum = async (albumId: string) => {
     if (expandedAlbum === albumId) {
@@ -78,7 +92,7 @@ export default function ArtistCatalog() {
       ) : error ? (
         <div className="card p-4 text-center">
           <p className="text-sm text-coral">{error}</p>
-          <button onClick={() => window.location.reload()} className="text-gold text-sm font-semibold mt-2">Try again</button>
+          <button onClick={fetchAlbums} className="text-gold text-sm font-semibold mt-2 min-h-[44px]">Try again</button>
         </div>
       ) : albums.length === 0 ? (
         <p className="text-muted text-sm text-center py-4">No albums found</p>
