@@ -52,6 +52,8 @@ export async function vibeRoutes(app: FastifyInstance) {
     const senderIp = getClientIp(request);
     const geo = await geolocateIp(senderIp).catch(() => ({ city: null, country: null }));
 
+    const senderId = request.cookies.deviceId || null;
+
     await prisma.vibeToken.create({
       data: {
         id: vibeId,
@@ -65,6 +67,7 @@ export async function vibeRoutes(app: FastifyInstance) {
         mode,
         startSec: startSec ?? null,
         senderDisplayName: senderDisplayName || 'Someone',
+        senderId,
         senderIp: senderIp || null,
         senderCity: geo.city,
         senderCountry: geo.country,
@@ -87,16 +90,18 @@ export async function vibeRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Vibe not found or expired' });
     }
 
-    // Mark as played on first access + capture receiver location
+    // Mark as played on first access + capture receiver location & identity
     if (!vibe.playedAt) {
       const receiverIp = getClientIp(request);
       const receiverGeo = await geolocateIp(receiverIp).catch(() => ({ city: null, country: null }));
+      const receiverId = request.cookies.deviceId || null;
 
       await prisma.vibeToken.update({
         where: { id },
         data: {
           playedAt: new Date(),
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // extend to 7 days
+          receiverId: !vibe.receiverId ? receiverId : undefined,
           receiverIp: receiverIp || null,
           receiverCity: receiverGeo.city,
           receiverCountry: receiverGeo.country,
@@ -216,5 +221,54 @@ export async function vibeRoutes(app: FastifyInstance) {
       appleMusicSearchUrl: `https://music.apple.com/search?term=${artistQuery}`,
       reaction: vibe.reaction,
     };
+  });
+
+  // Queue / History — returns sent and received vibes for the current device
+  app.get('/vibes/history', async (request, reply) => {
+    const deviceId = request.cookies.deviceId;
+    if (!deviceId) {
+      return { sent: [], received: [] };
+    }
+
+    const [sent, received] = await Promise.all([
+      prisma.vibeToken.findMany({
+        where: { senderId: deviceId },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          trackTitle: true,
+          trackArtist: true,
+          albumName: true,
+          albumArt: true,
+          spotifyId: true,
+          senderDisplayName: true,
+          reaction: true,
+          createdAt: true,
+          playedAt: true,
+          revealedAt: true,
+        },
+      }),
+      prisma.vibeToken.findMany({
+        where: { receiverId: deviceId },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          trackTitle: true,
+          trackArtist: true,
+          albumName: true,
+          albumArt: true,
+          spotifyId: true,
+          senderDisplayName: true,
+          reaction: true,
+          createdAt: true,
+          playedAt: true,
+          revealedAt: true,
+        },
+      }),
+    ]);
+
+    return { sent, received };
   });
 }

@@ -7,6 +7,7 @@ import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
+import crypto from 'node:crypto';
 import { env } from './config.js';
 import { prisma } from './lib/prisma.js';
 import { redis, checkRedisHealth } from './lib/redis.js';
@@ -36,6 +37,22 @@ await app.register(cookie, {
 await app.register(rateLimit, {
   max: 100,
   timeWindow: '1 minute',
+});
+
+// Shadow account: assign a permanent deviceId cookie to every visitor
+app.addHook('preHandler', async (request, reply) => {
+  if (!request.cookies.deviceId) {
+    const deviceId = crypto.randomUUID();
+    reply.setCookie('deviceId', deviceId, {
+      path: '/',
+      httpOnly: true,
+      secure: env.APP_URL.startsWith('https'),
+      sameSite: 'lax',
+      maxAge: 365 * 24 * 60 * 60, // 1 year
+    });
+    // Make it available on this request immediately
+    (request.cookies as any).deviceId = deviceId;
+  }
 });
 
 // Routes

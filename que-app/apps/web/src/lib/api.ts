@@ -35,4 +35,5 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  getHistory: () => request<{ sent: any[]; received: any[] }>('/vibes/history'),
 };

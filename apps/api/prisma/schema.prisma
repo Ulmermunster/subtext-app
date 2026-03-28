@@ -20,9 +20,11 @@ model VibeToken {
   mode              String    // AUTO | PICK
   startSec          Int?
   senderDisplayName String
+  senderId          String?
   senderIp          String?
   senderCity        String?
   senderCountry     String?
+  receiverId        String?
   receiverIp        String?
   receiverCity      String?
   receiverCountry   String?
@@ -34,6 +36,8 @@ model VibeToken {
   revealedAt        DateTime?
 
   @@index([expiresAt])
+  @@index([senderId])
+  @@index([receiverId])
 }
 
 model Session {

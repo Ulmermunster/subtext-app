@@ -5,6 +5,7 @@ import Send from './pages/Send';
 
 const ArtistCatalog = lazy(() => import('./pages/ArtistCatalog'));
 const ClipPicker = lazy(() => import('./pages/ClipPicker'));
+const History = lazy(() => import('./pages/History'));
 const Receiver = lazy(() => import('./pages/Receiver'));
 const Admin = lazy(() => import('./pages/Admin'));
 
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/send" element={<Send />} />
             <Route path="/send/artist/:id" element={<ArtistCatalog />} />
             <Route path="/send/clip" element={<ClipPicker />} />
+            <Route path="/queue" element={<History />} />
             <Route path="/v/:id" element={<Receiver />} />
             <Route path="/admin" element={<Admin />} />
           </Routes>

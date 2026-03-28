@@ -252,7 +252,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     return;
   }
 
-  fetch(API + '/vibes/' + vibeId)
+  fetch(API + '/vibes/' + vibeId, {credentials:'include'})
     .then(function(r) {
       if (!r.ok) throw new Error(r.status);
       return r.json();
@@ -337,6 +337,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     fetch(API + '/vibes/' + vibeId + '/react', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
       body: JSON.stringify({reaction: type})
     }).catch(function(){});
   };
@@ -353,7 +354,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   }
 
   function triggerReveal() {
-    fetch(API + '/vibes/' + vibeId + '/reveal')
+    fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
       .then(function(r) { return r.json(); })
       .then(function(data) {
         $landing.style.display = 'none';
