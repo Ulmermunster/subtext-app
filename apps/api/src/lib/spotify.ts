@@ -109,16 +109,13 @@ export async function getTrack(trackId: string, accessToken: string) {
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
-  const albums: any[] = [];
-  let url: string | null = `/artists/${artistId}/albums?include_groups=album,single&limit=50`;
+  const data: any = await spotifyFetch(
+    `/artists/${artistId}/albums?include_groups=album,single&limit=50&market=US`,
+    accessToken
+  );
+  const items = data.items || [];
 
-  while (url) {
-    const data: any = await spotifyFetch(url, accessToken);
-    albums.push(...data.items);
-    url = data.next ? data.next.replace(SPOTIFY_API, '') : null;
-  }
-
-  return albums.map((album) => ({
+  return items.map((album: any) => ({
     id: album.id,
     name: album.name,
     releaseDate: album.release_date,
