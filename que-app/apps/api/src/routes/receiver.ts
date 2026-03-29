@@ -327,49 +327,46 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $orb.style.transform = '';
   }
 
-  // -- Haptics: platform detection --
-  var _isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  // -- Haptics --
+  // Mirrors the ios-haptics library pattern:
+  // Try navigator.vibrate (Android), fall back to checkbox-switch trick (iOS).
+  // Label wraps input, appends to document.head, click, remove synchronously.
   var _hasVibrate = typeof navigator.vibrate === 'function';
-  var _hasSwitch = (function() {
+  var _isTouch = window.matchMedia('(pointer: coarse)').matches;
+
+  function _hapticTick() {
     try {
+      if (_hasVibrate) { navigator.vibrate(20); return; }
+      if (!_isTouch) return;
+      var lbl = document.createElement('label');
+      lbl.ariaHidden = 'true';
+      lbl.style.display = 'none';
       var inp = document.createElement('input');
       inp.type = 'checkbox';
       inp.setAttribute('switch', '');
-      return inp.getAttribute('switch') !== null;
-    } catch(e) { return false; }
-  })();
-
-  function _iosHapticTick() {
-    if (!_hasSwitch) return;
-    var id = '__hap_' + Math.random().toString(36).slice(2,8);
-    var inp = document.createElement('input');
-    inp.type = 'checkbox'; inp.setAttribute('switch',''); inp.id = id;
-    inp.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none';
-    var lbl = document.createElement('label');
-    lbl.setAttribute('for', id);
-    lbl.style.cssText = inp.style.cssText;
-    document.body.appendChild(inp);
-    document.body.appendChild(lbl);
-    lbl.click();
-    requestAnimationFrame(function() { inp.remove(); lbl.remove(); });
+      lbl.appendChild(inp);
+      document.head.appendChild(lbl);
+      lbl.click();
+      document.head.removeChild(lbl);
+    } catch(e) {}
   }
 
-  // Light tap — 20ms, for button presses
-  window.triggerHaptic = function() {
-    if (_isIOS && _hasSwitch) { _iosHapticTick(); return; }
-    try { if (_hasVibrate) navigator.vibrate(20); } catch(e) {}
-  };
+  // Light tap — single tick for buttons
+  window.triggerHaptic = function() { _hapticTick(); };
 
-  // Confirm — two quick pulses, for Vibe reaction
+  // Confirm — two ticks for Vibe reaction
   window.hapticConfirmRaw = function() {
-    if (_isIOS && _hasSwitch) { _iosHapticTick(); return; }
-    try { if (_hasVibrate) navigator.vibrate([25, 50, 25]); } catch(e) {}
+    if (_hasVibrate) { try { navigator.vibrate([25, 50, 25]); } catch(e) {} return; }
+    _hapticTick();
+    setTimeout(_hapticTick, 120);
   };
 
-  // Dramatic reveal pattern — called from onpointerdown on the unmask button
+  // Dramatic reveal — three ticks for unmask moment
   window.hapticRevealRaw = function() {
-    if (_isIOS && _hasSwitch) { _iosHapticTick(); return; }
-    try { if (_hasVibrate) navigator.vibrate([30, 60, 30, 80, 100]); } catch(e) {}
+    if (_hasVibrate) { try { navigator.vibrate([30, 60, 30, 80, 100]); } catch(e) {} return; }
+    _hapticTick();
+    setTimeout(_hapticTick, 120);
+    setTimeout(_hapticTick, 240);
   };
 
   function startPlayback() {

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { hapticTap } from '../lib/haptics';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export default function Home() {
 
       {/* Pulsing Q Orb — main CTA */}
       <button
+        onPointerDown={hapticTap}
         onClick={() => navigate('/send')}
         className="relative group my-8 focus:outline-none"
         aria-label="Send a Que"

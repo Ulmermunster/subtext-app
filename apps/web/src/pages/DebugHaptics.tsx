@@ -36,10 +36,8 @@ export default function DebugHaptics() {
       {/* Platform detection */}
       <div className="card p-4 mb-4 space-y-1">
         <h2 className="font-bold text-sm text-ink mb-2">Platform Detection</h2>
-        <Row label="isAndroid" value={diag.isAndroid} />
-        <Row label="isIOS" value={diag.isIOS} />
         <Row label="navigator.vibrate exists" value={diag.hasVibrateAPI} />
-        <Row label="iOS switch checkbox" value={diag.hasSwitchCheckbox} />
+        <Row label="Touch device (coarse)" value={diag.isTouchDevice} />
         <Row label="Expected path" value={diag.expectedPath} />
         <div className="text-[11px] text-muted break-all mt-2">
           UA: {diag.userAgent}
