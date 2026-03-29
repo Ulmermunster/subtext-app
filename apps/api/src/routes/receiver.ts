@@ -122,6 +122,16 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .error-emoji{font-size:48px;margin-bottom:16px}
 .error-title{font-size:20px;font-weight:700;margin-bottom:8px}
 .error-sub{font-size:14px;color:#9CA3AF}
+
+.unmask-wrap{display:none;flex-direction:column;align-items:center;gap:16px;
+  width:100%;padding:0 16px;animation:fadeUp .4s ease forwards}
+.unmask-wrap.active{display:flex}
+.unmask-btn{border:none;border-radius:999px;padding:16px 40px;font-size:16px;font-weight:700;
+  cursor:pointer;font-family:inherit;min-height:52px;touch-action:manipulation;
+  background:linear-gradient(135deg,#F5A623,#FFD96A);color:#1A1A2E;
+  box-shadow:0 4px 20px rgba(245,166,35,.35);transition:transform .15s ease}
+.unmask-btn:active{transform:scale(.95)}
+.unmask-sub{font-size:12px;color:#9CA3AF;font-weight:500}
 </style>
 </head>
 <body>
@@ -166,11 +176,19 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     </div>
 
     <div class="reactions" id="reactions">
-      <button class="react-btn btn-vibe" id="btnVibe" onpointerdown="triggerHaptic()" onclick="react('VIBE')">\u{1F44D} Vibe</button>
+      <button class="react-btn btn-vibe" id="btnVibe" onpointerdown="hapticConfirmRaw()" onclick="react('VIBE')">\u{1F44D} Vibe</button>
       <button class="react-btn btn-nope" id="btnNope" onpointerdown="triggerHaptic()" onclick="react('NOPE')">\u{1F44E} Nope</button>
     </div>
 
     <div class="hint" id="hint"></div>
+  </div>
+
+  <div id="unmaskSection" class="unmask-wrap">
+    <div class="wordmark">Que<span class="dot">.</span></div>
+    <div id="unmaskEmoji" style="font-size:48px">\u{1F50A}</div>
+    <div style="font-size:16px;font-weight:700;color:#1A1A2E">Time's up!</div>
+    <button class="unmask-btn" id="btnUnmask" onpointerdown="hapticRevealRaw()" onclick="doReveal()">\u{1F3AD} Tap to unmask</button>
+    <div class="unmask-sub">see who you've been listening to</div>
   </div>
 
   <div id="revealSection" class="reveal">
@@ -197,6 +215,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var $loading = document.getElementById('loading');
   var $error = document.getElementById('error');
   var $landing = document.getElementById('landing');
+  var $unmaskSection = document.getElementById('unmaskSection');
   var $revealSection = document.getElementById('revealSection');
   var $fromTag = document.getElementById('fromTag');
   var $orbWrap = document.getElementById('orbWrap');
@@ -308,8 +327,49 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $orb.style.transform = '';
   }
 
+  // -- Haptics: platform detection --
+  var _isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  var _hasVibrate = typeof navigator.vibrate === 'function';
+  var _hasSwitch = (function() {
+    try {
+      var inp = document.createElement('input');
+      inp.type = 'checkbox';
+      inp.setAttribute('switch', '');
+      return inp.getAttribute('switch') !== null;
+    } catch(e) { return false; }
+  })();
+
+  function _iosHapticTick() {
+    if (!_hasSwitch) return;
+    var id = '__hap_' + Math.random().toString(36).slice(2,8);
+    var inp = document.createElement('input');
+    inp.type = 'checkbox'; inp.setAttribute('switch',''); inp.id = id;
+    inp.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none';
+    var lbl = document.createElement('label');
+    lbl.setAttribute('for', id);
+    lbl.style.cssText = inp.style.cssText;
+    document.body.appendChild(inp);
+    document.body.appendChild(lbl);
+    lbl.click();
+    requestAnimationFrame(function() { inp.remove(); lbl.remove(); });
+  }
+
+  // Light tap — 20ms, for button presses
   window.triggerHaptic = function() {
-    try { if (typeof window !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(100); } catch(e) {}
+    if (_isIOS && _hasSwitch) { _iosHapticTick(); return; }
+    try { if (_hasVibrate) navigator.vibrate(20); } catch(e) {}
+  };
+
+  // Confirm — two quick pulses, for Vibe reaction
+  window.hapticConfirmRaw = function() {
+    if (_isIOS && _hasSwitch) { _iosHapticTick(); return; }
+    try { if (_hasVibrate) navigator.vibrate([25, 50, 25]); } catch(e) {}
+  };
+
+  // Dramatic reveal pattern — called from onpointerdown on the unmask button
+  window.hapticRevealRaw = function() {
+    if (_isIOS && _hasSwitch) { _iosHapticTick(); return; }
+    try { if (_hasVibrate) navigator.vibrate([30, 60, 30, 80, 100]); } catch(e) {}
   };
 
   function startPlayback() {
@@ -386,21 +446,30 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 
   function onClipEnd() {
     if (revealed) return;
-    revealed = true;
     clearTimeout(clipTimeout);
     clearInterval(progressInterval);
     if (audio) { try { audio.pause(); } catch(e){} }
     $orbBars.classList.remove('active');
     stopBassPulse();
 
-    setTimeout(function() { triggerReveal(); }, 400);
+    // Show "Tap to unmask" interstitial — user gesture required for haptic
+    $landing.style.display = 'none';
+    $unmaskSection.classList.add('active');
   }
 
-  function triggerReveal() {
+  // Called from the unmask button's onclick (user gesture context)
+  window.doReveal = function() {
+    if (revealed) return;
+    revealed = true;
+    $unmaskSection.classList.remove('active');
+    $unmaskSection.style.display = 'none';
+    fetchRevealData();
+  };
+
+  function fetchRevealData() {
     fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        $landing.style.display = 'none';
         $revealSection.classList.add('active');
 
         $revealArt.src = data.albumArt;

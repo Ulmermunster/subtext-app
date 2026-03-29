@@ -8,6 +8,7 @@ const ClipPicker = lazy(() => import('./pages/ClipPicker'));
 const History = lazy(() => import('./pages/History'));
 const Receiver = lazy(() => import('./pages/Receiver'));
 const Admin = lazy(() => import('./pages/Admin'));
+const DebugHaptics = lazy(() => import('./pages/DebugHaptics'));
 
 function Loading() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/queue" element={<History />} />
             <Route path="/v/:id" element={<Receiver />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/debug-haptics" element={<DebugHaptics />} />
           </Routes>
         </Suspense>
       </div>

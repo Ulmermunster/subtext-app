@@ -4,7 +4,7 @@ import SearchInput from '../components/SearchInput';
 import TrackResult from '../components/TrackResult';
 import ArtistResult from '../components/ArtistResult';
 import { api } from '../lib/api';
-import { triggerHaptic } from '../lib/haptics';
+import { hapticTap, hapticReveal } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
 
 function formatTime(sec: number) {
@@ -180,7 +180,7 @@ export default function Send() {
           <div className="flex-1 flex flex-col items-center justify-center gap-3">
             <span className="text-4xl">🎲</span>
             <p className="text-sm text-coral font-medium">{discoveryError}</p>
-            <button onPointerDown={triggerHaptic} onClick={handleRollDice} className="btn-primary text-sm px-6 py-3 mt-2">
+            <button onPointerDown={hapticTap} onClick={handleRollDice} className="btn-primary text-sm px-6 py-3 mt-2">
               Roll Again
             </button>
           </div>
@@ -259,14 +259,14 @@ export default function Send() {
             {!discoveryRevealed ? (
               <div className="flex gap-3 w-full max-w-xs">
                 <button
-                  onPointerDown={triggerHaptic}
+                  onPointerDown={hapticTap}
                   onClick={handleQueIt}
                   className="btn-primary flex-1 text-sm py-3 min-h-[48px]"
                 >
                   Que it 📨
                 </button>
                 <button
-                  onPointerDown={triggerHaptic}
+                  onPointerDown={hapticReveal}
                   onClick={handleReveal}
                   className="flex-1 card p-3 font-bold text-ink text-sm flex items-center justify-center hover:shadow-card-hover transition-all min-h-[48px] active:scale-[0.985]"
                 >
@@ -285,14 +285,14 @@ export default function Send() {
                   Open in Spotify
                 </a>
                 <button
-                  onPointerDown={triggerHaptic}
+                  onPointerDown={hapticTap}
                   onClick={handleQueIt}
                   className="btn-primary w-full text-sm py-3 min-h-[48px]"
                 >
                   Que it to a friend 📨
                 </button>
                 <button
-                  onPointerDown={triggerHaptic}
+                  onPointerDown={hapticTap}
                   onClick={handleRollDice}
                   className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px] active:scale-95 transition-transform"
                 >
@@ -326,7 +326,7 @@ export default function Send() {
 
       {/* Roll the Dice button */}
       <button
-        onPointerDown={triggerHaptic}
+        onPointerDown={hapticTap}
         onClick={handleRollDice}
         className="mt-3 py-2.5 text-sm font-semibold text-gold border border-gold/30 rounded-full active:scale-[0.985] transition-all hover:bg-gold/5"
       >

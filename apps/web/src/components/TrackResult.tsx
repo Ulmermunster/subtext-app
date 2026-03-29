@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { triggerHaptic } from '../lib/haptics';
+import { hapticTap } from '../lib/haptics';
 
 interface Props {
   track: {
@@ -18,7 +18,7 @@ interface Props {
 export default memo(function TrackResult({ track, onSelect, selected }: Props) {
   return (
     <button
-      onPointerDown={triggerHaptic}
+      onPointerDown={hapticTap}
       onClick={onSelect}
       className={`w-full flex items-center gap-4 p-4 rounded-card transition-all text-left mb-3 ${
         selected
