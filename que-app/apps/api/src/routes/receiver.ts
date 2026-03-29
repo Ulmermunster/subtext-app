@@ -396,6 +396,10 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     startClipTimer(30);
   }
 
+  $orbWrap.addEventListener('pointerdown', function() {
+    if (!revealed && vibeData) triggerHaptic();
+  });
+
   $orbWrap.addEventListener('click', function() {
     if (revealed) return;
     if (!vibeData) return;
