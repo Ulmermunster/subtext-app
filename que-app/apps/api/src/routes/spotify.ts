@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { searchTracks, getTrack, getArtistAlbums, getAlbumTracks, getClientToken } from '../lib/spotify.js';
+import { searchTracks, spotifyFetch, getTrack, getArtistAlbums, getAlbumTracks, getClientToken } from '../lib/spotify.js';
 import { env } from '../config.js';
 
 async function getAppToken() {
@@ -95,25 +95,36 @@ export async function spotifyRoutes(app: FastifyInstance) {
     }
   });
 
-  // --- Random track with valid preview ---
+  // --- Random track with valid preview (Batch & Filter strategy) ---
   app.get('/spotify/random', async (request, reply) => {
+    const wildcards = ['%25a%25', '%25e%25', '%25i%25', '%25o%25', '%25u%25'];
+    const yearRanges = [
+      'year:1980-1989', 'year:1990-1999', 'year:2000-2009',
+      'year:2010-2019', 'year:2020-2025',
+    ];
+    const maxAttempts = 3;
+
     try {
       const token = await getAppToken();
-      const vowels = ['a', 'e', 'i', 'o', 'u'];
-      const maxAttempts = 5;
 
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const letter = vowels[Math.floor(Math.random() * vowels.length)];
-        const offset = Math.floor(Math.random() * 800);
-        const data: any = await searchTracks(letter, token, 10);
+        const wildcard = wildcards[Math.floor(Math.random() * wildcards.length)];
+        const yearRange = yearRanges[Math.floor(Math.random() * yearRanges.length)];
+        const query = `${wildcard} ${yearRange}`;
+        // Spotify Dev Mode caps limit at 10, so fetch 10 per page.
+        // Use a random offset for variety (stay under 1000 Spotify cap).
+        const offset = Math.floor(Math.random() * 500);
+
+        const data: any = await spotifyFetch(
+          `/search?q=${query}&type=track&limit=10&offset=${offset}&market=US`,
+          token,
+        );
+
         const items = data.tracks?.items || [];
+        const withPreviews = items.filter((t: any) => t.preview_url);
 
-        // Shuffle and find one with a preview
-        const shuffled = items.sort(() => Math.random() - 0.5);
-        const withPreview = shuffled.find((t: any) => t.preview_url);
-
-        if (withPreview) {
-          const t = withPreview;
+        if (withPreviews.length > 0) {
+          const t = withPreviews[Math.floor(Math.random() * withPreviews.length)];
           return {
             id: t.id,
             title: t.name,
@@ -127,6 +138,10 @@ export async function spotifyRoutes(app: FastifyInstance) {
             hasPreview: true,
           };
         }
+
+        console.error(
+          `[random] attempt ${attempt + 1}/${maxAttempts} empty — query="${query}" offset=${offset} total=${items.length} withPreview=0`
+        );
       }
 
       return reply.status(404).send({ error: 'Could not find a track with a preview. Try again.' });
