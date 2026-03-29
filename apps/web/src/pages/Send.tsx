@@ -4,6 +4,8 @@ import SearchInput from '../components/SearchInput';
 import TrackResult from '../components/TrackResult';
 import ArtistResult from '../components/ArtistResult';
 import { api } from '../lib/api';
+import { hapticPop } from '../lib/haptics';
+import { useBassPulse } from '../lib/useBassPulse';
 
 function formatTime(sec: number) {
   const m = Math.floor(sec / 60);
@@ -30,6 +32,9 @@ export default function Send() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressRef = useRef<number | null>(null);
 
+  // Bass pulse visualizer
+  const { scale, connectAudio, disconnect: disconnectPulse } = useBassPulse();
+
   const handleSearch = useCallback(async (query: string) => {
     setSearchLoading(true);
     setSearchError('');
@@ -46,6 +51,7 @@ export default function Send() {
   }, []);
 
   const handleTrackSelect = useCallback((track: any) => {
+    hapticPop();
     navigate('/send/clip', { state: { track } });
   }, [navigate]);
 
@@ -63,10 +69,12 @@ export default function Send() {
       if (progressRef.current) {
         clearInterval(progressRef.current);
       }
+      disconnectPulse();
     };
   }, []);
 
   const handleRollDice = async () => {
+    hapticPop();
     setDiscoveryMode(true);
     setDiscoveryLoading(true);
     setDiscoveryTrack(null);
@@ -83,6 +91,7 @@ export default function Send() {
     if (progressRef.current) {
       clearInterval(progressRef.current);
     }
+    disconnectPulse();
 
     try {
       const track = await api.getRandomTrack();
@@ -91,6 +100,7 @@ export default function Send() {
 
       // Auto-play preview
       const audio = new Audio(track.previewUrl);
+      audio.crossOrigin = 'anonymous';
       audioRef.current = audio;
       const start = Date.now();
       const duration = 30;
@@ -101,17 +111,22 @@ export default function Send() {
         if (elapsed >= duration) {
           if (progressRef.current) clearInterval(progressRef.current);
           setDiscoveryPlaying(false);
+          disconnectPulse();
         }
       }, 250);
 
       audio.play()
-        .then(() => setDiscoveryPlaying(true))
+        .then(() => {
+          setDiscoveryPlaying(true);
+          connectAudio(audio);
+        })
         .catch(() => setDiscoveryError('Could not play audio'));
 
       audio.addEventListener('ended', () => {
         setDiscoveryPlaying(false);
         if (progressRef.current) clearInterval(progressRef.current);
         setDiscoveryProgress(1);
+        disconnectPulse();
       });
     } catch {
       setDiscoveryError('No track found. Roll again!');
@@ -120,21 +135,23 @@ export default function Send() {
   };
 
   const handleQueIt = () => {
+    hapticPop();
     if (!discoveryTrack) return;
-    // Stop audio
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     if (progressRef.current) clearInterval(progressRef.current);
+    disconnectPulse();
     navigate('/send/clip', { state: { track: discoveryTrack } });
   };
 
   const handleReveal = () => {
+    hapticPop();
     setDiscoveryRevealed(true);
-    // Let audio keep playing
   };
 
   const exitDiscovery = () => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     if (progressRef.current) clearInterval(progressRef.current);
+    disconnectPulse();
     setDiscoveryMode(false);
     setDiscoveryTrack(null);
     setDiscoveryRevealed(false);
@@ -175,18 +192,38 @@ export default function Send() {
 
         {discoveryTrack && !discoveryError && (
           <div className="flex-1 flex flex-col items-center justify-center w-full gap-5">
-            {/* Mystery album art — blurred if not revealed */}
+            {/* Mystery album art — blurred if not revealed, pulsing with bass */}
             <div className="relative">
+              {/* Bass-reactive glow ring */}
+              {discoveryPlaying && (
+                <div
+                  className="absolute inset-[-8px] rounded-[28px] bg-gold/20 blur-md"
+                  style={{
+                    transform: `scale(${scale})`,
+                    transition: 'transform 80ms ease-out',
+                  }}
+                />
+              )}
               <img
                 src={discoveryTrack.albumArt}
                 alt=""
-                className={`w-48 h-48 rounded-3xl object-cover shadow-card-hover border-4 border-white transition-all duration-500 ${
+                className={`w-48 h-48 rounded-3xl object-cover shadow-card-hover border-4 border-white relative z-10 ${
                   discoveryRevealed ? '' : 'blur-xl brightness-75'
                 }`}
+                style={{
+                  transform: discoveryPlaying ? `scale(${scale})` : undefined,
+                  transition: 'transform 80ms ease-out, filter 0.5s ease',
+                }}
               />
               {!discoveryRevealed && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-5xl">🎵</span>
+                <div className="absolute inset-0 flex items-center justify-center z-20">
+                  <span
+                    className="text-5xl"
+                    style={{
+                      transform: discoveryPlaying ? `scale(${scale})` : undefined,
+                      transition: 'transform 80ms ease-out',
+                    }}
+                  >🎵</span>
                 </div>
               )}
             </div>

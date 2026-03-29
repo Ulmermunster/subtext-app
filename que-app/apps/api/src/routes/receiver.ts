@@ -37,6 +37,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   border:4px solid #fff;display:flex;align-items:center;justify-content:center;
   position:relative;z-index:2;transition:transform .3s ease;
   box-shadow:0 0 60px rgba(245,166,35,.2)}
+.orb{transition:transform 80ms ease-out}
 .orb:active{transform:scale(.96)}
 .orb-emoji{font-size:48px;transition:opacity .3s ease}
 .orb-hint{position:absolute;bottom:-28px;left:0;right:0;text-align:center;
@@ -271,6 +272,46 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       }
     });
 
+  // Bass pulse state
+  var audioCtx = null, analyser = null, audioSource = null, bassPulseRaf = null;
+
+  function startBassPulse() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC || !audio) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (!audioSource) {
+        audioSource = audioCtx.createMediaElementSource(audio);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
+        audioSource.connect(analyser);
+        analyser.connect(audioCtx.destination);
+      }
+      var dataArray = new Uint8Array(analyser.frequencyBinCount);
+      function tick() {
+        analyser.getByteFrequencyData(dataArray);
+        var bassSum = 0;
+        for (var i = 0; i < 8; i++) bassSum += dataArray[i];
+        var bassAvg = bassSum / 8 / 255;
+        var s = 1 + bassAvg * 0.06;
+        $orb.style.transform = 'scale(' + s + ')';
+        bassPulseRaf = requestAnimationFrame(tick);
+      }
+      tick();
+    } catch(e) {}
+  }
+
+  function stopBassPulse() {
+    if (bassPulseRaf) { cancelAnimationFrame(bassPulseRaf); bassPulseRaf = null; }
+    $orb.style.transform = '';
+  }
+
+  function hapticPop() {
+    try { if (navigator && navigator.vibrate) navigator.vibrate(50); } catch(e) {}
+  }
+
   function startPlayback() {
     playing = true;
     $orbEmoji.style.opacity = '0';
@@ -288,6 +329,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     audio.src = audioUrl;
     document.body.appendChild(audio);
     audio.play().then(function() {
+      startBassPulse();
       clipTimeout = setTimeout(function() {
         if (audio && !audio.paused) { audio.pause(); }
       }, 30000);
@@ -303,8 +345,8 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 
     if (playing) {
       if (audio) {
-        if (audio.paused) { audio.play(); $orbBars.classList.add('active'); }
-        else { audio.pause(); $orbBars.classList.remove('active'); }
+        if (audio.paused) { audio.play(); $orbBars.classList.add('active'); startBassPulse(); }
+        else { audio.pause(); $orbBars.classList.remove('active'); stopBassPulse(); }
       }
       return;
     }
@@ -329,6 +371,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 
   window.react = function(type) {
     if (revealed) return;
+    hapticPop();
     currentReaction = type;
     $btnVibe.classList.toggle('selected', type === 'VIBE');
     $btnNope.classList.toggle('selected', type === 'NOPE');
@@ -349,6 +392,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     clearInterval(progressInterval);
     if (audio) { try { audio.pause(); } catch(e){} }
     $orbBars.classList.remove('active');
+    stopBassPulse();
 
     setTimeout(function() { triggerReveal(); }, 400);
   }

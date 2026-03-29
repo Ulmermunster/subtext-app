@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
+import { hapticPop } from '../lib/haptics';
 
 const TRACK_STORAGE_KEY = 'que_pending_track';
 
@@ -26,6 +27,7 @@ export default function ClipPicker() {
 
   const handleGenerate = async () => {
     if (!track) return;
+    hapticPop();
     setSending(true);
     setError('');
     try {
@@ -49,11 +51,13 @@ export default function ClipPicker() {
   };
 
   const handleSms = () => {
+    hapticPop();
     const displayName = senderName || 'Someone';
     openSms(displayName, vibeId, window.location.origin);
   };
 
   const handleCopy = async () => {
+    hapticPop();
     const displayName = senderName || 'Someone';
     await copyLink(displayName, vibeId, window.location.origin);
     setCopied(true);
