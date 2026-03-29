@@ -95,7 +95,7 @@ export async function spotifyRoutes(app: FastifyInstance) {
     }
   });
 
-  // --- Random track with valid preview (Batch & Filter + iTunes fallback) ---
+  // --- Random track with valid Spotify preview (Batch & Filter, Spotify-only) ---
   app.get('/spotify/random', async (request, reply) => {
     // High-frequency English words that appear in millions of song titles —
     // guarantees large result pools even in Spotify Dev Mode.
@@ -106,24 +106,11 @@ export async function spotifyRoutes(app: FastifyInstance) {
     ];
     const maxAttempts = 3;
 
-    async function findItunesPreview(title: string, artist: string): Promise<string | null> {
-      try {
-        const term = encodeURIComponent(`${title} ${artist}`);
-        const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=3`);
-        if (!res.ok) return null;
-        const data = await res.json() as { results: Array<{ previewUrl?: string }> };
-        return data.results?.[0]?.previewUrl || null;
-      } catch {
-        return null;
-      }
-    }
-
     try {
       const token = await getAppToken();
 
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const term = searchTerms[Math.floor(Math.random() * searchTerms.length)];
-        // Dev Mode result pools are small — keep offset 0-40 to stay in range
         const offset = Math.floor(Math.random() * 40);
         const q = encodeURIComponent(term);
 
@@ -138,13 +125,7 @@ export async function spotifyRoutes(app: FastifyInstance) {
           continue;
         }
 
-        // Shuffle the batch
-        for (let i = items.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [items[i], items[j]] = [items[j], items[i]];
-        }
-
-        // First pass: try tracks that already have a Spotify preview_url
+        // Filter for Spotify preview_url, then shuffle
         const withPreview = items.filter((t: any) => t.preview_url);
         if (withPreview.length > 0) {
           const t = withPreview[Math.floor(Math.random() * withPreview.length)];
@@ -162,29 +143,7 @@ export async function spotifyRoutes(app: FastifyInstance) {
           };
         }
 
-        // Second pass: no Spotify previews — try iTunes fallback for up to 3 tracks
-        console.error(`[random] attempt ${attempt + 1}/${maxAttempts} — query="${term}" offset=${offset} items=${items.length} spotifyPreviews=0, trying iTunes`);
-        const candidates = items.slice(0, 3);
-        for (const t of candidates) {
-          const artistName = t.artists.map((a: any) => a.name).join(', ');
-          const itunesUrl = await findItunesPreview(t.name, artistName);
-          if (itunesUrl) {
-            return {
-              id: t.id,
-              title: t.name,
-              artist: artistName,
-              artistId: t.artists[0]?.id || '',
-              albumName: t.album?.name || '',
-              albumArt: t.album?.images?.[0]?.url || '',
-              duration: t.duration_ms,
-              previewUrl: itunesUrl,
-              spotifyId: t.id,
-              hasPreview: true,
-            };
-          }
-        }
-
-        console.error(`[random] attempt ${attempt + 1}/${maxAttempts} — iTunes fallback also empty for "${term}"`);
+        console.error(`[random] attempt ${attempt + 1}/${maxAttempts} — query="${term}" offset=${offset} items=${items.length} withPreview=0`);
       }
 
       return reply.status(404).send({ error: 'Could not find a track with a preview. Try again.' });
