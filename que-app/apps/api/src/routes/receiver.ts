@@ -166,8 +166,8 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     </div>
 
     <div class="reactions" id="reactions">
-      <button class="react-btn btn-vibe" id="btnVibe" onclick="try{navigator.vibrate(50)}catch(e){};react('VIBE')">\u{1F44D} Vibe</button>
-      <button class="react-btn btn-nope" id="btnNope" onclick="try{navigator.vibrate(50)}catch(e){};react('NOPE')">\u{1F44E} Nope</button>
+      <button class="react-btn btn-vibe" id="btnVibe" onpointerdown="triggerHaptic()" onclick="react('VIBE')">\u{1F44D} Vibe</button>
+      <button class="react-btn btn-nope" id="btnNope" onpointerdown="triggerHaptic()" onclick="react('NOPE')">\u{1F44E} Nope</button>
     </div>
 
     <div class="hint" id="hint"></div>
@@ -308,9 +308,9 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $orb.style.transform = '';
   }
 
-  function hapticPop() {
-    try { if (navigator && navigator.vibrate) navigator.vibrate(50); } catch(e) {}
-  }
+  window.triggerHaptic = function() {
+    try { if (typeof window !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(100); } catch(e) {}
+  };
 
   function startPlayback() {
     playing = true;

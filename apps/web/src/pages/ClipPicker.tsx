@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { openSms, copyLink } from '../lib/sms';
-import { hapticPop } from '../lib/haptics';
+import { triggerHaptic } from '../lib/haptics';
 
 const TRACK_STORAGE_KEY = 'que_pending_track';
 
@@ -90,14 +90,14 @@ export default function ClipPicker() {
         </div>
         <div className="flex-1" />
         <div className="flex gap-3 w-full mb-4">
-          <button onClick={() => { hapticPop(); handleSms(); }} className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]">
+          <button onPointerDown={triggerHaptic} onClick={handleSms} className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
             SMS
           </button>
-          <button onClick={() => { hapticPop(); handleCopy(); }} className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]">
+          <button onPointerDown={triggerHaptic} onClick={handleCopy} className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -156,7 +156,8 @@ export default function ClipPicker() {
       )}
 
       <button
-        onClick={() => { hapticPop(); handleGenerate(); }}
+        onPointerDown={triggerHaptic}
+        onClick={handleGenerate}
         disabled={sending}
         className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px] mt-4 mb-2"
       >
