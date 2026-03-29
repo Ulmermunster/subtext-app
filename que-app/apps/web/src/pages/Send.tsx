@@ -51,7 +51,6 @@ export default function Send() {
   }, []);
 
   const handleTrackSelect = useCallback((track: any) => {
-    hapticPop();
     navigate('/send/clip', { state: { track } });
   }, [navigate]);
 
@@ -74,7 +73,6 @@ export default function Send() {
   }, []);
 
   const handleRollDice = async () => {
-    hapticPop();
     setDiscoveryMode(true);
     setDiscoveryLoading(true);
     setDiscoveryTrack(null);
@@ -135,7 +133,6 @@ export default function Send() {
   };
 
   const handleQueIt = () => {
-    hapticPop();
     if (!discoveryTrack) return;
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     if (progressRef.current) clearInterval(progressRef.current);
@@ -144,7 +141,6 @@ export default function Send() {
   };
 
   const handleReveal = () => {
-    hapticPop();
     setDiscoveryRevealed(true);
   };
 
@@ -263,13 +259,13 @@ export default function Send() {
             {!discoveryRevealed ? (
               <div className="flex gap-3 w-full max-w-xs">
                 <button
-                  onClick={handleQueIt}
+                  onClick={() => { hapticPop(); handleQueIt(); }}
                   className="btn-primary flex-1 text-sm py-3 min-h-[48px]"
                 >
                   Que it 📨
                 </button>
                 <button
-                  onClick={handleReveal}
+                  onClick={() => { hapticPop(); handleReveal(); }}
                   className="flex-1 card p-3 font-bold text-ink text-sm flex items-center justify-center hover:shadow-card-hover transition-all min-h-[48px] active:scale-[0.985]"
                 >
                   Reveal 👀
@@ -287,13 +283,13 @@ export default function Send() {
                   Open in Spotify
                 </a>
                 <button
-                  onClick={handleQueIt}
+                  onClick={() => { hapticPop(); handleQueIt(); }}
                   className="btn-primary w-full text-sm py-3 min-h-[48px]"
                 >
                   Que it to a friend 📨
                 </button>
                 <button
-                  onClick={handleRollDice}
+                  onClick={() => { hapticPop(); handleRollDice(); }}
                   className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px] active:scale-95 transition-transform"
                 >
                   Roll Again 🎲
@@ -326,7 +322,7 @@ export default function Send() {
 
       {/* Roll the Dice button */}
       <button
-        onClick={handleRollDice}
+        onClick={() => { hapticPop(); handleRollDice(); }}
         className="mt-3 py-2.5 text-sm font-semibold text-gold border border-gold/30 rounded-full active:scale-[0.985] transition-all hover:bg-gold/5"
       >
         Roll the Dice 🎲
@@ -364,7 +360,7 @@ export default function Send() {
               <TrackResult
                 key={track.id}
                 track={track}
-                onSelect={() => handleTrackSelect(track)}
+                onSelect={() => { hapticPop(); handleTrackSelect(track); }}
               />
             ))}
           </div>

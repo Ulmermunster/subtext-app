@@ -166,8 +166,8 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     </div>
 
     <div class="reactions" id="reactions">
-      <button class="react-btn btn-vibe" id="btnVibe" onclick="react('VIBE')">\u{1F44D} Vibe</button>
-      <button class="react-btn btn-nope" id="btnNope" onclick="react('NOPE')">\u{1F44E} Nope</button>
+      <button class="react-btn btn-vibe" id="btnVibe" onclick="try{navigator.vibrate(50)}catch(e){};react('VIBE')">\u{1F44D} Vibe</button>
+      <button class="react-btn btn-nope" id="btnNope" onclick="try{navigator.vibrate(50)}catch(e){};react('NOPE')">\u{1F44E} Nope</button>
     </div>
 
     <div class="hint" id="hint"></div>
@@ -371,7 +371,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 
   window.react = function(type) {
     if (revealed) return;
-    hapticPop();
     currentReaction = type;
     $btnVibe.classList.toggle('selected', type === 'VIBE');
     $btnNope.classList.toggle('selected', type === 'NOPE');
