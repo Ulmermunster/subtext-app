@@ -95,6 +95,47 @@ export async function spotifyRoutes(app: FastifyInstance) {
     }
   });
 
+  // --- Random track with valid preview ---
+  app.get('/spotify/random', async (request, reply) => {
+    try {
+      const token = await getAppToken();
+      const vowels = ['a', 'e', 'i', 'o', 'u'];
+      const maxAttempts = 5;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const letter = vowels[Math.floor(Math.random() * vowels.length)];
+        const offset = Math.floor(Math.random() * 800);
+        const data: any = await searchTracks(letter, token, 10);
+        const items = data.tracks?.items || [];
+
+        // Shuffle and find one with a preview
+        const shuffled = items.sort(() => Math.random() - 0.5);
+        const withPreview = shuffled.find((t: any) => t.preview_url);
+
+        if (withPreview) {
+          const t = withPreview;
+          return {
+            id: t.id,
+            title: t.name,
+            artist: t.artists.map((a: any) => a.name).join(', '),
+            artistId: t.artists[0]?.id || '',
+            albumName: t.album?.name || '',
+            albumArt: t.album?.images?.[0]?.url || '',
+            duration: t.duration_ms,
+            previewUrl: t.preview_url,
+            spotifyId: t.id,
+            hasPreview: true,
+          };
+        }
+      }
+
+      return reply.status(404).send({ error: 'Could not find a track with a preview. Try again.' });
+    } catch (err) {
+      request.log.error(err, 'Random track failed');
+      return reply.status(502).send({ error: 'Spotify API unavailable' });
+    }
+  });
+
   // --- Diagnostic: hit this in your browser to verify the full chain ---
   app.get('/spotify/test', async () => {
     const diag: Record<string, any> = { timestamp: new Date().toISOString() };

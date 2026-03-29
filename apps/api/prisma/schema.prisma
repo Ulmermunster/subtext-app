@@ -40,6 +40,18 @@ model VibeToken {
   @@index([receiverId])
 }
 
+model Streak {
+  id            String   @id @default(uuid())
+  userAId       String
+  userBId       String
+  streakCount   Int      @default(1)
+  lastVibeDate  DateTime @default(now())
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
 model Session {
   id                  String   @id
   spotifyAccessToken  String

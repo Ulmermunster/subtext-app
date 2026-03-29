@@ -14,6 +14,7 @@ interface QueItem {
   createdAt: string;
   playedAt: string | null;
   revealedAt: string | null;
+  streak: number;
 }
 
 function timeAgo(dateStr: string): string {
@@ -60,7 +61,14 @@ function QueCard({ item, isSent }: { item: QueItem; isSent: boolean }) {
         className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-sm text-ink truncate">{item.trackTitle}</div>
+        <div className="flex items-center gap-1.5">
+          <span className="font-bold text-sm text-ink truncate">{item.trackTitle}</span>
+          {item.streak > 1 && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-coral/10 text-coral flex-shrink-0">
+              🔥 {item.streak}
+            </span>
+          )}
+        </div>
         <div className="text-xs text-muted truncate">{item.trackArtist}</div>
         <div className="flex items-center gap-2 mt-1.5">
           <ReactionBadge reaction={item.reaction} />

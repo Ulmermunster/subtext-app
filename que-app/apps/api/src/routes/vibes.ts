@@ -182,6 +182,38 @@ export async function vibeRoutes(app: FastifyInstance) {
       },
     });
 
+    // Update streak if this is a VIBE between two known devices
+    if (reaction === 'VIBE' && vibe.senderId && request.cookies.deviceId) {
+      const receiverId = request.cookies.deviceId;
+      const senderId = vibe.senderId;
+      // Normalize pair order so A→B and B→A share one row
+      const [userAId, userBId] = [senderId, receiverId].sort();
+      const now = new Date();
+      const cutoff = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+      try {
+        const existing = await prisma.streak.findUnique({
+          where: { userAId_userBId: { userAId, userBId } },
+        });
+
+        if (existing) {
+          const newCount = existing.lastVibeDate > cutoff
+            ? existing.streakCount + 1
+            : 1;
+          await prisma.streak.update({
+            where: { id: existing.id },
+            data: { streakCount: newCount, lastVibeDate: now },
+          });
+        } else {
+          await prisma.streak.create({
+            data: { userAId, userBId, streakCount: 1, lastVibeDate: now },
+          });
+        }
+      } catch {
+        // Non-critical — don't fail the reaction if streak update errors
+      }
+    }
+
     return { success: true, reaction };
   });
 
@@ -230,45 +262,61 @@ export async function vibeRoutes(app: FastifyInstance) {
       return { sent: [], received: [] };
     }
 
-    const [sent, received] = await Promise.all([
+    const vibeSelect = {
+      id: true,
+      trackTitle: true,
+      trackArtist: true,
+      albumName: true,
+      albumArt: true,
+      spotifyId: true,
+      senderDisplayName: true,
+      senderId: true,
+      receiverId: true,
+      reaction: true,
+      createdAt: true,
+      playedAt: true,
+      revealedAt: true,
+    } as const;
+
+    const [sent, received, streaks] = await Promise.all([
       prisma.vibeToken.findMany({
         where: { senderId: deviceId },
         orderBy: { createdAt: 'desc' },
         take: 50,
-        select: {
-          id: true,
-          trackTitle: true,
-          trackArtist: true,
-          albumName: true,
-          albumArt: true,
-          spotifyId: true,
-          senderDisplayName: true,
-          reaction: true,
-          createdAt: true,
-          playedAt: true,
-          revealedAt: true,
-        },
+        select: vibeSelect,
       }),
       prisma.vibeToken.findMany({
         where: { receiverId: deviceId },
         orderBy: { createdAt: 'desc' },
         take: 50,
-        select: {
-          id: true,
-          trackTitle: true,
-          trackArtist: true,
-          albumName: true,
-          albumArt: true,
-          spotifyId: true,
-          senderDisplayName: true,
-          reaction: true,
-          createdAt: true,
-          playedAt: true,
-          revealedAt: true,
+        select: vibeSelect,
+      }),
+      // Fetch all streaks involving this user
+      prisma.streak.findMany({
+        where: {
+          OR: [{ userAId: deviceId }, { userBId: deviceId }],
+          streakCount: { gt: 1 },
         },
       }),
     ]);
 
-    return { sent, received };
+    // Build a lookup: partnerId -> streakCount
+    const streakMap = new Map<string, number>();
+    for (const s of streaks) {
+      const partner = s.userAId === deviceId ? s.userBId : s.userAId;
+      streakMap.set(partner, s.streakCount);
+    }
+
+    const addStreak = (item: any) => {
+      const partnerId = item.senderId === deviceId ? item.receiverId : item.senderId;
+      const streak = partnerId ? (streakMap.get(partnerId) || 0) : 0;
+      const { senderId: _s, receiverId: _r, ...rest } = item;
+      return { ...rest, streak };
+    };
+
+    return {
+      sent: sent.map(addStreak),
+      received: received.map(addStreak),
+    };
   });
 }
