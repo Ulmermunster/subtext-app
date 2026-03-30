@@ -149,6 +149,18 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .guess-pill.locked{pointer-events:none}
 .guess-result{font-size:14px;font-weight:600;text-align:center;
   opacity:0;animation:fadeUp .4s ease forwards}
+.guess-wrap.fade-out{opacity:0;transform:translateY(-8px);transition:opacity .4s ease,transform .4s ease;pointer-events:none}
+.inline-reveal{display:none;flex-direction:column;align-items:center;gap:6px;
+  width:100%;max-width:320px;margin:12px auto 0;padding:0;
+  opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease}
+.inline-reveal.active{display:flex}
+.inline-reveal.visible{opacity:1;transform:translateY(0)}
+.inline-reveal-art{width:120px;height:120px;border-radius:12px;object-fit:cover;
+  box-shadow:0 4px 20px rgba(0,0,0,.12)}
+.inline-reveal-title{font-size:18px;font-weight:800;color:#1A1A2E;text-align:center;
+  overflow-wrap:break-word;word-break:break-word;max-width:100%;margin-top:4px}
+.inline-reveal-meta{font-size:13px;color:#9CA3AF;font-weight:500;text-align:center;
+  overflow-wrap:break-word;word-break:break-word;max-width:100%}
 </style>
 </head>
 <body>
@@ -204,6 +216,12 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       <div class="guess-pills" id="guessPills"></div>
       <div class="guess-result" id="guessResult"></div>
     </div>
+
+    <div id="inlineReveal" class="inline-reveal">
+      <img class="inline-reveal-art" id="inlineRevealArt" src="" alt="">
+      <div class="inline-reveal-title" id="inlineRevealTitle"></div>
+      <div class="inline-reveal-meta" id="inlineRevealMeta"></div>
+    </div>
   </div>
 
   <div id="unmaskSection" class="unmask-wrap">
@@ -243,6 +261,10 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var $guessSection = document.getElementById('guessSection');
   var $guessPills = document.getElementById('guessPills');
   var $guessResult = document.getElementById('guessResult');
+  var $inlineReveal = document.getElementById('inlineReveal');
+  var $inlineRevealArt = document.getElementById('inlineRevealArt');
+  var $inlineRevealTitle = document.getElementById('inlineRevealTitle');
+  var $inlineRevealMeta = document.getElementById('inlineRevealMeta');
   var $revealSection = document.getElementById('revealSection');
   var $fromTag = document.getElementById('fromTag');
   var $orbWrap = document.getElementById('orbWrap');
@@ -497,12 +519,23 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   };
 
   function onClipEnd() {
-    if (revealed) return;
     clearTimeout(clipTimeout);
     clearInterval(progressInterval);
     if (audio) { try { audio.pause(); } catch(e){} }
     $orbBars.classList.remove('active');
     stopBassPulse();
+
+    if (isGuessMode && guessLocked) {
+      // Guess already made — transition from inline reveal to full reveal screen
+      $landing.style.display = 'none';
+      $inlineReveal.classList.remove('active', 'visible');
+      if (window._revealData) {
+        showFullReveal(window._revealData);
+      } else {
+        fetchRevealData();
+      }
+      return;
+    }
 
     if (isGuessMode && !guessLocked) {
       // Time ran out without a guess — auto-reveal
@@ -524,12 +557,12 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       return;
     }
 
+    if (revealed) return;
+
     $landing.style.display = 'none';
 
-    if (!isGuessMode) {
-      // Show "Tap to unmask" interstitial — user gesture required for haptic
-      $unmaskSection.classList.add('active');
-    }
+    // Show "Tap to unmask" interstitial — user gesture required for haptic
+    $unmaskSection.classList.add('active');
   }
 
   // Called from the unmask button's onclick (user gesture context)
@@ -561,12 +594,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     if (guessLocked) return;
     guessLocked = true;
 
-    // Stop audio + timers immediately
-    clearTimeout(clipTimeout);
-    clearInterval(progressInterval);
-    if (audio) { try { audio.pause(); } catch(ex){} }
-    $orbBars.classList.remove('active');
-    stopBassPulse();
+    // Do NOT stop audio — music keeps playing seamlessly
 
     var chosen = e.target.getAttribute('data-artist');
     var isCorrect = chosen === correctArtist;
@@ -603,39 +631,49 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       body: JSON.stringify({reaction: isCorrect ? 'VIBE' : 'NOPE'})
     }).catch(function(){});
 
-    // Immediate reveal after short delay
+    // After a short pause, fade out pills and fade in inline reveal (while music plays)
     setTimeout(function() {
-      revealed = true;
-      $landing.style.display = 'none';
-      fetchRevealData();
-    }, 1500);
+      $guessSection.classList.add('fade-out');
+      $hint.style.opacity = '0';
+      $hint.style.transition = 'opacity .4s ease';
+      // Fetch reveal data and show inline
+      fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          setTimeout(function() {
+            $guessSection.style.display = 'none';
+            $inlineRevealArt.src = data.albumArt;
+            $inlineRevealTitle.textContent = data.title;
+            $inlineRevealMeta.textContent = data.artist + ' \\u00B7 ' + data.albumName;
+            $inlineReveal.classList.add('active');
+            // Trigger reflow then animate in
+            void $inlineReveal.offsetWidth;
+            $inlineReveal.classList.add('visible');
+            revealed = true;
+            // Store reveal data for final screen
+            window._revealData = data;
+          }, 400);
+        }).catch(function(){});
+    }, 1200);
+  }
+
+  function showFullReveal(data) {
+    $revealSection.classList.add('active');
+
+    $revealArt.src = data.albumArt;
+    $revealTitle.textContent = data.title;
+    $revealMeta.textContent = data.artist + ' \\u00B7 ' + data.albumName;
+    $spotifyCta.href = data.spotifyUrl;
+
+    // No forced vibe badge — just show the reveal cleanly
+    $revealBadge.style.display = 'none';
   }
 
   function fetchRevealData() {
     fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        $revealSection.classList.add('active');
-
-        $revealArt.src = data.albumArt;
-        $revealTitle.textContent = data.title;
-        $revealMeta.textContent = data.artist + ' \\u00B7 ' + data.albumName;
-        $spotifyCta.href = data.spotifyUrl;
-
-        var reaction = data.reaction || currentReaction;
-        if (reaction === 'VIBE') {
-          $revealBadge.textContent = '\\u{1F44D} You vibed with this';
-          $revealBadge.className = 'reaction-badge badge-vibe';
-        } else if (reaction === 'NOPE') {
-          $revealBadge.textContent = '\\u{1F44E} Not your vibe \\u2014 fair enough';
-          $revealBadge.className = 'reaction-badge badge-nope';
-        } else {
-          $revealBadge.style.display = 'none';
-        }
-
-        if (reaction === 'VIBE') {
-          setTimeout(launchConfetti, 780);
-        }
+        showFullReveal(data);
       })
       .catch(function() {
         showError('\\u{1F635}', 'Reveal failed', 'Something went wrong loading the track info.');

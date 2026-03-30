@@ -25,10 +25,15 @@ function shuffle<T>(arr: T[]): T[] {
 async function resolveDecoys(artistId: string, realArtistName: string, token: string): Promise<string[]> {
   try {
     const related = await getRelatedArtists(artistId, token);
-    const filtered = related.filter(name => name.toLowerCase() !== realArtistName.toLowerCase());
+    // Filter out the real artist (compare against each individual artist name for multi-artist tracks)
+    const realNames = realArtistName.split(', ').map(n => n.toLowerCase());
+    const filtered = related.filter(name => !realNames.includes(name.toLowerCase()));
     if (filtered.length >= 3) return shuffle(filtered).slice(0, 3);
-  } catch {}
-  const pool = FALLBACK_ARTISTS.filter(name => name.toLowerCase() !== realArtistName.toLowerCase());
+  } catch (err) {
+    console.error('[resolveDecoys] Related artists failed for artistId=' + artistId + ':', err);
+  }
+  const realNames = realArtistName.split(', ').map(n => n.toLowerCase());
+  const pool = FALLBACK_ARTISTS.filter(name => !realNames.includes(name.toLowerCase()));
   return shuffle(pool).slice(0, 3);
 }
 
@@ -76,7 +81,9 @@ export async function vibeRoutes(app: FastifyInstance) {
     const artistId = track.artists[0]?.id || '';
     let decoyArtists: string[] = [];
     if (gameMode === 'guess' && artistId) {
+      console.log('[vibes/create] Resolving decoys for artist:', artistName, 'artistId:', artistId);
       decoyArtists = await resolveDecoys(artistId, artistName, token!);
+      console.log('[vibes/create] Resolved decoys:', decoyArtists);
     }
 
     const vibeId = nanoid();
