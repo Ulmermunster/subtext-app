@@ -1,48 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { customAlphabet } from 'nanoid';
 import { prisma } from '../lib/prisma.js';
-import { getTrack, getRelatedArtists, getClientToken } from '../lib/spotify.js';
+import { getTrack, generateDecoys, getClientToken } from '../lib/spotify.js';
 import { geolocateIp, getClientIp } from '../lib/geo.js';
 import { env } from '../config.js';
 
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
 
-const FALLBACK_ARTISTS = [
-  'Drake', 'Taylor Swift', 'Tame Impala', 'Billie Eilish', 'The Weeknd',
-  'Dua Lipa', 'Kendrick Lamar', 'Olivia Rodrigo', 'Bad Bunny', 'SZA',
-  'Harry Styles', 'Doja Cat', 'Post Malone', 'Ariana Grande', 'Travis Scott',
-  'Radiohead', 'Frank Ocean', 'Lana Del Rey', 'Tyler, The Creator', 'Beyoncé',
-];
-
-function shuffle<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-async function resolveDecoys(artistId: string, realArtistName: string, token: string): Promise<string[]> {
-  try {
-    const related = await getRelatedArtists(artistId, token);
-    // Filter out the real artist (compare against each individual artist name for multi-artist tracks)
-    const realNames = realArtistName.split(', ').map(n => n.toLowerCase());
-    const filtered = related.filter(name => !realNames.includes(name.toLowerCase()));
-    if (filtered.length >= 3) {
-      const picked = shuffle(filtered).slice(0, 3);
-      console.log('[resolveDecoys] Picked related artists:', picked, 'for', realArtistName);
-      return picked;
-    }
-    console.log('[resolveDecoys] Not enough related artists (' + filtered.length + '), falling back');
-  } catch (err) {
-    console.error('[resolveDecoys] Related artists failed for artistId=' + artistId + ':', err);
-  }
-  const realNames = realArtistName.split(', ').map(n => n.toLowerCase());
-  const pool = FALLBACK_ARTISTS.filter(name => !realNames.includes(name.toLowerCase()));
-  const picked = shuffle(pool).slice(0, 3);
-  console.log('[resolveDecoys] Using FALLBACK artists:', picked, 'for', realArtistName);
-  return picked;
-}
 
 async function findItunesPreview(title: string, artist: string): Promise<string | null> {
   try {
@@ -83,14 +47,17 @@ export async function vibeRoutes(app: FastifyInstance) {
 
     const previewUrl = track.preview_url || null;
 
-    // Resolve decoys server-side for guess mode
+    // Resolve decoys server-side for guess mode (multi-tier cascade)
     const artistName = track.artists.map((a: any) => a.name).join(', ');
     const artistId = track.artists[0]?.id || '';
+    const releaseYear = track.album?.release_date
+      ? parseInt(track.album.release_date.substring(0, 4), 10) || null
+      : null;
     let decoyArtists: string[] = [];
     if (gameMode === 'guess' && artistId) {
-      console.log('[vibes/create] Resolving decoys for artist:', artistName, 'artistId:', artistId);
-      decoyArtists = await resolveDecoys(artistId, artistName, token!);
-      console.log('[vibes/create] Resolved decoys:', decoyArtists);
+      console.log('[vibes/create] Resolving decoys for:', artistName, '| artistId:', artistId, '| year:', releaseYear);
+      decoyArtists = await generateDecoys(artistId, artistName, releaseYear, token!);
+      console.log('[vibes/create] Final decoys:', decoyArtists);
     }
 
     const vibeId = nanoid();

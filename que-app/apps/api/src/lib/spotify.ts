@@ -126,23 +126,157 @@ export async function getRelatedArtists(artistId: string, accessToken: string): 
     console.error('[getRelatedArtists] artistId is empty/undefined!');
     return [];
   }
-  console.log('[getRelatedArtists] Fetching for artistId:', artistId, 'tokenLen:', accessToken?.length);
-  try {
-    const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
-    const artists = data.artists || [];
-    console.log('[getRelatedArtists] Spotify returned', artists.length, 'related artists');
-    if (artists.length === 0) {
-      console.log('[getRelatedArtists] Full response keys:', Object.keys(data));
+  console.log('[getRelatedArtists] Fetching for artistId:', artistId);
+  const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
+  const artists = data.artists || [];
+  console.log('[getRelatedArtists] Spotify returned', artists.length, 'related artists');
+  // Sort by popularity descending, take top 10 most recognizable
+  const sorted = artists
+    .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+    .slice(0, 10);
+  return sorted.map((a: any) => a.name);
+}
+
+export async function getArtist(artistId: string, accessToken: string): Promise<{ name: string; genres: string[] }> {
+  const data: any = await spotifyFetch(`/artists/${artistId}`, accessToken);
+  return { name: data.name, genres: data.genres || [] };
+}
+
+export async function searchArtistsByGenre(genre: string, accessToken: string, limit = 10): Promise<string[]> {
+  const safeLimit = Math.min(limit, 10);
+  const data: any = await spotifyFetch(
+    `/search?q=${encodeURIComponent(`genre:"${genre}"`)}&type=artist&limit=${safeLimit}&market=US`,
+    accessToken
+  );
+  return (data.artists?.items || []).map((a: any) => a.name);
+}
+
+export async function getArtistTopTracks(artistId: string, accessToken: string): Promise<Array<{ name: string; artists: string[] }>> {
+  const data: any = await spotifyFetch(`/artists/${artistId}/top-tracks?market=US`, accessToken);
+  return (data.tracks || []).map((t: any) => ({
+    name: t.name,
+    artists: (t.artists || []).map((a: any) => a.name),
+  }));
+}
+
+/**
+ * Multi-tier decoy generation cascade.
+ * Guarantees 3 contextually relevant decoy artist names.
+ *
+ * Tier 1: Spotify Related Artists API
+ * Tier 2: Genre-based artist search
+ * Tier 3: Featured/collaborator artists from top tracks
+ * Tier 4: Era-matched defaults based on release year
+ */
+export async function generateDecoys(
+  artistId: string,
+  realArtistName: string,
+  releaseYear: number | null,
+  accessToken: string
+): Promise<string[]> {
+  const realNames = new Set(realArtistName.split(', ').map(n => n.toLowerCase()));
+  const isNotReal = (name: string) => !realNames.has(name.toLowerCase());
+
+  function pickThree(pool: string[]): string[] | null {
+    const filtered = pool.filter(isNotReal);
+    // Dedupe
+    const unique = [...new Set(filtered.map(n => n.trim()))];
+    if (unique.length >= 3) {
+      // Fisher-Yates shuffle
+      for (let i = unique.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [unique[i], unique[j]] = [unique[j], unique[i]];
+      }
+      return unique.slice(0, 3);
     }
-    // Sort by popularity descending, take top 10 most recognizable
-    const sorted = artists
-      .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
-      .slice(0, 10);
-    return sorted.map((a: any) => a.name);
-  } catch (err: any) {
-    console.error('[getRelatedArtists] Spotify API failed:', err.status || 'unknown status', err.message);
-    throw err;
+    return null;
   }
+
+  // --- Tier 1: Related Artists ---
+  try {
+    const related = await getRelatedArtists(artistId, accessToken);
+    const picked = pickThree(related);
+    if (picked) {
+      console.log('[generateDecoys] Tier 1 (related artists):', picked);
+      return picked;
+    }
+    console.log('[generateDecoys] Tier 1 insufficient (' + related.length + ' results), trying Tier 2');
+  } catch (err: any) {
+    console.error('[generateDecoys] Tier 1 failed:', err.status || '', err.message);
+  }
+
+  // --- Tier 2: Genre Search ---
+  try {
+    const artist = await getArtist(artistId, accessToken);
+    if (artist.genres.length > 0) {
+      // Try first two genres for better coverage
+      const allResults: string[] = [];
+      for (const genre of artist.genres.slice(0, 2)) {
+        const results = await searchArtistsByGenre(genre, accessToken, 10);
+        allResults.push(...results);
+      }
+      const picked = pickThree(allResults);
+      if (picked) {
+        console.log('[generateDecoys] Tier 2 (genre search "' + artist.genres.slice(0, 2).join(', ') + '"):', picked);
+        return picked;
+      }
+      console.log('[generateDecoys] Tier 2 insufficient, trying Tier 3');
+    } else {
+      console.log('[generateDecoys] Tier 2 skipped (no genres), trying Tier 3');
+    }
+  } catch (err: any) {
+    console.error('[generateDecoys] Tier 2 failed:', err.status || '', err.message);
+  }
+
+  // --- Tier 3: Featured Artists from Top Tracks ---
+  try {
+    const topTracks = await getArtistTopTracks(artistId, accessToken);
+    const featured: string[] = [];
+    for (const track of topTracks) {
+      for (const name of track.artists) {
+        if (isNotReal(name)) featured.push(name);
+      }
+    }
+    const picked = pickThree(featured);
+    if (picked) {
+      console.log('[generateDecoys] Tier 3 (featured artists):', picked);
+      return picked;
+    }
+    console.log('[generateDecoys] Tier 3 insufficient (' + featured.length + ' unique), trying Tier 4');
+  } catch (err: any) {
+    console.error('[generateDecoys] Tier 3 failed:', err.status || '', err.message);
+  }
+
+  // --- Tier 4: Era-Matched Defaults ---
+  const ERA_DEFAULTS: Record<string, string[]> = {
+    '2020s': ['Olivia Rodrigo', 'Sabrina Carpenter', 'Chappell Roan', 'Gracie Abrams', 'Reneé Rapp',
+              'Ice Spice', 'NewJeans', 'Tyla', 'Zach Bryan', 'Noah Kahan'],
+    '2010s': ['Lorde', 'Halsey', 'Khalid', 'Cardi B', 'Lizzo',
+              'Bazzi', 'Rex Orange County', 'Clairo', 'BROCKHAMPTON', 'Glass Animals'],
+    '2000s': ['Amy Winehouse', 'Nelly Furtado', 'The Killers', 'Kings of Leon', 'Gnarls Barkley',
+              'Fergie', 'Panic! At The Disco', 'Fall Out Boy', 'My Chemical Romance', 'Paramore'],
+    '1990s': ['Alanis Morissette', 'No Doubt', 'Garbage', 'Third Eye Blind', 'Weezer',
+              'Jewel', 'Blind Melon', 'Collective Soul', 'Counting Crows', 'Live'],
+    'classic': ['Fleetwood Mac', 'Blondie', 'The Cure', 'Talking Heads', 'The Smiths',
+                'Siouxsie and the Banshees', 'Echo & the Bunnymen', 'Cocteau Twins', 'Joy Division', 'New Order'],
+  };
+  const year = releaseYear || new Date().getFullYear();
+  let eraKey: string;
+  if (year >= 2020) eraKey = '2020s';
+  else if (year >= 2010) eraKey = '2010s';
+  else if (year >= 2000) eraKey = '2000s';
+  else if (year >= 1990) eraKey = '1990s';
+  else eraKey = 'classic';
+
+  const eraPool = ERA_DEFAULTS[eraKey].filter(isNotReal);
+  // Shuffle
+  for (let i = eraPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [eraPool[i], eraPool[j]] = [eraPool[j], eraPool[i]];
+  }
+  const picked = eraPool.slice(0, 3);
+  console.log('[generateDecoys] Tier 4 (era "' + eraKey + '" defaults):', picked);
+  return picked;
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
