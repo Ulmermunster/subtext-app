@@ -1,6 +1,31 @@
 const SPOTIFY_API = 'https://api.spotify.com/v1';
 const SPOTIFY_ACCOUNTS = 'https://accounts.spotify.com';
 
+// --- In-Memory TTL Cache ---
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const cache = new Map<string, { data: any; expiresAt: number }>();
+
+function cacheGet<T>(key: string): T | null {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function cacheSet(key: string, data: any, ttl = CACHE_TTL): void {
+  cache.set(key, { data, expiresAt: Date.now() + ttl });
+  // Lazy eviction: prune expired entries when cache grows large
+  if (cache.size > 500) {
+    const now = Date.now();
+    for (const [k, v] of cache) {
+      if (now > v.expiresAt) cache.delete(k);
+    }
+  }
+}
+
 // Client credentials token cache (no user login needed)
 let clientTokenCache: { token: string; expiresAt: number } | null = null;
 
@@ -126,37 +151,59 @@ export async function getRelatedArtists(artistId: string, accessToken: string): 
     console.error('[getRelatedArtists] artistId is empty/undefined!');
     return [];
   }
-  console.log('[getRelatedArtists] Fetching for artistId:', artistId);
+  const cacheKey = `related:${artistId}`;
+  const cached = cacheGet<string[]>(cacheKey);
+  if (cached) {
+    console.log('[getRelatedArtists] CACHE HIT for', artistId, '(' + cached.length + ' artists)');
+    return cached;
+  }
+  console.log('[getRelatedArtists] CACHE MISS, fetching from Spotify for', artistId);
   const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
   const artists = data.artists || [];
   console.log('[getRelatedArtists] Spotify returned', artists.length, 'related artists');
-  // Sort by popularity descending, take top 10 most recognizable
   const sorted = artists
     .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
     .slice(0, 10);
-  return sorted.map((a: any) => a.name);
+  const result = sorted.map((a: any) => a.name);
+  cacheSet(cacheKey, result);
+  return result;
 }
 
 export async function getArtist(artistId: string, accessToken: string): Promise<{ name: string; genres: string[] }> {
+  const cacheKey = `artist:${artistId}`;
+  const cached = cacheGet<{ name: string; genres: string[] }>(cacheKey);
+  if (cached) return cached;
   const data: any = await spotifyFetch(`/artists/${artistId}`, accessToken);
-  return { name: data.name, genres: data.genres || [] };
+  const result = { name: data.name, genres: data.genres || [] };
+  cacheSet(cacheKey, result);
+  return result;
 }
 
 export async function searchArtistsByGenre(genre: string, accessToken: string, limit = 10): Promise<string[]> {
+  const cacheKey = `genre:${genre}:${limit}`;
+  const cached = cacheGet<string[]>(cacheKey);
+  if (cached) return cached;
   const safeLimit = Math.min(limit, 10);
   const data: any = await spotifyFetch(
     `/search?q=${encodeURIComponent(`genre:"${genre}"`)}&type=artist&limit=${safeLimit}&market=US`,
     accessToken
   );
-  return (data.artists?.items || []).map((a: any) => a.name);
+  const result = (data.artists?.items || []).map((a: any) => a.name);
+  cacheSet(cacheKey, result);
+  return result;
 }
 
 export async function getArtistTopTracks(artistId: string, accessToken: string): Promise<Array<{ name: string; artists: string[] }>> {
+  const cacheKey = `toptracks:${artistId}`;
+  const cached = cacheGet<Array<{ name: string; artists: string[] }>>(cacheKey);
+  if (cached) return cached;
   const data: any = await spotifyFetch(`/artists/${artistId}/top-tracks?market=US`, accessToken);
-  return (data.tracks || []).map((t: any) => ({
+  const result = (data.tracks || []).map((t: any) => ({
     name: t.name,
     artists: (t.artists || []).map((a: any) => a.name),
   }));
+  cacheSet(cacheKey, result, 12 * 60 * 60 * 1000); // 12h TTL for top tracks
+  return result;
 }
 
 /**
