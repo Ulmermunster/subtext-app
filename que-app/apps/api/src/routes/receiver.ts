@@ -132,6 +132,23 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   box-shadow:0 4px 20px rgba(245,166,35,.35);transition:transform .15s ease}
 .unmask-btn:active{transform:scale(.95)}
 .unmask-sub{font-size:12px;color:#9CA3AF;font-weight:500}
+
+.guess-wrap{display:none;flex-direction:column;align-items:center;gap:12px;
+  width:100%;padding:0 16px}
+.guess-wrap.active{display:flex}
+.guess-prompt{font-size:15px;font-weight:700;color:#1A1A2E;text-align:center}
+.guess-pills{display:flex;flex-direction:column;gap:8px;width:100%;max-width:320px}
+.guess-pill{border:2px solid #E5E0D5;border-radius:999px;padding:14px 24px;
+  font-size:15px;font-weight:600;color:#1A1A2E;background:#FFF8E7;
+  cursor:pointer;font-family:inherit;min-height:48px;touch-action:manipulation;
+  transition:all .2s ease;text-align:center}
+.guess-pill:active{transform:scale(.97)}
+.guess-pill.correct{background:#F5A623;border-color:#F5A623;color:#1A1A2E}
+.guess-pill.wrong{background:#D1D5DB;border-color:#D1D5DB;color:#6B7280}
+.guess-pill.reveal{border-color:#F5A623;color:#F5A623}
+.guess-pill.locked{pointer-events:none}
+.guess-result{font-size:14px;font-weight:600;text-align:center;
+  opacity:0;animation:fadeUp .4s ease forwards}
 </style>
 </head>
 <body>
@@ -191,6 +208,14 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     <div class="unmask-sub">see who you've been listening to</div>
   </div>
 
+  <div id="guessSection" class="guess-wrap">
+    <div class="wordmark">Que<span class="dot">.</span></div>
+    <div style="font-size:48px">\u{1F3AF}</div>
+    <div class="guess-prompt">Who's the artist?</div>
+    <div class="guess-pills" id="guessPills"></div>
+    <div class="guess-result" id="guessResult"></div>
+  </div>
+
   <div id="revealSection" class="reveal">
     <div class="wordmark">Que<span class="dot">.</span></div>
     <div class="reveal-label">The song was...</div>
@@ -209,6 +234,7 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 <script>
 (function(){
   var vibeId, vibeData, audio, currentReaction = null, playing = false, revealed = false;
+  var isGuessMode = false, artistChoices = [], correctArtist = '', guessLocked = false;
   var clipTimeout = null, progressInterval = null;
   var API = location.origin;
 
@@ -216,6 +242,9 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var $error = document.getElementById('error');
   var $landing = document.getElementById('landing');
   var $unmaskSection = document.getElementById('unmaskSection');
+  var $guessSection = document.getElementById('guessSection');
+  var $guessPills = document.getElementById('guessPills');
+  var $guessResult = document.getElementById('guessResult');
   var $revealSection = document.getElementById('revealSection');
   var $fromTag = document.getElementById('fromTag');
   var $orbWrap = document.getElementById('orbWrap');
@@ -279,9 +308,20 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     })
     .then(function(data) {
       vibeData = data;
+      isGuessMode = data.gameMode === 'guess';
+      if (isGuessMode && data.artistChoices) {
+        artistChoices = data.artistChoices;
+        correctArtist = data.trackArtist;
+      }
       $loading.style.display = 'none';
       $landing.style.display = 'flex';
-      $fromTag.textContent = data.senderDisplayName + " que'd you a song \\u{1F440}";
+      $fromTag.textContent = data.senderDisplayName + (isGuessMode
+        ? " challenged you \\u{1F3AF}"
+        : " que'd you a song \\u{1F440}");
+      // In guess mode, hide Vibe/Nope reactions (artist guessing replaces them)
+      if (isGuessMode) {
+        document.getElementById('reactions').style.display = 'none';
+      }
     })
     .catch(function(err) {
       if (err.message === '404') {
@@ -369,14 +409,22 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     setTimeout(_hapticTick, 240);
   };
 
+  // Error — three quick ticks for wrong guess
+  window.hapticErrorRaw = function() {
+    if (_hasVibrate) { try { navigator.vibrate([15, 40, 15, 40, 15]); } catch(e) {} return; }
+    _hapticTick();
+    setTimeout(_hapticTick, 120);
+    setTimeout(_hapticTick, 240);
+  };
+
   function startPlayback() {
     playing = true;
     $orbEmoji.style.opacity = '0';
     $orbBars.classList.add('active');
     $orbHint.textContent = '';
     $scrubber.classList.add('active');
-    $reactions.classList.add('active');
-    $hint.textContent = 'artist reveals at the end';
+    if (!isGuessMode) $reactions.classList.add('active');
+    $hint.textContent = isGuessMode ? 'guess the artist when the clip ends' : 'artist reveals at the end';
 
     var audioUrl = API + '/vibes/' + vibeId + '/audio';
     audio = new Audio();
@@ -453,9 +501,15 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $orbBars.classList.remove('active');
     stopBassPulse();
 
-    // Show "Tap to unmask" interstitial — user gesture required for haptic
     $landing.style.display = 'none';
-    $unmaskSection.classList.add('active');
+
+    if (isGuessMode) {
+      // Show guess-the-artist game
+      mountGuessGame();
+    } else {
+      // Show "Tap to unmask" interstitial — user gesture required for haptic
+      $unmaskSection.classList.add('active');
+    }
   }
 
   // Called from the unmask button's onclick (user gesture context)
@@ -466,6 +520,73 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $unmaskSection.style.display = 'none';
     fetchRevealData();
   };
+
+  // --- Guess the Artist game ---
+  function mountGuessGame() {
+    $guessSection.classList.add('active');
+    $guessPills.innerHTML = '';
+
+    for (var i = 0; i < artistChoices.length; i++) {
+      var pill = document.createElement('button');
+      pill.className = 'guess-pill';
+      pill.textContent = artistChoices[i];
+      pill.setAttribute('data-artist', artistChoices[i]);
+      pill.setAttribute('onpointerdown', 'triggerHaptic()');
+      pill.addEventListener('click', handleGuess);
+      $guessPills.appendChild(pill);
+    }
+  }
+
+  function handleGuess(e) {
+    if (guessLocked) return;
+    guessLocked = true;
+
+    var chosen = e.target.getAttribute('data-artist');
+    var isCorrect = chosen === correctArtist;
+    var pills = $guessPills.querySelectorAll('.guess-pill');
+
+    // Lock all pills
+    for (var i = 0; i < pills.length; i++) {
+      pills[i].classList.add('locked');
+    }
+
+    if (isCorrect) {
+      e.target.classList.add('correct');
+      $guessResult.textContent = '\\u{1F389} You got it!';
+      $guessResult.style.color = '#F5A623';
+      hapticConfirmRaw();
+      // Fire confetti
+      setTimeout(launchConfetti, 300);
+    } else {
+      e.target.classList.add('wrong');
+      // Highlight the correct answer
+      for (var j = 0; j < pills.length; j++) {
+        if (pills[j].getAttribute('data-artist') === correctArtist) {
+          pills[j].classList.add('reveal');
+        }
+      }
+      $guessResult.textContent = '\\u{1F614} Not quite...';
+      $guessResult.style.color = '#9CA3AF';
+      hapticErrorRaw();
+    }
+
+    // Send reaction based on guess result
+    var reaction = isCorrect ? 'VIBE' : 'NOPE';
+    fetch(API + '/vibes/' + vibeId + '/react', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({reaction: reaction})
+    }).catch(function(){});
+
+    // After delay, transition to reveal
+    setTimeout(function() {
+      revealed = true;
+      $guessSection.classList.remove('active');
+      $guessSection.style.display = 'none';
+      fetchRevealData();
+    }, 1800);
+  }
 
   function fetchRevealData() {
     fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})

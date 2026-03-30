@@ -24,6 +24,7 @@ export default function ClipPicker() {
   const [senderName, setSenderName] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [gameMode, setGameMode] = useState<'vibe' | 'guess'>('vibe');
 
   const handleGenerate = async () => {
     if (!track) return;
@@ -34,6 +35,8 @@ export default function ClipPicker() {
         trackId: track.spotifyId,
         mode: 'AUTO',
         senderDisplayName: senderName || undefined,
+        gameMode,
+        decoyArtists: track.decoyArtists || undefined,
       });
       setVibeId(result.vibeId);
       setSent(true);
@@ -79,13 +82,19 @@ export default function ClipPicker() {
         <h1 className="text-4xl font-extrabold text-ink tracking-tight mb-1">
           Que'd<span className="text-gold">.</span>
         </h1>
-        <p className="text-muted text-sm mb-6">Send this blind clip.</p>
+        <p className="text-muted text-sm mb-6">
+          {gameMode === 'guess' ? 'Guessing game sent.' : 'Send this blind clip.'}
+        </p>
         <div className="relative mb-8">
           <img src={track.albumArt} alt="" className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white" style={{ transform: 'rotate(-3deg)' }} />
           <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-ink border-4 border-white flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8L6.5 11.5L13 5" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            {gameMode === 'guess' ? (
+              <span className="text-lg">🎯</span>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8L6.5 11.5L13 5" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
           </div>
         </div>
         <div className="flex-1" />
@@ -136,6 +145,37 @@ export default function ClipPicker() {
         <div className="text-muted text-[11px] mt-0.5">Best 30 seconds selected automatically</div>
       </div>
 
+      {/* Game mode toggle */}
+      <div className="flex gap-2 mt-4">
+        <button
+          onPointerDown={hapticTap}
+          onClick={() => setGameMode('vibe')}
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] ${
+            gameMode === 'vibe'
+              ? 'bg-ink text-white shadow-card'
+              : 'bg-white border border-border text-muted'
+          }`}
+        >
+          🎵 Mystery Vibe
+        </button>
+        <button
+          onPointerDown={hapticTap}
+          onClick={() => setGameMode('guess')}
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] ${
+            gameMode === 'guess'
+              ? 'bg-ink text-white shadow-card'
+              : 'bg-white border border-border text-muted'
+          }`}
+        >
+          🎯 Guessing Game
+        </button>
+      </div>
+      <p className="text-[10px] text-muted text-center mt-1.5">
+        {gameMode === 'guess'
+          ? 'They guess the artist from 4 choices'
+          : 'They listen blind, then react'}
+      </p>
+
       <div className="flex-1" />
 
       <div className="relative mt-5">
@@ -162,7 +202,7 @@ export default function ClipPicker() {
         className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px] mt-4 mb-2"
       >
         {sending ? <div className="spinner" /> : (
-          <>Generate Mystery Link ✦</>
+          gameMode === 'guess' ? <>Send Guessing Game 🎯</> : <>Generate Mystery Link ✦</>
         )}
       </button>
     </div>

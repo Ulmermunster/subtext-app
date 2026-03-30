@@ -34,6 +34,8 @@ model VibeToken {
   reaction          String?   // VIBE | NOPE
   reactedAt         DateTime?
   revealedAt        DateTime?
+  gameMode          String    @default("vibe") // vibe | guess
+  decoyArtists      String?   // JSON array of 3 decoy artist names
 
   @@index([expiresAt])
   @@index([senderId])

@@ -22,11 +22,13 @@ async function findItunesPreview(title: string, artist: string): Promise<string 
 export async function vibeRoutes(app: FastifyInstance) {
   // Create a vibe (no auth required — uses client credentials)
   app.post('/vibes/create', async (request, reply) => {
-    const { trackId, mode, startSec, senderDisplayName } = request.body as {
+    const { trackId, mode, startSec, senderDisplayName, gameMode, decoyArtists } = request.body as {
       trackId: string;
       mode: 'AUTO' | 'PICK';
       startSec?: number;
       senderDisplayName?: string;
+      gameMode?: 'vibe' | 'guess';
+      decoyArtists?: string[];
     };
 
     if (!trackId || !mode) {
@@ -72,6 +74,8 @@ export async function vibeRoutes(app: FastifyInstance) {
         senderCity: geo.city,
         senderCountry: geo.country,
         expiresAt,
+        gameMode: gameMode || 'vibe',
+        decoyArtists: decoyArtists ? JSON.stringify(decoyArtists) : null,
       },
     });
 
@@ -109,14 +113,32 @@ export async function vibeRoutes(app: FastifyInstance) {
       });
     }
 
-    // NEVER return title, artist, albumName, albumArt
-    return {
+    // NEVER return title, artist, albumName, albumArt in vibe mode
+    // In guess mode, return decoys + real artist (shuffled) so client can render choices
+    const base: Record<string, any> = {
       mode: vibe.mode,
       startSec: vibe.startSec,
       previewUrl: vibe.previewUrl,
       spotifyId: vibe.spotifyId,
       senderDisplayName: vibe.senderDisplayName,
+      gameMode: vibe.gameMode,
     };
+
+    if (vibe.gameMode === 'guess') {
+      // Parse decoys and combine with real artist, shuffled
+      let decoys: string[] = [];
+      try { decoys = vibe.decoyArtists ? JSON.parse(vibe.decoyArtists) : []; } catch {}
+      const choices = [...decoys, vibe.trackArtist];
+      // Fisher-Yates shuffle
+      for (let i = choices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [choices[i], choices[j]] = [choices[j], choices[i]];
+      }
+      base.artistChoices = choices;
+      base.trackArtist = vibe.trackArtist; // needed for client-side correctness check
+    }
+
+    return base;
   });
 
   // Stream audio for a vibe (same-origin proxy — works on all mobile browsers)

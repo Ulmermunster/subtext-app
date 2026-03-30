@@ -1,9 +1,42 @@
 import { FastifyInstance } from 'fastify';
-import { searchTracks, spotifyFetch, getTrack, getArtistAlbums, getAlbumTracks, getClientToken } from '../lib/spotify.js';
+import { searchTracks, spotifyFetch, getTrack, getRelatedArtists, getArtistAlbums, getAlbumTracks, getClientToken } from '../lib/spotify.js';
 import { env } from '../config.js';
 
 async function getAppToken() {
   return getClientToken(env.SPOTIFY_CLIENT_ID, env.SPOTIFY_CLIENT_SECRET);
+}
+
+const FALLBACK_ARTISTS = [
+  'Drake', 'Taylor Swift', 'Tame Impala', 'Billie Eilish', 'The Weeknd',
+  'Dua Lipa', 'Kendrick Lamar', 'Olivia Rodrigo', 'Bad Bunny', 'SZA',
+  'Harry Styles', 'Doja Cat', 'Post Malone', 'Ariana Grande', 'Travis Scott',
+  'Radiohead', 'Frank Ocean', 'Lana Del Rey', 'Tyler, The Creator', 'Beyoncé',
+];
+
+/** Pick 3 decoy artists, excluding the real artist name. */
+async function resolveDecoys(artistId: string, realArtistName: string, token: string): Promise<string[]> {
+  try {
+    const related = await getRelatedArtists(artistId, token);
+    const filtered = related.filter(name => name.toLowerCase() !== realArtistName.toLowerCase());
+    if (filtered.length >= 3) {
+      // Shuffle and pick 3
+      for (let i = filtered.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+      }
+      return filtered.slice(0, 3);
+    }
+  } catch (err: any) {
+    console.error(`[decoys] Related artists failed for ${artistId}: ${err.message}`);
+  }
+
+  // Fallback: pick 3 from hardcoded list, excluding real artist
+  const pool = FALLBACK_ARTISTS.filter(name => name.toLowerCase() !== realArtistName.toLowerCase());
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 3);
 }
 
 export async function spotifyRoutes(app: FastifyInstance) {
@@ -52,17 +85,21 @@ export async function spotifyRoutes(app: FastifyInstance) {
     try {
       const token = await getAppToken();
       const t = await getTrack(id, token);
+      const artistName = t.artists.map((a: any) => a.name).join(', ');
+      const artistId = t.artists[0]?.id || '';
+      const decoyArtists = artistId ? await resolveDecoys(artistId, artistName, token) : [];
       return {
         id: t.id,
         title: t.name,
-        artist: t.artists.map((a: any) => a.name).join(', '),
-        artistId: t.artists[0]?.id || '',
+        artist: artistName,
+        artistId,
         albumName: t.album?.name || '',
         albumArt: t.album?.images?.[0]?.url || '',
         duration: t.duration_ms,
         previewUrl: t.preview_url || null,
         spotifyId: t.id,
         hasPreview: !!t.preview_url,
+        decoyArtists,
       };
     } catch (err) {
       request.log.error(err, 'Spotify track fetch failed');
@@ -169,17 +206,20 @@ export async function spotifyRoutes(app: FastifyInstance) {
 
           if (previewUrl) {
             console.error(`[random] hit — "${t.name}" by ${artistName}`);
+            const artId = t.artists[0]?.id || '';
+            const decoyArtists = artId ? await resolveDecoys(artId, artistName, token) : [];
             return {
               id: t.id,
               title: t.name,
               artist: artistName,
-              artistId: t.artists[0]?.id || '',
+              artistId: artId,
               albumName: t.album?.name || '',
               albumArt: t.album?.images?.[0]?.url || '',
               duration: t.duration_ms,
               previewUrl,
               spotifyId: t.id,
               hasPreview: true,
+              decoyArtists,
             };
           }
         }

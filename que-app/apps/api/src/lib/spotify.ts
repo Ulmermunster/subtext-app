@@ -121,6 +121,11 @@ export async function getTrack(trackId: string, accessToken: string) {
   return spotifyFetch(`/tracks/${trackId}?market=US`, accessToken);
 }
 
+export async function getRelatedArtists(artistId: string, accessToken: string): Promise<string[]> {
+  const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
+  return (data.artists || []).map((a: any) => a.name);
+}
+
 export async function getArtistAlbums(artistId: string, accessToken: string) {
   // First page to get total count
   const first: any = await spotifyFetch(
