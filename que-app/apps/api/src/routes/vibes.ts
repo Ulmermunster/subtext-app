@@ -1,11 +1,36 @@
 import { FastifyInstance } from 'fastify';
 import { customAlphabet } from 'nanoid';
 import { prisma } from '../lib/prisma.js';
-import { getTrack, getClientToken } from '../lib/spotify.js';
+import { getTrack, getRelatedArtists, getClientToken } from '../lib/spotify.js';
 import { geolocateIp, getClientIp } from '../lib/geo.js';
 import { env } from '../config.js';
 
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
+
+const FALLBACK_ARTISTS = [
+  'Drake', 'Taylor Swift', 'Tame Impala', 'Billie Eilish', 'The Weeknd',
+  'Dua Lipa', 'Kendrick Lamar', 'Olivia Rodrigo', 'Bad Bunny', 'SZA',
+  'Harry Styles', 'Doja Cat', 'Post Malone', 'Ariana Grande', 'Travis Scott',
+  'Radiohead', 'Frank Ocean', 'Lana Del Rey', 'Tyler, The Creator', 'Beyoncé',
+];
+
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+async function resolveDecoys(artistId: string, realArtistName: string, token: string): Promise<string[]> {
+  try {
+    const related = await getRelatedArtists(artistId, token);
+    const filtered = related.filter(name => name.toLowerCase() !== realArtistName.toLowerCase());
+    if (filtered.length >= 3) return shuffle(filtered).slice(0, 3);
+  } catch {}
+  const pool = FALLBACK_ARTISTS.filter(name => name.toLowerCase() !== realArtistName.toLowerCase());
+  return shuffle(pool).slice(0, 3);
+}
 
 async function findItunesPreview(title: string, artist: string): Promise<string | null> {
   try {
@@ -22,13 +47,12 @@ async function findItunesPreview(title: string, artist: string): Promise<string 
 export async function vibeRoutes(app: FastifyInstance) {
   // Create a vibe (no auth required — uses client credentials)
   app.post('/vibes/create', async (request, reply) => {
-    const { trackId, mode, startSec, senderDisplayName, gameMode, decoyArtists } = request.body as {
+    const { trackId, mode, startSec, senderDisplayName, gameMode } = request.body as {
       trackId: string;
       mode: 'AUTO' | 'PICK';
       startSec?: number;
       senderDisplayName?: string;
       gameMode?: 'vibe' | 'guess';
-      decoyArtists?: string[];
     };
 
     if (!trackId || !mode) {
@@ -46,6 +70,14 @@ export async function vibeRoutes(app: FastifyInstance) {
     }
 
     const previewUrl = track.preview_url || null;
+
+    // Resolve decoys server-side for guess mode
+    const artistName = track.artists.map((a: any) => a.name).join(', ');
+    const artistId = track.artists[0]?.id || '';
+    let decoyArtists: string[] = [];
+    if (gameMode === 'guess' && artistId) {
+      decoyArtists = await resolveDecoys(artistId, artistName, token!);
+    }
 
     const vibeId = nanoid();
     const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours
@@ -75,7 +107,7 @@ export async function vibeRoutes(app: FastifyInstance) {
         senderCountry: geo.country,
         expiresAt,
         gameMode: gameMode || 'vibe',
-        decoyArtists: decoyArtists ? JSON.stringify(decoyArtists) : null,
+        decoyArtists: decoyArtists.length > 0 ? JSON.stringify(decoyArtists) : null,
       },
     });
 

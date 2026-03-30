@@ -36,7 +36,6 @@ export const api = {
     startSec?: number;
     senderDisplayName?: string;
     gameMode?: 'vibe' | 'guess';
-    decoyArtists?: string[];
   }) =>
     request<{ vibeId: string; shareUrl: string }>('/vibes/create', {
       method: 'POST',

@@ -36,7 +36,6 @@ export default function ClipPicker() {
         mode: 'AUTO',
         senderDisplayName: senderName || undefined,
         gameMode,
-        decoyArtists: track.decoyArtists || undefined,
       });
       setVibeId(result.vibeId);
       setSent(true);

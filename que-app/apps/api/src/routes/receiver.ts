@@ -133,8 +133,8 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .unmask-btn:active{transform:scale(.95)}
 .unmask-sub{font-size:12px;color:#9CA3AF;font-weight:500}
 
-.guess-wrap{display:none;flex-direction:column;align-items:center;gap:12px;
-  width:100%;padding:0 16px}
+.guess-wrap{display:none;flex-direction:column;align-items:center;gap:10px;
+  width:100%;max-width:320px;margin:12px auto 0;padding:0}
 .guess-wrap.active{display:flex}
 .guess-prompt{font-size:15px;font-weight:700;color:#1A1A2E;text-align:center}
 .guess-pills{display:flex;flex-direction:column;gap:8px;width:100%;max-width:320px}
@@ -198,6 +198,12 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     </div>
 
     <div class="hint" id="hint"></div>
+
+    <div id="guessSection" class="guess-wrap">
+      <div class="guess-prompt">Who's the artist?</div>
+      <div class="guess-pills" id="guessPills"></div>
+      <div class="guess-result" id="guessResult"></div>
+    </div>
   </div>
 
   <div id="unmaskSection" class="unmask-wrap">
@@ -206,14 +212,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     <div style="font-size:16px;font-weight:700;color:#1A1A2E">Time's up!</div>
     <button class="unmask-btn" id="btnUnmask" onpointerdown="hapticRevealRaw()" onclick="doReveal()">\u{1F3AD} Tap to unmask</button>
     <div class="unmask-sub">see who you've been listening to</div>
-  </div>
-
-  <div id="guessSection" class="guess-wrap">
-    <div class="wordmark">Que<span class="dot">.</span></div>
-    <div style="font-size:48px">\u{1F3AF}</div>
-    <div class="guess-prompt">Who's the artist?</div>
-    <div class="guess-pills" id="guessPills"></div>
-    <div class="guess-result" id="guessResult"></div>
   </div>
 
   <div id="revealSection" class="reveal">
@@ -423,8 +421,13 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $orbBars.classList.add('active');
     $orbHint.textContent = '';
     $scrubber.classList.add('active');
-    if (!isGuessMode) $reactions.classList.add('active');
-    $hint.textContent = isGuessMode ? 'guess the artist when the clip ends' : 'artist reveals at the end';
+    if (isGuessMode) {
+      mountGuessGame();
+      $hint.textContent = 'guess the artist \u2014 tap a name below';
+    } else {
+      $reactions.classList.add('active');
+      $hint.textContent = 'artist reveals at the end';
+    }
 
     var audioUrl = API + '/vibes/' + vibeId + '/audio';
     audio = new Audio();
@@ -501,12 +504,29 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $orbBars.classList.remove('active');
     stopBassPulse();
 
+    if (isGuessMode && !guessLocked) {
+      // Time ran out without a guess — auto-reveal
+      guessLocked = true;
+      var pills = $guessPills.querySelectorAll('.guess-pill');
+      for (var i = 0; i < pills.length; i++) {
+        pills[i].classList.add('locked');
+        if (pills[i].getAttribute('data-artist') === correctArtist) {
+          pills[i].classList.add('reveal');
+        }
+      }
+      $guessResult.textContent = '\\u23F0 Time\\'s up!';
+      $guessResult.style.color = '#9CA3AF';
+      setTimeout(function() {
+        revealed = true;
+        $landing.style.display = 'none';
+        fetchRevealData();
+      }, 1800);
+      return;
+    }
+
     $landing.style.display = 'none';
 
-    if (isGuessMode) {
-      // Show guess-the-artist game
-      mountGuessGame();
-    } else {
+    if (!isGuessMode) {
       // Show "Tap to unmask" interstitial — user gesture required for haptic
       $unmaskSection.classList.add('active');
     }
@@ -541,6 +561,13 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     if (guessLocked) return;
     guessLocked = true;
 
+    // Stop audio + timers immediately
+    clearTimeout(clipTimeout);
+    clearInterval(progressInterval);
+    if (audio) { try { audio.pause(); } catch(ex){} }
+    $orbBars.classList.remove('active');
+    stopBassPulse();
+
     var chosen = e.target.getAttribute('data-artist');
     var isCorrect = chosen === correctArtist;
     var pills = $guessPills.querySelectorAll('.guess-pill');
@@ -555,14 +582,12 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       $guessResult.textContent = '\\u{1F389} You got it!';
       $guessResult.style.color = '#F5A623';
       hapticConfirmRaw();
-      // Fire confetti
       setTimeout(launchConfetti, 300);
     } else {
       e.target.classList.add('wrong');
-      // Highlight the correct answer
       for (var j = 0; j < pills.length; j++) {
         if (pills[j].getAttribute('data-artist') === correctArtist) {
-          pills[j].classList.add('reveal');
+          pills[j].classList.add('correct');
         }
       }
       $guessResult.textContent = '\\u{1F614} Not quite...';
@@ -570,22 +595,20 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       hapticErrorRaw();
     }
 
-    // Send reaction based on guess result
-    var reaction = isCorrect ? 'VIBE' : 'NOPE';
+    // Send reaction
     fetch(API + '/vibes/' + vibeId + '/react', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       credentials: 'include',
-      body: JSON.stringify({reaction: reaction})
+      body: JSON.stringify({reaction: isCorrect ? 'VIBE' : 'NOPE'})
     }).catch(function(){});
 
-    // After delay, transition to reveal
+    // Immediate reveal after short delay
     setTimeout(function() {
       revealed = true;
-      $guessSection.classList.remove('active');
-      $guessSection.style.display = 'none';
+      $landing.style.display = 'none';
       fetchRevealData();
-    }, 1800);
+    }, 1500);
   }
 
   function fetchRevealData() {

@@ -34,8 +34,8 @@ export default function Home() {
         <h1 className="text-4xl font-extrabold text-ink tracking-tight">
           Que<span className="text-gold">.</span>
         </h1>
-        <p className="text-[11px] font-semibold text-muted uppercase tracking-[0.25em] mt-1">
-          The Blind Taste Test
+        <p className="text-sm font-semibold text-muted mt-1">
+          Find new music, without the bias.
         </p>
       </div>
 
@@ -67,7 +67,7 @@ export default function Home() {
 
       {/* Hint text */}
       <p className="text-xs font-medium text-muted mb-10 animate-fade-in">
-        tap to send a song
+        Listen. Vibe. Discover.
       </p>
 
       {/* How it works — compact step pills */}
