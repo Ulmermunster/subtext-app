@@ -28,13 +28,20 @@ async function resolveDecoys(artistId: string, realArtistName: string, token: st
     // Filter out the real artist (compare against each individual artist name for multi-artist tracks)
     const realNames = realArtistName.split(', ').map(n => n.toLowerCase());
     const filtered = related.filter(name => !realNames.includes(name.toLowerCase()));
-    if (filtered.length >= 3) return shuffle(filtered).slice(0, 3);
+    if (filtered.length >= 3) {
+      const picked = shuffle(filtered).slice(0, 3);
+      console.log('[resolveDecoys] Picked related artists:', picked, 'for', realArtistName);
+      return picked;
+    }
+    console.log('[resolveDecoys] Not enough related artists (' + filtered.length + '), falling back');
   } catch (err) {
     console.error('[resolveDecoys] Related artists failed for artistId=' + artistId + ':', err);
   }
   const realNames = realArtistName.split(', ').map(n => n.toLowerCase());
   const pool = FALLBACK_ARTISTS.filter(name => !realNames.includes(name.toLowerCase()));
-  return shuffle(pool).slice(0, 3);
+  const picked = shuffle(pool).slice(0, 3);
+  console.log('[resolveDecoys] Using FALLBACK artists:', picked, 'for', realArtistName);
+  return picked;
 }
 
 async function findItunesPreview(title: string, artist: string): Promise<string | null> {

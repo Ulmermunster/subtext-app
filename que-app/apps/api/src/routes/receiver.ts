@@ -84,33 +84,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .hint{font-size:12px;color:#9CA3AF;font-weight:500;text-align:center;
   margin:4px 0;transition:opacity .3s ease}
 
-.reveal{display:none;flex-direction:column;align-items:center;gap:8px;width:100%;
-  padding:0 16px}
-.reveal.active{display:flex}
-.reveal-label{font-size:14px;color:#9CA3AF;font-weight:600;
-  opacity:0;animation:fadeUp .5s ease forwards}
-.album-art{width:min(200px,50vw);height:min(200px,50vw);border-radius:20px;object-fit:cover;
-  box-shadow:0 8px 40px rgba(0,0,0,.12);border:4px solid #fff;
-  opacity:0;transform:scale(.7) rotate(-3deg);
-  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards;animation-delay:.15s}
-.reveal-title{font-size:24px;font-weight:800;color:#1A1A2E;text-align:center;
-  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.34s;
-  overflow-wrap:break-word;word-break:break-word;max-width:100%}
-.reveal-meta{font-size:14px;color:#9CA3AF;font-weight:500;text-align:center;
-  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.46s;
-  overflow-wrap:break-word;word-break:break-word;max-width:100%}
-.reaction-badge{border-radius:999px;padding:10px 24px;font-size:14px;font-weight:700;
-  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.58s}
-.badge-vibe{background:rgba(16,185,129,.1);color:#10B981}
-.badge-nope{background:rgba(249,115,22,.1);color:#F97316}
-.spotify-cta{display:inline-flex;align-items:center;gap:8px;background:#1DB954;color:#fff;
-  border-radius:999px;padding:14px 28px;font-size:14px;font-weight:700;text-decoration:none;
-  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.74s;
-  min-height:48px;touch-action:manipulation}
-.sendback-cta{display:inline-flex;align-items:center;gap:6px;background:#1A1A2E;color:#fff;
-  border-radius:999px;padding:14px 28px;font-size:14px;font-weight:700;text-decoration:none;
-  margin-top:8px;opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.88s;
-  min-height:48px;touch-action:manipulation;margin-bottom:16px}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes popIn{0%{opacity:0;transform:scale(.7) rotate(-3deg)}70%{opacity:1;transform:scale(1.06) rotate(-1deg)}
@@ -150,17 +123,34 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
 .guess-result{font-size:14px;font-weight:600;text-align:center;
   opacity:0;animation:fadeUp .4s ease forwards}
 .guess-wrap.fade-out{opacity:0;transform:translateY(-8px);transition:opacity .4s ease,transform .4s ease;pointer-events:none}
-.inline-reveal{display:none;flex-direction:column;align-items:center;gap:6px;
-  width:100%;max-width:320px;margin:12px auto 0;padding:0;
+.orb.revealed{background:none;border:none;box-shadow:none;overflow:hidden;border-radius:20px}
+.orb.revealed .orb-bars{opacity:0!important}
+.orb-revealed-art{width:100%;height:100%;object-fit:cover;border-radius:20px;
+  position:absolute;top:0;left:0;opacity:0;transition:opacity .6s ease;z-index:3}
+.orb-revealed-art.visible{opacity:1}
+.mystery.revealed-title{color:#1A1A2E;font-size:20px;font-weight:800;letter-spacing:0;
+  transition:all .4s ease}
+.subtitle.revealed-meta{color:#9CA3AF;font-size:13px;font-weight:500;
+  transition:all .4s ease}
+.inline-actions{display:none;flex-direction:column;align-items:center;gap:8px;
+  width:100%;max-width:320px;margin:16px auto 0;padding:0;
   opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease}
-.inline-reveal.active{display:flex}
-.inline-reveal.visible{opacity:1;transform:translateY(0)}
-.inline-reveal-art{width:120px;height:120px;border-radius:12px;object-fit:cover;
-  box-shadow:0 4px 20px rgba(0,0,0,.12)}
-.inline-reveal-title{font-size:18px;font-weight:800;color:#1A1A2E;text-align:center;
-  overflow-wrap:break-word;word-break:break-word;max-width:100%;margin-top:4px}
-.inline-reveal-meta{font-size:13px;color:#9CA3AF;font-weight:500;text-align:center;
-  overflow-wrap:break-word;word-break:break-word;max-width:100%}
+.inline-actions.active{display:flex}
+.inline-actions.visible{opacity:1;transform:translateY(0)}
+.inline-actions .vibe-row{display:flex;gap:10px;width:100%}
+.inline-actions .vibe-btn{border:none;border-radius:999px;padding:12px 0;font-size:15px;
+  font-weight:700;cursor:pointer;font-family:inherit;flex:1;min-height:48px;
+  touch-action:manipulation;transition:transform .15s ease,box-shadow .15s ease}
+.inline-actions .vibe-btn:active{transform:scale(.95)}
+.inline-actions .vibe-btn-yes{background:#10B981;color:#fff}
+.inline-actions .vibe-btn-yes.selected{box-shadow:0 0 0 3px rgba(16,185,129,.4)}
+.inline-actions .vibe-btn-no{background:#F97316;color:#fff}
+.inline-actions .vibe-btn-no.selected{box-shadow:0 0 0 3px rgba(249,115,22,.4)}
+.inline-actions .action-link{display:inline-flex;align-items:center;justify-content:center;
+  gap:8px;border-radius:999px;padding:12px 24px;font-size:14px;font-weight:700;
+  text-decoration:none;min-height:48px;touch-action:manipulation;width:100%}
+.inline-actions .spotify-link{background:#1DB954;color:#fff}
+.inline-actions .queback-link{background:#1A1A2E;color:#fff}
 </style>
 </head>
 <body>
@@ -190,11 +180,12 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       <div class="orb" id="orb">
         <span class="orb-emoji" id="orbEmoji">\u{1F3B5}</span>
         <div class="orb-bars" id="orbBars"></div>
+        <img class="orb-revealed-art" id="orbRevealArt" src="" alt="">
       </div>
       <div class="orb-hint" id="orbHint">tap to play</div>
     </div>
     <div class="mystery" id="mysteryLabel">??? \u00B7 ???</div>
-    <div class="subtitle">no artist \u00B7 no title \u00B7 no skipping</div>
+    <div class="subtitle" id="subtitleLabel">no artist \u00B7 no title \u00B7 no skipping</div>
 
     <div class="scrubber" id="scrubber">
       <div class="scrub-track"><div class="scrub-fill" id="scrubFill"></div></div>
@@ -217,10 +208,16 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       <div class="guess-result" id="guessResult"></div>
     </div>
 
-    <div id="inlineReveal" class="inline-reveal">
-      <img class="inline-reveal-art" id="inlineRevealArt" src="" alt="">
-      <div class="inline-reveal-title" id="inlineRevealTitle"></div>
-      <div class="inline-reveal-meta" id="inlineRevealMeta"></div>
+    <div id="inlineActions" class="inline-actions">
+      <div class="vibe-row">
+        <button class="vibe-btn vibe-btn-yes" id="inlineVibe" onpointerdown="hapticConfirmRaw()" onclick="inlineReact('VIBE')">\u{1F44D} Vibe</button>
+        <button class="vibe-btn vibe-btn-no" id="inlineNope" onpointerdown="triggerHaptic()" onclick="inlineReact('NOPE')">\u{1F44E} Nope</button>
+      </div>
+      <a class="action-link spotify-link" id="inlineSpotify" href="#" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        Open in Spotify
+      </a>
+      <a class="action-link queback-link" href="/send">\u{1F3B5} Que one back</a>
     </div>
   </div>
 
@@ -232,19 +229,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     <div class="unmask-sub">see who you've been listening to</div>
   </div>
 
-  <div id="revealSection" class="reveal">
-    <div class="wordmark">Que<span class="dot">.</span></div>
-    <div class="reveal-label">The song was...</div>
-    <img class="album-art" id="revealArt" src="" alt="">
-    <div class="reveal-title" id="revealTitle"></div>
-    <div class="reveal-meta" id="revealMeta"></div>
-    <div class="reaction-badge" id="revealBadge"></div>
-    <a class="spotify-cta" id="spotifyCta" href="#" target="_blank" rel="noopener">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-      Open in Spotify
-    </a>
-    <a class="sendback-cta" id="sendbackCta" href="/send">\u{1F3B5} Que one back</a>
-  </div>
 </div>
 
 <script>
@@ -261,11 +245,11 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var $guessSection = document.getElementById('guessSection');
   var $guessPills = document.getElementById('guessPills');
   var $guessResult = document.getElementById('guessResult');
-  var $inlineReveal = document.getElementById('inlineReveal');
-  var $inlineRevealArt = document.getElementById('inlineRevealArt');
-  var $inlineRevealTitle = document.getElementById('inlineRevealTitle');
-  var $inlineRevealMeta = document.getElementById('inlineRevealMeta');
-  var $revealSection = document.getElementById('revealSection');
+  var $inlineActions = document.getElementById('inlineActions');
+  var $inlineSpotify = document.getElementById('inlineSpotify');
+  var $orbRevealArt = document.getElementById('orbRevealArt');
+  var $mysteryLabel = document.getElementById('mysteryLabel');
+  var $subtitleLabel = document.getElementById('subtitleLabel');
   var $fromTag = document.getElementById('fromTag');
   var $orbWrap = document.getElementById('orbWrap');
   var $orb = document.getElementById('orb');
@@ -280,12 +264,6 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   var $btnVibe = document.getElementById('btnVibe');
   var $btnNope = document.getElementById('btnNope');
   var $hint = document.getElementById('hint');
-  var $revealArt = document.getElementById('revealArt');
-  var $revealTitle = document.getElementById('revealTitle');
-  var $revealMeta = document.getElementById('revealMeta');
-  var $revealBadge = document.getElementById('revealBadge');
-  var $spotifyCta = document.getElementById('spotifyCta');
-  var $sendbackCta = document.getElementById('sendbackCta');
 
   function showError(emoji, title, sub) {
     $loading.style.display = 'none';
@@ -526,14 +504,8 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     stopBassPulse();
 
     if (isGuessMode && guessLocked) {
-      // Guess already made — transition from inline reveal to full reveal screen
-      $landing.style.display = 'none';
-      $inlineReveal.classList.remove('active', 'visible');
-      if (window._revealData) {
-        showFullReveal(window._revealData);
-      } else {
-        fetchRevealData();
-      }
+      // Guess already made — player is already morphed, just stop audio gracefully
+      // The inline actions (Vibe/Nope, Spotify, Que back) stay visible
       return;
     }
 
@@ -549,11 +521,37 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       }
       $guessResult.textContent = '\\u23F0 Time\\'s up!';
       $guessResult.style.color = '#9CA3AF';
-      setTimeout(function() {
-        revealed = true;
-        $landing.style.display = 'none';
-        fetchRevealData();
-      }, 1800);
+      // Fetch reveal data and morph in-place
+      fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          window._revealData = data;
+          setTimeout(function() {
+            // Morph orb -> album art
+            $orbRevealArt.src = data.albumArt;
+            $orbRevealArt.classList.add('visible');
+            $orb.classList.add('revealed');
+            $orbEmoji.style.display = 'none';
+            var rings = document.querySelectorAll('.ring');
+            for (var r = 0; r < rings.length; r++) rings[r].style.display = 'none';
+            $mysteryLabel.textContent = data.title;
+            $mysteryLabel.classList.add('revealed-title');
+            $subtitleLabel.textContent = data.artist + ' \\u00B7 ' + data.albumName;
+            $subtitleLabel.classList.add('revealed-meta');
+            $inlineSpotify.href = data.spotifyUrl;
+            revealed = true;
+            // Fade out pills, show action buttons
+            $guessSection.classList.add('fade-out');
+            $hint.style.opacity = '0';
+            setTimeout(function() {
+              $guessSection.style.display = 'none';
+              $hint.style.display = 'none';
+              $inlineActions.classList.add('active');
+              void $inlineActions.offsetWidth;
+              $inlineActions.classList.add('visible');
+            }, 400);
+          }, 1000);
+        }).catch(function(){});
       return;
     }
 
@@ -569,9 +567,39 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
   window.doReveal = function() {
     if (revealed) return;
     revealed = true;
+    hapticRevealRaw();
     $unmaskSection.classList.remove('active');
     $unmaskSection.style.display = 'none';
-    fetchRevealData();
+    // Show #landing again, morph orb in-place
+    $landing.style.display = 'flex';
+    // Hide reactions row (already voted during playback)
+    $reactions.style.display = 'none';
+    $hint.style.display = 'none';
+    fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        window._revealData = data;
+        $orbRevealArt.src = data.albumArt;
+        $orbRevealArt.classList.add('visible');
+        $orb.classList.add('revealed');
+        $orbEmoji.style.display = 'none';
+        $orbBars.classList.remove('active');
+        var rings = document.querySelectorAll('.ring');
+        for (var r = 0; r < rings.length; r++) rings[r].style.display = 'none';
+        $mysteryLabel.textContent = data.title;
+        $mysteryLabel.classList.add('revealed-title');
+        $subtitleLabel.textContent = data.artist + ' \\u00B7 ' + data.albumName;
+        $subtitleLabel.classList.add('revealed-meta');
+        $inlineSpotify.href = data.spotifyUrl;
+        // Show scrubber at 100%
+        $scrubFill.style.width = '100%';
+        // Show Vibe/Nope + action buttons
+        $inlineActions.classList.add('active');
+        void $inlineActions.offsetWidth;
+        $inlineActions.classList.add('visible');
+      }).catch(function() {
+        showError('\\u{1F635}', 'Reveal failed', 'Something went wrong loading the track info.');
+      });
   };
 
   // --- Guess the Artist game ---
@@ -623,62 +651,59 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       hapticErrorRaw();
     }
 
-    // Send reaction
-    fetch(API + '/vibes/' + vibeId + '/react', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      credentials: 'include',
-      body: JSON.stringify({reaction: isCorrect ? 'VIBE' : 'NOPE'})
-    }).catch(function(){});
+    // Fetch reveal data immediately (don't wait for fade)
+    fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        window._revealData = data;
+        // Morph the player in-place: orb -> album art, ??? -> title/artist
+        $orbRevealArt.src = data.albumArt;
+        $orbRevealArt.classList.add('visible');
+        $orb.classList.add('revealed');
+        $orbEmoji.style.display = 'none';
+        // Hide pulse rings
+        var rings = document.querySelectorAll('.ring');
+        for (var r = 0; r < rings.length; r++) rings[r].style.display = 'none';
+        // Update text labels
+        $mysteryLabel.textContent = data.title;
+        $mysteryLabel.classList.add('revealed-title');
+        $subtitleLabel.textContent = data.artist + ' \\u00B7 ' + data.albumName;
+        $subtitleLabel.classList.add('revealed-meta');
+        // Set Spotify link
+        $inlineSpotify.href = data.spotifyUrl;
+        revealed = true;
+      }).catch(function(){});
 
-    // After a short pause, fade out pills and fade in inline reveal (while music plays)
+    // After a short pause, fade out pills and show action buttons
     setTimeout(function() {
       $guessSection.classList.add('fade-out');
       $hint.style.opacity = '0';
       $hint.style.transition = 'opacity .4s ease';
-      // Fetch reveal data and show inline
-      fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          setTimeout(function() {
-            $guessSection.style.display = 'none';
-            $inlineRevealArt.src = data.albumArt;
-            $inlineRevealTitle.textContent = data.title;
-            $inlineRevealMeta.textContent = data.artist + ' \\u00B7 ' + data.albumName;
-            $inlineReveal.classList.add('active');
-            // Trigger reflow then animate in
-            void $inlineReveal.offsetWidth;
-            $inlineReveal.classList.add('visible');
-            revealed = true;
-            // Store reveal data for final screen
-            window._revealData = data;
-          }, 400);
-        }).catch(function(){});
+
+      setTimeout(function() {
+        $guessSection.style.display = 'none';
+        $hint.style.display = 'none';
+        // Show Vibe/Nope + Spotify + Que back inline
+        $inlineActions.classList.add('active');
+        void $inlineActions.offsetWidth;
+        $inlineActions.classList.add('visible');
+      }, 400);
     }, 1200);
   }
 
-  function showFullReveal(data) {
-    $revealSection.classList.add('active');
+  // Inline Vibe/Nope reaction handler (used in both guess and vibe modes post-reveal)
+  window.inlineReact = function(type) {
+    currentReaction = type;
+    document.getElementById('inlineVibe').classList.toggle('selected', type === 'VIBE');
+    document.getElementById('inlineNope').classList.toggle('selected', type === 'NOPE');
+    fetch(API + '/vibes/' + vibeId + '/react', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({reaction: type})
+    }).catch(function(){});
+  };
 
-    $revealArt.src = data.albumArt;
-    $revealTitle.textContent = data.title;
-    $revealMeta.textContent = data.artist + ' \\u00B7 ' + data.albumName;
-    $spotifyCta.href = data.spotifyUrl;
-
-    // No forced vibe badge — just show the reveal cleanly
-    $revealBadge.style.display = 'none';
-  }
-
-  function fetchRevealData() {
-    fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        showFullReveal(data);
-      })
-      .catch(function() {
-        showError('\\u{1F635}', 'Reveal failed', 'Something went wrong loading the track info.');
-      });
-  }
 
   function launchConfetti() {
     var canvas = document.getElementById('confetti');

@@ -123,7 +123,12 @@ export async function getTrack(trackId: string, accessToken: string) {
 
 export async function getRelatedArtists(artistId: string, accessToken: string): Promise<string[]> {
   const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
-  return (data.artists || []).map((a: any) => a.name);
+  const artists = data.artists || [];
+  // Sort by popularity descending, take top 10 most recognizable
+  const sorted = artists
+    .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+    .slice(0, 10);
+  return sorted.map((a: any) => a.name);
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
