@@ -122,13 +122,27 @@ export async function getTrack(trackId: string, accessToken: string) {
 }
 
 export async function getRelatedArtists(artistId: string, accessToken: string): Promise<string[]> {
-  const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
-  const artists = data.artists || [];
-  // Sort by popularity descending, take top 10 most recognizable
-  const sorted = artists
-    .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
-    .slice(0, 10);
-  return sorted.map((a: any) => a.name);
+  if (!artistId) {
+    console.error('[getRelatedArtists] artistId is empty/undefined!');
+    return [];
+  }
+  console.log('[getRelatedArtists] Fetching for artistId:', artistId, 'tokenLen:', accessToken?.length);
+  try {
+    const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
+    const artists = data.artists || [];
+    console.log('[getRelatedArtists] Spotify returned', artists.length, 'related artists');
+    if (artists.length === 0) {
+      console.log('[getRelatedArtists] Full response keys:', Object.keys(data));
+    }
+    // Sort by popularity descending, take top 10 most recognizable
+    const sorted = artists
+      .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+      .slice(0, 10);
+    return sorted.map((a: any) => a.name);
+  } catch (err: any) {
+    console.error('[getRelatedArtists] Spotify API failed:', err.status || 'unknown status', err.message);
+    throw err;
+  }
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {

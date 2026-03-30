@@ -521,10 +521,12 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       }
       $guessResult.textContent = '\\u23F0 Time\\'s up!';
       $guessResult.style.color = '#9CA3AF';
-      // Fetch reveal data and morph in-place
+      // Fetch reveal data and morph in-place (no reaction needed — time gate passes since 30s elapsed)
       fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
-        .then(function(r) { return r.json(); })
+        .then(function(r) { console.log('Timeout reveal status:', r.status); return r.json(); })
         .then(function(data) {
+          console.log('Timeout reveal data:', JSON.stringify(data));
+          if (data.error) { console.error('Timeout reveal error:', data.error); return; }
           window._revealData = data;
           setTimeout(function() {
             // Morph orb -> album art
@@ -576,8 +578,10 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
     $reactions.style.display = 'none';
     $hint.style.display = 'none';
     fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
-      .then(function(r) { return r.json(); })
+      .then(function(r) { console.log('Vibe reveal status:', r.status); return r.json(); })
       .then(function(data) {
+        console.log('Vibe reveal data:', JSON.stringify(data));
+        if (data.error) { console.error('Vibe reveal error:', data.error); return; }
         window._revealData = data;
         $orbRevealArt.src = data.albumArt;
         $orbRevealArt.classList.add('visible');
@@ -651,28 +655,43 @@ body{background:linear-gradient(180deg,#FFF8E7 0%,#FFFBF0 40%,#FFF3D0 100%);
       hapticErrorRaw();
     }
 
-    // Fetch reveal data immediately (don't wait for fade)
-    fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'})
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        window._revealData = data;
-        // Morph the player in-place: orb -> album art, ??? -> title/artist
-        $orbRevealArt.src = data.albumArt;
-        $orbRevealArt.classList.add('visible');
-        $orb.classList.add('revealed');
-        $orbEmoji.style.display = 'none';
-        // Hide pulse rings
-        var rings = document.querySelectorAll('.ring');
-        for (var r = 0; r < rings.length; r++) rings[r].style.display = 'none';
-        // Update text labels
-        $mysteryLabel.textContent = data.title;
-        $mysteryLabel.classList.add('revealed-title');
-        $subtitleLabel.textContent = data.artist + ' \\u00B7 ' + data.albumName;
-        $subtitleLabel.classList.add('revealed-meta');
-        // Set Spotify link
-        $inlineSpotify.href = data.spotifyUrl;
-        revealed = true;
-      }).catch(function(){});
+    // IMPORTANT: Chain reaction POST -> reveal GET to avoid race condition.
+    // The /reveal endpoint gates on vibe.reaction existing in DB.
+    // If we fire-and-forget the reaction, /reveal may 403 because the row hasn't been updated yet.
+    fetch(API + '/vibes/' + vibeId + '/react', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({reaction: isCorrect ? 'VIBE' : 'NOPE'})
+    })
+    .then(function() {
+      return fetch(API + '/vibes/' + vibeId + '/reveal', {credentials:'include'});
+    })
+    .then(function(r) {
+      console.log('Reveal response status:', r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      console.log('Reveal data:', JSON.stringify(data));
+      if (data.error) { console.error('Reveal returned error:', data.error); return; }
+      window._revealData = data;
+      // Morph the player in-place: orb -> album art, ??? -> title/artist
+      $orbRevealArt.src = data.albumArt;
+      $orbRevealArt.classList.add('visible');
+      $orb.classList.add('revealed');
+      $orbEmoji.style.display = 'none';
+      // Hide pulse rings
+      var rings = document.querySelectorAll('.ring');
+      for (var r = 0; r < rings.length; r++) rings[r].style.display = 'none';
+      // Update text labels
+      $mysteryLabel.textContent = data.title;
+      $mysteryLabel.classList.add('revealed-title');
+      $subtitleLabel.textContent = data.artist + ' \\u00B7 ' + data.albumName;
+      $subtitleLabel.classList.add('revealed-meta');
+      // Set Spotify link
+      $inlineSpotify.href = data.spotifyUrl;
+      revealed = true;
+    }).catch(function(err) { console.error('Reveal chain failed:', err); });
 
     // After a short pause, fade out pills and show action buttons
     setTimeout(function() {
