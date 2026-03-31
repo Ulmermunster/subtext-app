@@ -19,14 +19,14 @@ export default function SearchInput({ onSearch, isLoading }: Props) {
   }, [value]);
 
   return (
-    <div>
+    <div className="glass-card p-4">
       <div className="relative">
         <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Search a track..."
-          className="w-full py-3 text-3xl font-bold text-ink placeholder:text-muted/40 bg-transparent border-none focus:outline-none"
+          className="w-full py-3 text-2xl font-bold text-ink placeholder:text-muted/40 bg-transparent border-none focus:outline-none font-headline tracking-tight"
         />
         {isLoading && (
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
