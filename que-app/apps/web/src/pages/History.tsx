@@ -32,20 +32,20 @@ function timeAgo(dateStr: string): string {
 function ReactionBadge({ reaction }: { reaction: string | null }) {
   if (reaction === 'VIBE') {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-mint/15 text-mint">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#00CCCC]/15 text-[#00CCCC]">
         👍 Vibe
       </span>
     );
   }
   if (reaction === 'NOPE') {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-coral/15 text-coral">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-primary-container/15 text-primary">
         👎 Nope
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gold/10 text-gold">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-tertiary-container/30 text-tertiary">
       ⏳ Unplayed
     </span>
   );
@@ -53,31 +53,31 @@ function ReactionBadge({ reaction }: { reaction: string | null }) {
 
 function QueCard({ item, isSent }: { item: QueItem; isSent: boolean }) {
   return (
-    <div className="card p-4 flex items-center gap-3 mb-3">
+    <div className="glass-card p-4 flex items-center gap-3 mb-3">
       <img
         src={item.albumArt}
         alt=""
         loading="lazy"
-        className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+        className="w-14 h-14 rounded-xl object-cover flex-shrink-0 shadow-sm"
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="font-bold text-sm text-ink truncate">{item.trackTitle}</span>
+          <span className="font-bold text-sm text-ink truncate font-headline">{item.trackTitle}</span>
           {item.streak > 1 && (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-coral/10 text-coral flex-shrink-0">
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-container/15 text-primary flex-shrink-0">
               🔥 {item.streak}
             </span>
           )}
         </div>
-        <div className="text-xs text-muted truncate">{item.trackArtist}</div>
+        <div className="text-xs text-muted truncate font-body">{item.trackArtist}</div>
         <div className="flex items-center gap-2 mt-1.5">
           <ReactionBadge reaction={item.reaction} />
-          <span className="text-[10px] text-muted">{timeAgo(item.createdAt)}</span>
+          <span className="text-[10px] text-muted font-body">{timeAgo(item.createdAt)}</span>
         </div>
       </div>
       {isSent && (
         <div className="flex-shrink-0 text-right">
-          <div className="text-[10px] text-muted font-medium">
+          <div className="text-[10px] text-muted font-medium font-body">
             {item.playedAt ? 'Opened' : 'Pending'}
           </div>
         </div>
@@ -119,12 +119,12 @@ export default function History() {
       <div className="flex items-center gap-3 py-3">
         <button
           onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-lg active:scale-95 transition-transform"
+          className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-primary text-lg active:scale-95 transition-transform"
         >
           ←
         </button>
-        <h1 className="text-xl font-extrabold text-ink tracking-tight">
-          Queue<span className="text-gold">.</span>
+        <h1 className="text-xl font-black italic text-primary tracking-tighter font-headline">
+          Queue<span className="text-primary-container">.</span>
         </h1>
       </div>
 
@@ -132,20 +132,20 @@ export default function History() {
       <div className="flex gap-2 mt-2 mb-4">
         <button
           onClick={() => setTab('sent')}
-          className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-[0.985] ${
+          className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-[0.97] font-headline ${
             tab === 'sent'
-              ? 'bg-ink text-white shadow-card'
-              : 'bg-white border border-border text-muted'
+              ? 'bg-gradient-to-br from-primary to-primary-container text-white shadow-card'
+              : 'bg-white/20 backdrop-blur-md border border-white/30 text-muted'
           }`}
         >
           Sent{sent.length > 0 && ` (${sent.length})`}
         </button>
         <button
           onClick={() => setTab('received')}
-          className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-[0.985] ${
+          className={`flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-[0.97] font-headline ${
             tab === 'received'
-              ? 'bg-ink text-white shadow-card'
-              : 'bg-white border border-border text-muted'
+              ? 'bg-gradient-to-br from-primary to-primary-container text-white shadow-card'
+              : 'bg-white/20 backdrop-blur-md border border-white/30 text-muted'
           }`}
         >
           Received{received.length > 0 && ` (${received.length})`}
@@ -160,15 +160,15 @@ export default function History() {
       )}
 
       {error && (
-        <div className="card p-4 border-coral/30 text-center">
-          <p className="text-sm text-coral">{error}</p>
+        <div className="glass-card p-4 border-error/30 text-center">
+          <p className="text-sm text-error font-body">{error}</p>
         </div>
       )}
 
       {!loading && !error && items.length === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <span className="text-4xl">{tab === 'sent' ? '🎵' : '📬'}</span>
-          <p className="text-sm text-muted font-medium">
+          <p className="text-sm text-muted font-medium font-body">
             {tab === 'sent'
               ? "No Que's sent yet"
               : "No Que's received yet"}

@@ -31,11 +31,13 @@ export default function DebugHaptics() {
       className="w-full max-w-md mx-auto px-5 py-8"
       style={{ fontFamily: 'monospace', fontSize: '13px' }}
     >
-      <h1 className="text-xl font-bold text-ink mb-4">Haptics Debug</h1>
+      <h1 className="text-xl font-black italic text-primary mb-4 font-headline tracking-tighter">
+        Haptics Debug
+      </h1>
 
       {/* Platform detection */}
-      <div className="card p-4 mb-4 space-y-1">
-        <h2 className="font-bold text-sm text-ink mb-2">Platform Detection</h2>
+      <div className="glass-card p-4 mb-4 space-y-1">
+        <h2 className="font-bold text-sm text-ink mb-2 font-headline">Platform Detection</h2>
         <Row label="navigator.vibrate exists" value={diag.hasVibrateAPI} />
         <Row label="Touch device (coarse)" value={diag.isTouchDevice} />
         <Row label="Expected path" value={diag.expectedPath} />
@@ -45,8 +47,8 @@ export default function DebugHaptics() {
       </div>
 
       {/* Test buttons */}
-      <div className="card p-4 mb-4 space-y-3">
-        <h2 className="font-bold text-sm text-ink mb-2">Fire Haptics</h2>
+      <div className="glass-card p-4 mb-4 space-y-3">
+        <h2 className="font-bold text-sm text-ink mb-2 font-headline">Fire Haptics</h2>
         <p className="text-[11px] text-muted mb-2">
           Each button fires on <b>onPointerDown</b> (haptic) + onClick (log).
           You should feel the vibration on finger-down, before release.
@@ -56,44 +58,44 @@ export default function DebugHaptics() {
           label="hapticTap() — 20ms"
           onPointerDown={hapticTap}
           onClick={() => addLog('hapticTap() fired')}
-          color="#F5A623"
+          color="linear-gradient(135deg, #9c3853, #ff85a1)"
         />
         <HapticButton
           label="hapticConfirm() — [25,50,25]"
           onPointerDown={hapticConfirm}
           onClick={() => addLog('hapticConfirm() fired')}
-          color="#10B981"
+          color="linear-gradient(135deg, #32626f, #b4e4f5)"
         />
         <HapticButton
           label="hapticReveal() — [30,60,30,80,100]"
           onPointerDown={hapticReveal}
           onClick={() => addLog('hapticReveal() fired')}
-          color="#3B82F6"
+          color="linear-gradient(135deg, #595a6b, #e6e6fa)"
         />
         <HapticButton
           label="hapticError() — [15,40,15,40,15]"
           onPointerDown={hapticError}
           onClick={() => addLog('hapticError() fired')}
-          color="#F97316"
+          color="linear-gradient(135deg, #b41340, #f74b6d)"
         />
 
-        <hr className="border-border" />
+        <hr className="border-white/20" />
 
         <HapticButton
           label="Raw vibrate(200) — direct call"
           onPointerDown={testVibrateDirect}
           onClick={() => addLog('Raw vibrate test fired')}
-          color="#EC4899"
+          color="linear-gradient(135deg, #00CCCC, #b4e4f5)"
         />
       </div>
 
       {/* Log output */}
-      <div className="card p-4">
+      <div className="glass-card p-4">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="font-bold text-sm text-ink">Log</h2>
+          <h2 className="font-bold text-sm text-ink font-headline">Log</h2>
           <button
             onClick={() => setLog([])}
-            className="text-[11px] text-muted underline"
+            className="text-[11px] text-primary underline"
           >
             Clear
           </button>
@@ -127,9 +129,9 @@ function Row({
   const color =
     typeof value === 'boolean'
       ? value
-        ? '#10B981'
-        : '#F97316'
-      : '#1A1A2E';
+        ? '#00CCCC'
+        : '#f74b6d'
+      : '#2c2f33';
 
   return (
     <div className="flex justify-between">
