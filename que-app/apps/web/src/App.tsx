@@ -21,8 +21,6 @@ function Loading() {
 export default function App() {
   return (
     <>
-      <div className="blob-1" />
-      <div className="blob-2" />
       <div className="relative z-10 min-h-screen">
         <Suspense fallback={<Loading />}>
           <Routes>

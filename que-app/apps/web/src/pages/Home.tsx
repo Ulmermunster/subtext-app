@@ -6,97 +6,149 @@ export default function Home() {
 
   return (
     <div
-      className="w-full max-w-md mx-auto px-5 flex flex-col items-center justify-center"
+      className="w-full relative overflow-hidden"
       style={{
         minHeight: '100dvh',
-        paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
       }}
     >
-      {/* Queue button — top right */}
-      <button
-        onClick={() => navigate('/queue')}
-        className="absolute top-0 right-0 mt-[max(1.25rem,env(safe-area-inset-top))] mr-5 w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted active:scale-95 transition-transform shadow-card"
-        aria-label="Queue history"
+      {/* ── Top App Bar ── */}
+      <header
+        className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4"
+        style={{
+          background: 'rgba(245,246,252,0.6)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        }}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6" />
-          <line x1="8" y1="12" x2="21" y2="12" />
-          <line x1="8" y1="18" x2="21" y2="18" />
-          <line x1="3" y1="6" x2="3.01" y2="6" />
-          <line x1="3" y1="12" x2="3.01" y2="12" />
-          <line x1="3" y1="18" x2="3.01" y2="18" />
-        </svg>
-      </button>
-
-      {/* Wordmark */}
-      <div className="text-center mb-4">
-        <h1 className="text-4xl font-extrabold text-ink tracking-tight">
-          Que<span className="text-gold">.</span>
-        </h1>
-        <p className="text-sm font-semibold text-muted mt-1">
-          Find new music, without the bias.
-        </p>
-      </div>
-
-      {/* Pulsing Q Orb — main CTA */}
-      <button
-        onPointerDown={hapticTap}
-        onClick={() => navigate('/send')}
-        className="relative group my-8 focus:outline-none"
-        aria-label="Send a Que"
-      >
-        {/* Pulse rings */}
-        <span className="absolute inset-[-24px] rounded-full border-[1.5px] border-gold/20 animate-orb-ping" />
-        <span className="absolute inset-[-40px] rounded-full border border-gold/10 animate-orb-ping animation-delay-400" />
-
-        {/* Outer glow */}
-        <span className="absolute inset-[-6px] rounded-full bg-gradient-to-br from-gold/15 to-gold-light/10 blur-sm group-active:scale-95 transition-transform" />
-
-        {/* White ring */}
-        <span className="absolute inset-[-4px] rounded-full bg-white shadow-glow" />
-
-        {/* Gold orb */}
-        <span className="relative flex items-center justify-center w-44 h-44 rounded-full bg-gradient-to-br from-gold to-gold-light shadow-glow group-hover:shadow-[0_0_80px_rgba(245,166,35,.35)] group-active:scale-[0.96] transition-all duration-200">
-          {/* Sparkle */}
-          <span className="absolute -top-1 -right-1 text-gold text-xl opacity-80">✦</span>
-          {/* Q */}
-          <span className="text-7xl font-extrabold text-ink/80 select-none">Q</span>
-        </span>
-      </button>
-
-      {/* Hint text */}
-      <p className="text-xs font-medium text-muted mb-10 animate-fade-in">
-        Listen. Vibe. Discover.
-      </p>
-
-      {/* How it works — compact step pills */}
-      <div className="w-full max-w-xs">
-        <div className="flex items-center justify-between gap-1">
-          <StepPill emoji="🎧" label="Pick" />
-          <Dot />
-          <StepPill emoji="📨" label="Send" />
-          <Dot />
-          <StepPill emoji="🙈" label="Blind" />
-          <Dot />
-          <StepPill emoji="✨" label="Reveal" />
+        <div className="flex items-center gap-3">
+          {/* Avatar placeholder — tinted circle */}
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container bg-gradient-to-br from-primary/20 to-primary-container/30 flex items-center justify-center">
+            <span className="text-primary text-sm font-bold">Q</span>
+          </div>
+          <span className="text-2xl font-black text-primary tracking-tighter font-headline">
+            Que<span className="text-primary-container">.</span>
+          </span>
         </div>
-      </div>
+        <button
+          onClick={() => navigate('/queue')}
+          className="text-primary hover:opacity-80 transition-opacity active:scale-95 duration-200"
+          aria-label="Queue history"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6" />
+            <line x1="8" y1="12" x2="21" y2="12" />
+            <line x1="8" y1="18" x2="21" y2="18" />
+            <line x1="3" y1="6" x2="3.01" y2="6" />
+            <line x1="3" y1="12" x2="3.01" y2="12" />
+            <line x1="3" y1="18" x2="3.01" y2="18" />
+          </svg>
+        </button>
+      </header>
+
+      {/* ── Main Content ── */}
+      <main className="relative h-screen flex flex-col items-center justify-center px-6 pt-20 pb-32">
+        {/* Pulse background blob */}
+        <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
+          <div className="pulse-bg w-[120%] h-[60%] rounded-full animate-pulse" />
+        </div>
+
+        {/* Hero Section */}
+        <section className="relative z-10 w-full text-center mb-12">
+          <h1 className="font-headline font-extrabold text-4xl text-ink tracking-tight mb-2">
+            Tasting Room
+          </h1>
+          <p className="text-muted font-medium text-sm">
+            Discover your next favorite melody.
+          </p>
+        </section>
+
+        {/* ── Central Glass Card with Dice ── */}
+        <div className="relative z-10 w-full max-w-sm aspect-square glass-card flex items-center justify-center mb-8">
+          <div className="relative w-full h-full flex items-center justify-center gap-4">
+            {/* Magenta Die */}
+            <div className="w-28 h-28 bg-gradient-to-br from-primary to-primary-container rounded-lg shadow-xl transform -rotate-12 flex items-center justify-center">
+              <div className="grid grid-cols-2 gap-3 p-4">
+                <div className="w-3 h-3 bg-white rounded-full" />
+                <div className="w-3 h-3 bg-white rounded-full" />
+                <div className="w-3 h-3 bg-white rounded-full" />
+                <div className="w-3 h-3 bg-white rounded-full" />
+              </div>
+            </div>
+            {/* Cyan Die */}
+            <div className="w-28 h-28 bg-gradient-to-br from-secondary to-secondary-container rounded-lg shadow-xl transform rotate-12 -translate-y-4 flex items-center justify-center">
+              <div className="grid grid-cols-3 gap-2 p-4">
+                <div className="w-2 h-2 bg-white rounded-full" />
+                <div className="w-2 h-2 bg-white rounded-full" />
+                <div className="w-2 h-2 bg-white rounded-full" />
+                <div className="w-2 h-2 bg-white rounded-full" />
+                <div className="w-2 h-2 bg-white rounded-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* TAP TO ROLL Button */}
+        <button
+          onPointerDown={hapticTap}
+          onClick={() => navigate('/send')}
+          className="relative z-10 flex items-center gap-3 bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-full font-headline font-bold text-lg shadow-lg active:scale-95 transition-all duration-200"
+          aria-label="Send a Que"
+        >
+          <span>TAP TO ROLL</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" opacity="0.9">
+            <path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.18 2-3.74C16 4.46 13.54 2 10.5 2S5 4.46 5 7.5c0 1.56.79 2.93 2 3.74V7.5a2.5 2.5 0 0 1 5 0v3.74zM12 14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-12C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
+          </svg>
+        </button>
+      </main>
+
+      {/* ── Bottom Nav Bar ── */}
+      <nav
+        className="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pt-4 rounded-t-xl"
+        style={{
+          background: 'rgba(239,240,247,0.6)',
+          backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)',
+          boxShadow: '0 -12px 32px rgba(156,56,83,0.08)',
+          paddingBottom: 'max(2rem, env(safe-area-inset-bottom))',
+        }}
+      >
+        {/* Active: ROLL */}
+        <button
+          onClick={() => navigate('/send')}
+          className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full px-6 py-2 scale-110 active:scale-95 transition-all duration-200"
+        >
+          <span className="text-xl">🎲</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">ROLL</span>
+        </button>
+
+        {/* MYSTERY — create a mystery link */}
+        <button
+          onClick={() => navigate('/send')}
+          className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
+        >
+          <span className="text-xl">❓</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">MYSTERY</span>
+        </button>
+
+        {/* GUESS */}
+        <button
+          onClick={() => navigate('/send')}
+          className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
+        >
+          <span className="text-xl">🧠</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">GUESS</span>
+        </button>
+
+        {/* COLLECTION */}
+        <button
+          onClick={() => navigate('/queue')}
+          className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
+        >
+          <span className="text-xl">📦</span>
+          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">COLLECTION</span>
+        </button>
+      </nav>
     </div>
   );
-}
-
-function StepPill({ emoji, label }: { emoji: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-sm">
-        {emoji}
-      </span>
-      <span className="text-[9px] font-bold text-muted uppercase tracking-wider">{label}</span>
-    </div>
-  );
-}
-
-function Dot() {
-  return <span className="w-1 h-1 rounded-full bg-gold/30 mb-4" />;
 }
