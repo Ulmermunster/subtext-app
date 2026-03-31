@@ -63,49 +63,87 @@ export default function ClipPicker() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ── No track fallback ──
   if (!track) {
     return (
       <div className="w-full max-w-md mx-auto px-5 py-8">
-        <p className="text-muted">No track selected.</p>
-        <button onClick={() => navigate('/send')} className="text-gold text-sm mt-2 font-semibold min-h-[44px]">← Back to search</button>
+        <p className="text-muted font-body">No track selected.</p>
+        <button onClick={() => navigate('/send')} className="text-primary text-sm mt-2 font-semibold min-h-[44px] font-headline">← Back to search</button>
       </div>
     );
   }
 
+  // ── Sent confirmation ──
   if (sent) {
     return (
-      <div className="w-full max-w-md mx-auto px-5 flex flex-col items-center" style={{ minHeight: '100dvh', paddingTop: 'max(1.5rem, env(safe-area-inset-top))', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+      <div
+        className="mesh-gradient w-full max-w-md mx-auto px-5 flex flex-col items-center"
+        style={{
+          minHeight: '100dvh',
+          paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
+          paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+        }}
+      >
+        {/* Back */}
         <div className="w-full flex items-center mb-6">
-          <button onClick={() => navigate('/')} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
+          <button
+            onClick={() => navigate('/')}
+            className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-primary text-lg active:scale-95 transition-transform"
+          >
+            ←
+          </button>
         </div>
-        <h1 className="text-4xl font-extrabold text-ink tracking-tight mb-1">
-          Que'd<span className="text-gold">.</span>
+
+        {/* Title */}
+        <h1 className="text-4xl font-black italic text-primary tracking-tighter mb-1 font-headline">
+          Que'd<span className="text-primary-container">.</span>
         </h1>
-        <p className="text-muted text-sm mb-6">
+        <p className="text-muted text-sm mb-6 font-body">
           {gameMode === 'guess' ? 'Guessing game sent.' : 'Send this blind clip.'}
         </p>
+
+        {/* Album art with badge */}
         <div className="relative mb-8">
-          <img src={track.albumArt} alt="" className="w-40 h-40 rounded-3xl object-cover shadow-card-hover border-4 border-white" style={{ transform: 'rotate(-3deg)' }} />
-          <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-ink border-4 border-white flex items-center justify-center">
+          <img
+            src={track.albumArt}
+            alt=""
+            className="w-40 h-40 rounded-[2rem] object-cover border-none"
+            style={{
+              transform: 'rotate(-3deg)',
+              boxShadow: '0 12px 48px rgba(156,56,83,.15), 0 0 0 3px rgba(255,255,255,.4)',
+            }}
+          />
+          <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-white flex items-center justify-center shadow-lg">
             {gameMode === 'guess' ? (
               <span className="text-lg">🎯</span>
             ) : (
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8L6.5 11.5L13 5" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3 8L6.5 11.5L13 5" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
           </div>
         </div>
+
         <div className="flex-1" />
+
+        {/* Action buttons */}
         <div className="flex gap-3 w-full mb-4">
-          <button onPointerDown={hapticTap} onClick={handleSms} className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]">
+          <button
+            onPointerDown={hapticTap}
+            onClick={handleSms}
+            className="btn-primary flex-1 flex items-center justify-center gap-2 min-h-[48px]"
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
             SMS
           </button>
-          <button onPointerDown={hapticTap} onClick={handleCopy} className="flex-1 card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px]">
+          <button
+            onPointerDown={hapticTap}
+            onClick={handleCopy}
+            className="flex-1 glass-card p-3.5 font-bold text-ink flex items-center justify-center gap-2 hover:shadow-card-hover transition-all min-h-[48px] active:scale-[0.97] font-headline"
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -113,35 +151,58 @@ export default function ClipPicker() {
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
-        <button onClick={() => navigate('/send')} className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px]">
+
+        <button
+          onClick={() => navigate('/send')}
+          className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px] font-body"
+        >
           Start Over
         </button>
       </div>
     );
   }
 
+  // ── Main clip picker form ──
   return (
-    <div className="w-full max-w-md mx-auto px-5 flex flex-col" style={{ minHeight: '100dvh', paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+    <div
+      className="w-full max-w-md mx-auto px-5 flex flex-col"
+      style={{
+        minHeight: '100dvh',
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+      }}
+    >
+      {/* Top bar */}
       <div className="flex items-center gap-4 py-2">
-        <button onClick={() => navigate(-1)} className="text-muted text-lg w-10 h-10 flex items-center justify-center">←</button>
-        <button onClick={() => navigate('/send')} className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-muted text-sm">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-primary text-lg active:scale-95 transition-transform"
+        >
+          ←
+        </button>
+        <button
+          onClick={() => navigate('/send')}
+          className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-muted text-sm active:scale-95 transition-transform"
+        >
           ✕
         </button>
       </div>
 
-      <div className="card p-4 flex items-center gap-3 mt-3">
-        <img src={track.albumArt} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+      {/* Track info card */}
+      <div className="glass-card p-4 flex items-center gap-3 mt-3">
+        <img src={track.albumArt} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0 shadow-sm" />
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-ink truncate">{track.title}</div>
-          <div className="text-muted text-sm truncate">{track.artist} · {track.albumName}</div>
-          <div className="text-muted text-xs">{formatDuration(track.duration)}</div>
+          <div className="font-bold text-ink truncate font-headline">{track.title}</div>
+          <div className="text-muted text-sm truncate font-body">{track.artist} · {track.albumName}</div>
+          <div className="text-muted text-xs font-body">{formatDuration(track.duration)}</div>
         </div>
       </div>
 
-      <div className="card p-4 mt-4 text-center">
+      {/* Auto clip info */}
+      <div className="glass-card p-4 mt-4 text-center">
         <div className="text-lg mb-1">🎵</div>
-        <div className="font-semibold text-ink text-sm">Auto clip</div>
-        <div className="text-muted text-[11px] mt-0.5">Best 30 seconds selected automatically</div>
+        <div className="font-semibold text-ink text-sm font-headline">Auto clip</div>
+        <div className="text-muted text-[11px] mt-0.5 font-body">Best 30 seconds selected automatically</div>
       </div>
 
       {/* Game mode toggle */}
@@ -149,10 +210,10 @@ export default function ClipPicker() {
         <button
           onPointerDown={hapticTap}
           onClick={() => setGameMode('vibe')}
-          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] ${
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] font-headline ${
             gameMode === 'vibe'
-              ? 'bg-ink text-white shadow-card'
-              : 'bg-white border border-border text-muted'
+              ? 'bg-gradient-to-br from-primary to-primary-container text-white shadow-card'
+              : 'bg-white/20 backdrop-blur-md border border-white/30 text-muted'
           }`}
         >
           🎵 Mystery Vibe
@@ -160,16 +221,16 @@ export default function ClipPicker() {
         <button
           onPointerDown={hapticTap}
           onClick={() => setGameMode('guess')}
-          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] ${
+          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] font-headline ${
             gameMode === 'guess'
-              ? 'bg-ink text-white shadow-card'
-              : 'bg-white border border-border text-muted'
+              ? 'bg-gradient-to-br from-primary to-primary-container text-white shadow-card'
+              : 'bg-white/20 backdrop-blur-md border border-white/30 text-muted'
           }`}
         >
           🎯 Guessing Game
         </button>
       </div>
-      <p className="text-[10px] text-muted text-center mt-1.5">
+      <p className="text-[10px] text-muted text-center mt-1.5 font-body">
         {gameMode === 'guess'
           ? 'They guess the artist from 4 choices'
           : 'They listen blind, then react'}
@@ -177,23 +238,26 @@ export default function ClipPicker() {
 
       <div className="flex-1" />
 
+      {/* Sender name input */}
       <div className="relative mt-5">
         <input
           type="text"
           value={senderName}
           onChange={(e) => setSenderName(e.target.value)}
           placeholder="Your name"
-          className="w-full px-4 py-3 rounded-card border-2 border-gold/30 bg-white text-ink placeholder:text-muted text-center font-medium focus:outline-none focus:border-gold min-h-[48px]"
+          className="w-full px-4 py-3 rounded-card border-2 border-primary/20 bg-white/30 backdrop-blur-md text-ink placeholder:text-muted text-center font-medium focus:outline-none focus:border-primary min-h-[48px] font-body"
         />
-        <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-sky" />
+        <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-secondary-container" />
       </div>
 
+      {/* Error */}
       {error && (
-        <div className="card p-4 border-coral/30 mt-4">
-          <p className="text-sm text-coral">{error}</p>
+        <div className="glass-card p-4 border-error/30 mt-4">
+          <p className="text-sm text-error font-body">{error}</p>
         </div>
       )}
 
+      {/* Generate button */}
       <button
         onPointerDown={hapticTap}
         onClick={handleGenerate}
