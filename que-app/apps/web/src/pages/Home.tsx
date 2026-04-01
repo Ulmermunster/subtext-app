@@ -30,7 +30,6 @@ export default function Home() {
             Que<span className="text-primary-container">.</span>
           </span>
         </div>
-{/* spacer to balance header layout */}
         <div className="w-10" />
       </header>
 
@@ -51,10 +50,10 @@ export default function Home() {
           </p>
         </section>
 
-        {/* ── Central Glass Card with Dice (clickable) ── */}
+        {/* ── Central Glass Card with Dice (clickable — triggers auto-roll) ── */}
         <button
           onPointerDown={hapticTap}
-          onClick={() => navigate('/send')}
+          onClick={() => navigate('/send', { state: { autoRoll: true } })}
           className="relative z-10 w-full max-w-sm aspect-square glass-card flex items-center justify-center mb-8 cursor-pointer active:scale-[0.97] transition-transform duration-200 group"
           aria-label="Roll the dice"
         >
@@ -90,7 +89,7 @@ export default function Home() {
         </p>
       </main>
 
-      {/* ── Bottom Nav Bar ── */}
+      {/* ── Bottom Nav Bar (3 buttons) ── */}
       <nav
         className="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pt-4 rounded-t-xl"
         style={{
@@ -110,22 +109,16 @@ export default function Home() {
           <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">ROLL</span>
         </button>
 
-        {/* MYSTERY — create a mystery link */}
+        {/* SEND */}
         <button
           onClick={() => navigate('/send')}
           className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
         >
-          <span className="text-xl">❓</span>
-          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">MYSTERY</span>
-        </button>
-
-        {/* GUESS */}
-        <button
-          onClick={() => navigate('/send', { state: { defaultGameMode: 'guess' } })}
-          className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
-        >
-          <span className="text-xl">🧠</span>
-          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">GUESS</span>
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">SEND</span>
         </button>
 
         {/* COLLECTION */}
