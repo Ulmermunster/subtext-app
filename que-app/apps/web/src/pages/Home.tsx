@@ -30,20 +30,8 @@ export default function Home() {
             Que<span className="text-primary-container">.</span>
           </span>
         </div>
-        <button
-          onClick={() => navigate('/queue')}
-          className="text-primary hover:opacity-80 transition-opacity active:scale-95 duration-200"
-          aria-label="Queue history"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6" />
-            <line x1="8" y1="12" x2="21" y2="12" />
-            <line x1="8" y1="18" x2="21" y2="18" />
-            <line x1="3" y1="6" x2="3.01" y2="6" />
-            <line x1="3" y1="12" x2="3.01" y2="12" />
-            <line x1="3" y1="18" x2="3.01" y2="18" />
-          </svg>
-        </button>
+{/* spacer to balance header layout */}
+        <div className="w-10" />
       </header>
 
       {/* ── Main Content ── */}
@@ -63,11 +51,19 @@ export default function Home() {
           </p>
         </section>
 
-        {/* ── Central Glass Card with Dice ── */}
-        <div className="relative z-10 w-full max-w-sm aspect-square glass-card flex items-center justify-center mb-8">
+        {/* ── Central Glass Card with Dice (clickable) ── */}
+        <button
+          onPointerDown={hapticTap}
+          onClick={() => navigate('/send')}
+          className="relative z-10 w-full max-w-sm aspect-square glass-card flex items-center justify-center mb-8 cursor-pointer active:scale-[0.97] transition-transform duration-200 group"
+          aria-label="Roll the dice"
+        >
+          {/* Pulsing glow ring behind dice */}
+          <div className="absolute inset-0 rounded-card dice-pulse-glow pointer-events-none" />
+
           <div className="relative w-full h-full flex items-center justify-center gap-4">
             {/* Magenta Die */}
-            <div className="w-28 h-28 bg-gradient-to-br from-primary to-primary-container rounded-lg shadow-xl transform -rotate-12 flex items-center justify-center">
+            <div className="w-28 h-28 bg-gradient-to-br from-primary to-primary-container rounded-lg shadow-xl transform -rotate-12 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
               <div className="grid grid-cols-2 gap-3 p-4">
                 <div className="w-3 h-3 bg-white rounded-full" />
                 <div className="w-3 h-3 bg-white rounded-full" />
@@ -76,7 +72,7 @@ export default function Home() {
               </div>
             </div>
             {/* Cyan Die */}
-            <div className="w-28 h-28 bg-gradient-to-br from-secondary to-secondary-container rounded-lg shadow-xl transform rotate-12 -translate-y-4 flex items-center justify-center">
+            <div className="w-28 h-28 bg-gradient-to-br from-secondary to-secondary-container rounded-lg shadow-xl transform rotate-12 -translate-y-4 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
               <div className="grid grid-cols-3 gap-2 p-4">
                 <div className="w-2 h-2 bg-white rounded-full" />
                 <div className="w-2 h-2 bg-white rounded-full" />
@@ -86,20 +82,12 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* TAP TO ROLL Button */}
-        <button
-          onPointerDown={hapticTap}
-          onClick={() => navigate('/send')}
-          className="relative z-10 flex items-center gap-3 bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-full font-headline font-bold text-lg shadow-lg active:scale-95 transition-all duration-200"
-          aria-label="Send a Que"
-        >
-          <span>TAP TO ROLL</span>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" opacity="0.9">
-            <path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.18 2-3.74C16 4.46 13.54 2 10.5 2S5 4.46 5 7.5c0 1.56.79 2.93 2 3.74V7.5a2.5 2.5 0 0 1 5 0v3.74zM12 14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-12C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
-          </svg>
         </button>
+
+        {/* Tap hint */}
+        <p className="relative z-10 text-muted text-xs font-medium tracking-wide uppercase opacity-60">
+          Tap the dice to roll
+        </p>
       </main>
 
       {/* ── Bottom Nav Bar ── */}
@@ -115,8 +103,8 @@ export default function Home() {
       >
         {/* Active: ROLL */}
         <button
-          onClick={() => navigate('/send')}
-          className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full px-6 py-2 scale-110 active:scale-95 transition-all duration-200"
+          onClick={() => navigate('/')}
+          className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full px-6 py-2 active:scale-95 transition-all duration-200"
         >
           <span className="text-xl">🎲</span>
           <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">ROLL</span>
@@ -133,7 +121,7 @@ export default function Home() {
 
         {/* GUESS */}
         <button
-          onClick={() => navigate('/send')}
+          onClick={() => navigate('/send', { state: { defaultGameMode: 'guess' } })}
           className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
         >
           <span className="text-xl">🧠</span>

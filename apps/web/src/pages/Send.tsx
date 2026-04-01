@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import TrackResult from '../components/TrackResult';
 import ArtistResult from '../components/ArtistResult';
@@ -15,6 +15,8 @@ function formatTime(sec: number) {
 
 export default function Send() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const defaultGameMode = (location.state as any)?.defaultGameMode;
   const [searchLoading, setSearchLoading] = useState(false);
   const [tracks, setTracks] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
@@ -51,8 +53,8 @@ export default function Send() {
   }, []);
 
   const handleTrackSelect = useCallback((track: any) => {
-    navigate('/send/clip', { state: { track } });
-  }, [navigate]);
+    navigate('/send/clip', { state: { track, defaultGameMode } });
+  }, [navigate, defaultGameMode]);
 
   const handleArtistSelect = useCallback((artist: any) => {
     navigate(`/send/artist/${artist.id}`, { state: { artist } });
@@ -434,7 +436,7 @@ export default function Send() {
           }}
         >
           <button
-            onClick={() => { exitDiscovery(); navigate('/send'); }}
+            onClick={() => { exitDiscovery(); navigate('/'); }}
             className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
           >
             <span className="text-xl">🎲</span>
@@ -442,13 +444,13 @@ export default function Send() {
           </button>
           <button
             onClick={exitDiscovery}
-            className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full w-16 h-16 -mt-10 shadow-lg active:scale-90 duration-300"
+            className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full px-6 py-2 active:scale-95 transition-all duration-200"
           >
-            <span className="text-lg">❓</span>
+            <span className="text-xl">❓</span>
             <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">MYSTERY</span>
           </button>
           <button
-            onClick={() => { exitDiscovery(); navigate('/send'); }}
+            onClick={() => { exitDiscovery(); navigate('/send', { state: { defaultGameMode: 'guess' } }); }}
             className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
           >
             <span className="text-xl">🧠</span>
@@ -501,15 +503,6 @@ export default function Send() {
       <div className="mt-4">
         <SearchInput onSearch={handleSearch} isLoading={searchLoading} />
       </div>
-
-      {/* ── Roll the Dice button ── */}
-      <button
-        onPointerDown={hapticTap}
-        onClick={handleRollDice}
-        className="mt-4 py-3 text-sm font-bold font-headline text-primary border border-primary/30 rounded-full active:scale-[0.97] transition-all hover:bg-primary/5 backdrop-blur-sm bg-white/20"
-      >
-        Roll the Dice 🎲
-      </button>
 
       {/* Search loading */}
       {searchLoading && (
@@ -583,20 +576,20 @@ export default function Send() {
         }}
       >
         <button
-          onClick={handleRollDice}
+          onClick={() => navigate('/')}
           className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
         >
           <span className="text-xl">🎲</span>
           <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">ROLL</span>
         </button>
         <button
-          className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full w-16 h-16 -mt-10 shadow-lg active:scale-90 duration-300"
+          className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full px-6 py-2 active:scale-95 transition-all duration-200"
         >
-          <span className="text-lg">❓</span>
+          <span className="text-xl">❓</span>
           <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">MYSTERY</span>
         </button>
         <button
-          onClick={() => navigate('/send')}
+          onClick={() => navigate('/send', { state: { defaultGameMode: 'guess' } })}
           className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
         >
           <span className="text-xl">🧠</span>

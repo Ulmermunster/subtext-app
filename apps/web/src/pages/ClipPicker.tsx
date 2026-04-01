@@ -24,7 +24,9 @@ export default function ClipPicker() {
   const [senderName, setSenderName] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-  const [gameMode, setGameMode] = useState<'vibe' | 'guess'>('vibe');
+  const [gameMode, setGameMode] = useState<'vibe' | 'guess'>(
+    (location.state as any)?.defaultGameMode === 'guess' ? 'guess' : 'vibe'
+  );
 
   const handleGenerate = async () => {
     if (!track) return;
