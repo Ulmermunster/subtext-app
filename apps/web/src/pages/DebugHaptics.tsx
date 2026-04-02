@@ -58,7 +58,7 @@ export default function DebugHaptics() {
           label="hapticTap() — 20ms"
           onPointerDown={hapticTap}
           onClick={() => addLog('hapticTap() fired')}
-          color="linear-gradient(135deg, #9c3853, #ff85a1)"
+          color="linear-gradient(135deg, #FF6B9D, #FFB347)"
         />
         <HapticButton
           label="hapticConfirm() — [25,50,25]"
@@ -70,7 +70,7 @@ export default function DebugHaptics() {
           label="hapticReveal() — [30,60,30,80,100]"
           onPointerDown={hapticReveal}
           onClick={() => addLog('hapticReveal() fired')}
-          color="linear-gradient(135deg, #595a6b, #e6e6fa)"
+          color="linear-gradient(135deg, #6b7280, #3a3a4a)"
         />
         <HapticButton
           label="hapticError() — [15,40,15,40,15]"
@@ -131,7 +131,7 @@ function Row({
       ? value
         ? '#00CCCC'
         : '#f74b6d'
-      : '#2c2f33';
+      : '#9ca3af';
 
   return (
     <div className="flex justify-between">

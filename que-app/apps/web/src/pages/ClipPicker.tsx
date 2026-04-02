@@ -112,10 +112,10 @@ export default function ClipPicker() {
             className="w-40 h-40 rounded-[2rem] object-cover border-none"
             style={{
               transform: 'rotate(-3deg)',
-              boxShadow: '0 12px 48px rgba(156,56,83,.15), 0 0 0 3px rgba(255,255,255,.4)',
+              boxShadow: '0 12px 48px rgba(0,0,0,.3), 0 0 0 3px #FF1493, 0 0 20px rgba(255,20,147,.3)',
             }}
           />
-          <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-white flex items-center justify-center shadow-lg">
+          <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-surface flex items-center justify-center shadow-lg">
             {gameMode === 'guess' ? (
               <span className="text-lg">🎯</span>
             ) : (
@@ -247,7 +247,7 @@ export default function ClipPicker() {
           value={senderName}
           onChange={(e) => setSenderName(e.target.value)}
           placeholder="Your name"
-          className="w-full px-4 py-3 rounded-card border-2 border-primary/20 bg-white/30 backdrop-blur-md text-ink placeholder:text-muted text-center font-medium focus:outline-none focus:border-primary min-h-[48px] font-body"
+          className="w-full px-4 py-3 rounded-card border-2 border-primary/20 bg-white/10 backdrop-blur-md text-ink placeholder:text-muted text-center font-medium focus:outline-none focus:border-primary min-h-[48px] font-body"
         />
         <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-secondary-container" />
       </div>

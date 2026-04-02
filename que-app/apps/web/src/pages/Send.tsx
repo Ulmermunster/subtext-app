@@ -174,7 +174,7 @@ export default function Send() {
         <header
           className="fixed top-0 z-50 w-full flex justify-between items-center px-6 py-4"
           style={{
-            background: 'rgba(245,246,252,0.6)',
+            background: 'rgba(10,10,15,0.8)',
             backdropFilter: 'blur(40px)',
             WebkitBackdropFilter: 'blur(40px)',
             paddingTop: 'max(1rem, env(safe-area-inset-top))',
@@ -299,7 +299,7 @@ export default function Send() {
                         🎵
                       </span>
                     )}
-                    <div className="text-center px-4 py-1.5 rounded-full bg-black/5 backdrop-blur-sm border border-white/10">
+                    <div className="text-center px-4 py-1.5 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
                       <p className="font-headline font-extrabold text-white tracking-[0.2em] text-[10px] uppercase drop-shadow-sm">
                         {discoveryRevealed
                           ? 'TRACK REVEALED'
@@ -331,7 +331,7 @@ export default function Send() {
                       onClick={handleReveal}
                       className="px-10 py-3 rounded-full bg-white/10 backdrop-blur-md border nope-glow transition-all duration-300 active:scale-95"
                     >
-                      <span className="font-headline font-black italic tracking-widest text-sm text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.8)]">
+                      <span className="font-headline font-black italic tracking-widest text-sm text-[#FF6B9D] drop-shadow-[0_0_8px_rgba(255,107,157,0.8)]">
                         REVEAL
                       </span>
                     </button>
@@ -375,7 +375,7 @@ export default function Send() {
                   </div>
 
                   {/* Vibe or Nah */}
-                  <h2 className="font-headline font-extrabold text-primary text-xl tracking-tight">Vibe or Nah</h2>
+                  <h2 className="font-headline font-light italic text-primary text-xl tracking-[0.2em] uppercase">VIBE OR NAH?</h2>
                   <div className="flex gap-4 w-full max-w-xs">
                     <button
                       onPointerDown={hapticTap}
@@ -428,10 +428,10 @@ export default function Send() {
         <nav
           className="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pt-4 rounded-t-xl"
           style={{
-            background: 'rgba(239,240,247,0.6)',
+            background: 'rgba(17,17,22,0.8)',
             backdropFilter: 'blur(40px)',
             WebkitBackdropFilter: 'blur(40px)',
-            boxShadow: '0 -12px 32px rgba(156,56,83,0.08)',
+            boxShadow: '0 -12px 32px rgba(0,0,0,0.3)',
             paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
           }}
         >
@@ -476,7 +476,7 @@ export default function Send() {
       <header
         className="fixed top-0 w-full z-50 flex items-center justify-between px-6 py-4"
         style={{
-          background: 'rgba(245,246,252,0.6)',
+          background: 'rgba(10,10,15,0.8)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           paddingTop: 'max(1rem, env(safe-area-inset-top))',
@@ -616,10 +616,10 @@ export default function Send() {
       <nav
         className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-4 rounded-t-xl"
         style={{
-          background: 'rgba(239,240,247,0.6)',
+          background: 'rgba(17,17,22,0.8)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
-          boxShadow: '0 -12px 32px rgba(156,56,83,0.08)',
+          boxShadow: '0 -12px 32px rgba(0,0,0,0.3)',
           paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
         }}
       >

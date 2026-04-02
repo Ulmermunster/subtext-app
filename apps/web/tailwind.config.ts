@@ -5,51 +5,51 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Sugar Rush palette
-        background: '#f5f6fc',
-        surface: '#f5f6fc',
-        'surface-dim': '#d1d4dd',
-        'surface-bright': '#f5f6fc',
-        'surface-container': '#e6e8ef',
-        'surface-container-low': '#eff0f7',
-        'surface-container-high': '#e0e2ea',
+        // Midnight Dark palette
+        background: '#0a0a0f',
+        surface: '#111116',
+        'surface-dim': '#18181c',
+        'surface-bright': '#1e1e24',
+        'surface-container': '#151519',
+        'surface-container-low': '#111116',
+        'surface-container-high': '#1e1e24',
         white: '#FFFFFF',
-        ink: '#2c2f33',
-        muted: '#595b61',
-        'outline-variant': '#abadb3',
-        border: '#dadde5',
+        ink: '#ffffff',
+        muted: '#6b7280',
+        'outline-variant': '#374151',
+        border: 'rgba(255,255,255,0.08)',
 
-        // Primary – deep rose / pink
-        primary: '#9c3853',
-        'primary-container': '#ff85a1',
-        'primary-dim': '#8d2c48',
-        'on-primary': '#ffeff0',
-        'on-primary-container': '#5d0325',
+        // Primary – sunset pink
+        primary: '#FF6B9D',
+        'primary-container': '#FFB347',
+        'primary-dim': '#e05a88',
+        'on-primary': '#1a0a12',
+        'on-primary-container': '#3d1800',
 
-        // Secondary – teal / cyan
-        secondary: '#32626f',
-        'secondary-container': '#b4e4f5',
-        'on-secondary': '#dff7ff',
+        // Secondary – neon cyan
+        secondary: '#00CCCC',
+        'secondary-container': '#0a3a3a',
+        'on-secondary': '#003333',
 
-        // Tertiary – slate / lavender
-        tertiary: '#595a6b',
-        'tertiary-container': '#e6e6fa',
+        // Tertiary – muted lavender
+        tertiary: '#9ca3af',
+        'tertiary-container': '#1e1e24',
 
         // Error / accent
-        error: '#b41340',
-        'error-container': '#f74b6d',
+        error: '#ef4444',
+        'error-container': '#7f1d1d',
 
-        // Legacy aliases (keep existing refs working)
-        gold: '#9c3853',
-        'gold-light': '#ff85a1',
-        'gold-pale': '#e6e6fa',
-        amber: '#9c3853',
-        navy: '#2c2f33',
-        coral: '#f74b6d',
-        mint: '#32626f',
-        sky: '#b4e4f5',
+        // Legacy aliases
+        gold: '#FF6B9D',
+        'gold-light': '#FFB347',
+        'gold-pale': '#1e1e24',
+        amber: '#FFB347',
+        navy: '#0a0a0f',
+        coral: '#ef4444',
+        mint: '#00CCCC',
+        sky: '#0a3a3a',
         spotify: '#1DB954',
-        cream: '#eff0f7',
+        cream: '#151519',
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
@@ -65,10 +65,11 @@ export default {
         full: '9999px',
       },
       boxShadow: {
-        card: '0 2px 12px rgba(156,56,83,.06), 0 4px 24px rgba(156,56,83,.08)',
-        'card-hover': '0 4px 20px rgba(156,56,83,.10), 0 8px 32px rgba(156,56,83,.14)',
-        glow: '0 0 60px rgba(156,56,83,.15)',
-        'glass': '0 12px 32px rgba(156,56,83,0.08)',
+        card: '0 2px 12px rgba(0,0,0,.3), 0 4px 24px rgba(0,0,0,.2)',
+        'card-hover': '0 4px 20px rgba(0,0,0,.4), 0 8px 32px rgba(0,0,0,.3)',
+        glow: '0 0 60px rgba(255,107,157,.15)',
+        glass: '0 12px 32px rgba(0,0,0,0.3)',
+        sunset: '0 4px 24px rgba(255,107,157,.3), 0 0 48px rgba(255,179,71,.15)',
       },
     },
   },
