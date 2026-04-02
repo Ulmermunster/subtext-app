@@ -82,6 +82,7 @@ export default function Send() {
     setDiscoveryPlaying(false);
     setDiscoveryProgress(0);
     setDiscoveryError('');
+    setDiscoveryVibe(null);
 
     // Stop any previous audio
     if (audioRef.current) {
@@ -111,6 +112,7 @@ export default function Send() {
         if (elapsed >= duration) {
           if (progressRef.current) clearInterval(progressRef.current);
           setDiscoveryPlaying(false);
+          setDiscoveryRevealed(true);
           disconnectPulse();
         }
       }, 250);
@@ -126,6 +128,7 @@ export default function Send() {
         setDiscoveryPlaying(false);
         if (progressRef.current) clearInterval(progressRef.current);
         setDiscoveryProgress(1);
+        setDiscoveryRevealed(true);
         disconnectPulse();
       });
     } catch {
@@ -169,10 +172,10 @@ export default function Send() {
   // ════════════════════════════════════════════
   if (discoveryMode) {
     return (
-      <div className="bg-surface sugar-rush-mesh min-h-screen font-body text-on-surface flex flex-col">
+      <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
         {/* ── Top App Bar — Centered QUE. wordmark ── */}
-        <header className="fixed top-0 w-full z-50 bg-black/40 backdrop-blur-3xl border-b border-white/5">
-          <div className="flex justify-between items-center px-6 h-16 w-full">
+        <header className="shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
+          <div className="flex justify-between items-center px-6 h-14 w-full">
             <button
               onClick={exitDiscovery}
               className="flex items-center gap-2 scale-95 active:scale-90 transition-transform duration-200 cursor-pointer"
@@ -184,8 +187,8 @@ export default function Send() {
           </div>
         </header>
 
-        {/* ── Main Content Canvas ── */}
-        <main className="min-h-screen pt-24 pb-40 flex flex-col items-center justify-center relative px-6 overflow-hidden">
+        {/* ── Main Content Canvas — fills remaining space, no scroll ── */}
+        <main className="flex-1 min-h-0 flex flex-col items-center justify-center relative px-6 py-4 overflow-hidden">
 
           {/* Loading state */}
           {discoveryLoading && (
@@ -212,85 +215,87 @@ export default function Send() {
 
           {/* Track loaded — Vibe or Nah? Player */}
           {discoveryTrack && !discoveryError && (
-            <>
+            <div className="flex flex-col items-center w-full max-w-sm gap-4">
               {/* Editorial Header */}
-              <div className="text-center mb-10">
-                <h1 className="text-5xl md:text-6xl font-black uppercase italic tracking-tighter text-white mb-2 leading-none font-headline">
+              <div className="text-center shrink-0">
+                <h1 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter text-white mb-1 leading-none font-headline">
                   Vibe or Nah?
                 </h1>
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.3em] text-white/40 font-label">The Blind Listen</p>
               </div>
 
-              {/* Central Crystal Cube */}
-              <div className="relative w-72 h-72 md:w-80 md:h-80 flex items-center justify-center">
-                {/* Progress Ring — neon pink */}
-                <svg className="absolute w-full h-full -rotate-90">
-                  <circle
-                    className="text-white/5"
-                    cx="50%" cy="50%" r="48%"
-                    fill="none" stroke="currentColor" strokeWidth="2"
-                  />
-                  <circle
-                    className="text-primary progress-ring"
-                    cx="50%" cy="50%" r="48%"
-                    fill="none" stroke="currentColor"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                  />
-                </svg>
+              {/* Central Crystal Cube — shrinks on small screens */}
+              <div className="flex-1 min-h-0 flex items-center justify-center w-full">
+                <div className="relative w-56 h-56 max-w-[50vw] max-h-[50vw] md:w-64 md:h-64 flex items-center justify-center">
+                  {/* Progress Ring — neon pink */}
+                  <svg className="absolute w-full h-full -rotate-90">
+                    <circle
+                      className="text-white/5"
+                      cx="50%" cy="50%" r="48%"
+                      fill="none" stroke="currentColor" strokeWidth="2"
+                    />
+                    <circle
+                      className="text-primary progress-ring"
+                      cx="50%" cy="50%" r="48%"
+                      fill="none" stroke="currentColor"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                    />
+                  </svg>
 
-                {/* The Cube — frosted glass card */}
-                <div
-                  className="crystal-cube w-56 h-56 rounded-xl flex flex-col items-center justify-center p-6 text-center relative group transition-all duration-500 hover:scale-105 shadow-2xl"
-                  style={{
-                    transform: discoveryPlaying ? `scale(${scale})` : undefined,
-                    transition: 'transform 80ms ease-out',
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50 rounded-xl" />
-                  <div className="relative z-10">
-                    {/* Album art */}
-                    {discoveryTrack.albumArt && (
-                      <img
-                        src={discoveryTrack.albumArt}
-                        alt=""
-                        className={`w-24 h-24 rounded-lg shadow-2xl mb-4 border border-white/20 object-cover transition-all duration-700 ${
-                          discoveryRevealed
-                            ? 'blur-0 brightness-100'
-                            : 'blur-md brightness-75'
-                        }`}
-                      />
-                    )}
-                    <span
-                      className="material-symbols-outlined text-primary text-4xl"
-                      style={{
-                        fontVariationSettings: "'FILL' 1",
-                        transform: discoveryPlaying ? `scale(${scale})` : undefined,
-                        transition: 'transform 80ms ease-out',
-                      }}
-                    >
-                      music_note
-                    </span>
+                  {/* The Cube — frosted glass card */}
+                  <div
+                    className="crystal-cube w-44 h-44 md:w-48 md:h-48 rounded-xl flex flex-col items-center justify-center p-4 text-center relative group transition-all duration-500 shadow-2xl"
+                    style={{
+                      transform: discoveryPlaying ? `scale(${scale})` : undefined,
+                      transition: 'transform 80ms ease-out',
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50 rounded-xl" />
+                    <div className="relative z-10 flex flex-col items-center">
+                      {/* Album art */}
+                      {discoveryTrack.albumArt && (
+                        <img
+                          src={discoveryTrack.albumArt}
+                          alt=""
+                          className={`w-20 h-20 rounded-lg shadow-2xl mb-3 border border-white/20 object-cover transition-all duration-700 ${
+                            discoveryRevealed
+                              ? 'blur-0 brightness-100'
+                              : 'blur-md brightness-75'
+                          }`}
+                        />
+                      )}
+                      <span
+                        className="material-symbols-outlined text-primary text-3xl"
+                        style={{
+                          fontVariationSettings: "'FILL' 1",
+                          transform: discoveryPlaying ? `scale(${scale})` : undefined,
+                          transition: 'transform 80ms ease-out',
+                        }}
+                      >
+                        music_note
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Track Details — below the cube */}
-              <div className="mt-10 text-center">
+              <div className="text-center shrink-0">
                 {discoveryRevealed ? (
                   <>
-                    <h2 className="text-3xl font-black italic tracking-tighter text-primary uppercase font-headline">
+                    <h2 className="text-2xl font-black italic tracking-tighter text-primary uppercase font-headline">
                       {discoveryTrack.title}
                     </h2>
-                    <p className="text-lg font-bold text-white uppercase tracking-widest mt-1 font-headline">
+                    <p className="text-base font-bold text-white uppercase tracking-widest mt-1 font-headline">
                       by {discoveryTrack.artist}
                     </p>
                   </>
                 ) : (
                   <>
-                    <h2 className="text-3xl font-black italic tracking-tighter text-white/30 uppercase font-headline">
+                    <h2 className="text-2xl font-black italic tracking-tighter text-white/30 uppercase font-headline">
                       ???
                     </h2>
                     <p className="text-sm font-bold text-white/20 uppercase tracking-widest mt-1 font-headline">
@@ -302,66 +307,98 @@ export default function Send() {
                 )}
               </div>
 
-              {/* Action Buttons — Glass Pill Style */}
-              <div className="mt-14 flex gap-6 w-full max-w-sm">
-                <button
-                  onPointerDown={hapticTap}
-                  onClick={discoveryRevealed ? () => setDiscoveryVibe('VIBE') : handleQueIt}
-                  className={`vibe-pill-glass flex-1 py-5 rounded-full flex items-center justify-center gap-3 active:scale-95 transition-all text-accent-yellow ${
-                    discoveryVibe === 'VIBE' ? 'ring-2 ring-yellow-400/40' : ''
-                  }`}
-                >
-                  <span className="material-symbols-outlined font-bold glow-text-yellow" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
-                  <span className="text-xs font-black uppercase tracking-widest glow-text-yellow">Vibe</span>
-                </button>
-                <button
-                  onPointerDown={hapticTap}
-                  onClick={discoveryRevealed ? () => setDiscoveryVibe('NOPE') : handleReveal}
-                  className={`nope-pill-glass flex-1 py-5 rounded-full flex items-center justify-center gap-3 active:scale-95 transition-all text-primary ${
-                    discoveryVibe === 'NOPE' ? 'ring-2 ring-rose-400/40' : ''
-                  }`}
-                >
-                  <span className="material-symbols-outlined font-bold glow-text-pink">close</span>
-                  <span className="text-xs font-black uppercase tracking-widest glow-text-pink">Nope</span>
-                </button>
-              </div>
+              {/* ── Pre-Reveal: Vibe / Nope voting buttons ── */}
+              {!discoveryRevealed && (
+                <div className="shrink-0 flex flex-col items-center gap-3 w-full">
+                  <div className="flex gap-5 w-full">
+                    <button
+                      onPointerDown={hapticTap}
+                      onClick={() => { if (!discoveryVibe) setDiscoveryVibe('VIBE'); }}
+                      disabled={!!discoveryVibe}
+                      className={`vibe-pill-glass flex-1 py-4 rounded-full flex items-center justify-center gap-3 transition-all text-accent-yellow ${
+                        discoveryVibe === 'VIBE'
+                          ? 'ring-2 ring-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.3)] scale-[1.03]'
+                          : discoveryVibe === 'NOPE'
+                            ? 'opacity-30 pointer-events-none'
+                            : 'active:scale-95'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined font-bold glow-text-yellow" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                      <span className="text-xs font-black uppercase tracking-widest glow-text-yellow">Vibe</span>
+                    </button>
+                    <button
+                      onPointerDown={hapticTap}
+                      onClick={() => { if (!discoveryVibe) { setDiscoveryVibe('NOPE'); handleReveal(); } }}
+                      disabled={!!discoveryVibe}
+                      className={`nope-pill-glass flex-1 py-4 rounded-full flex items-center justify-center gap-3 transition-all text-primary ${
+                        discoveryVibe === 'NOPE'
+                          ? 'ring-2 ring-rose-400/50 shadow-[0_0_30px_rgba(236,72,153,0.3)]'
+                          : discoveryVibe === 'VIBE'
+                            ? 'opacity-30 pointer-events-none'
+                            : 'active:scale-95'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined font-bold glow-text-pink">close</span>
+                      <span className="text-xs font-black uppercase tracking-widest glow-text-pink">Nope</span>
+                    </button>
+                  </div>
+                  {/* Locked-in indicator when Vibe is selected, waiting for reveal */}
+                  {discoveryVibe === 'VIBE' && (
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-accent-yellow/70 animate-pulse">
+                      Locked in — revealing when the beat drops
+                    </p>
+                  )}
+                </div>
+              )}
 
-              {/* Revealed extras — Spotify + Roll Again */}
+              {/* ── Post-Reveal: Universal action buttons ── */}
               {discoveryRevealed && (
-                <div className="mt-8 flex flex-col items-center gap-4 w-full max-w-sm">
+                <div className="shrink-0 flex flex-col items-center gap-3 w-full">
+                  {/* Open in Spotify — green pill */}
                   <a
                     href={`https://open.spotify.com/track/${discoveryTrack.spotifyId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-spotify w-full flex items-center justify-center gap-2 min-h-[48px] no-underline"
+                    className="btn-spotify w-full flex items-center justify-center gap-2 min-h-[44px] rounded-full no-underline text-sm"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
                     Open in Spotify
                   </a>
+
+                  {/* Que this Song — tropical gradient primary CTA */}
+                  <button
+                    onPointerDown={hapticTap}
+                    onClick={handleQueIt}
+                    className="tropical-gradient text-white w-full min-h-[44px] rounded-full font-headline shadow-2xl shadow-pink-500/20 active:scale-95 transition-all duration-300 text-sm font-extrabold uppercase tracking-widest"
+                  >
+                    Que this Song
+                  </button>
+
+                  {/* Roll Again — muted text */}
                   <button
                     onPointerDown={hapticTap}
                     onClick={handleRollDice}
-                    className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px] active:scale-95 transition-transform"
+                    className="text-xs font-bold text-muted uppercase tracking-wider py-2 min-h-[36px] active:scale-95 transition-transform"
                   >
                     Roll Again
                   </button>
                 </div>
               )}
 
-              {/* Mystery Glow Indicator — shown while listening */}
+              {/* Mystery Glow Indicator — shown while listening pre-reveal */}
               {!discoveryRevealed && discoveryPlaying && (
-                <div className="fixed bottom-32 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+                <div className="shrink-0 flex flex-col items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-accent-yellow shadow-[0_0_10px_#facc15] animate-pulse" />
                   <p className="text-[9px] font-black uppercase tracking-[0.4em] text-accent-yellow">Decrypting</p>
                 </div>
               )}
-            </>
+            </div>
           )}
         </main>
 
         {/* ── Bottom Nav Bar ── */}
-        <nav className="fixed bottom-0 w-full z-50 bg-black/80 backdrop-blur-3xl rounded-t-[3rem] border-t border-white/5">
-          <div className="flex justify-around items-center px-12 py-8">
+        <nav className="shrink-0 bg-black/80 backdrop-blur-3xl rounded-t-[2rem] border-t border-white/5 z-50">
+          <div className="flex justify-around items-center px-12 py-5">
             <button
               onClick={exitDiscovery}
               className="flex flex-col items-center justify-center text-white rounded-full px-8 py-3 shadow-xl cursor-pointer active:scale-[0.96] transition-all duration-300 ease-out tropical-gradient shadow-pink-500/20"
