@@ -71,9 +71,9 @@ body{background-color:#0a0a0f;
 .orb-bars{display:flex;align-items:center;gap:3px;height:60px;opacity:0;
   position:absolute;transition:opacity .4s ease;z-index:3}
 .orb-bars.active{opacity:1}
-.orb-bar{width:4px;border-radius:2px;background:rgba(255,255,255,.9);
+.orb-bar{width:4px;border-radius:2px;background:linear-gradient(to top,#FFB347,#FF6B9D);
   animation:wave 1.2s ease-in-out infinite alternate;
-  filter:drop-shadow(0 0 4px rgba(0,255,255,.6))}
+  filter:drop-shadow(0 0 4px rgba(255,107,157,.6))}
 @keyframes wave{0%{height:12px}100%{height:var(--h,40px)}}
 
 .scrubber{width:100%;max-width:280px;margin:12px 0;opacity:0;transition:opacity .3s ease}
@@ -123,16 +123,17 @@ body{background-color:#0a0a0f;
   font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 .error-sub{font-size:14px;color:#6b7280}
 
-.unmask-wrap{display:none;flex-direction:column;align-items:center;gap:16px;
-  width:100%;padding:0 16px;animation:fadeUp .4s ease forwards}
+.unmask-wrap{display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  width:100%;min-height:100vh;min-height:100dvh;padding:0 16px;animation:fadeUp .4s ease forwards;
+  position:fixed;inset:0;z-index:50;background-color:rgba(10,10,15,.95)}
 .unmask-wrap.active{display:flex}
-.unmask-btn{border:none;border-radius:999px;padding:16px 40px;font-size:16px;font-weight:700;
+.unmask-btn{border:none;border-radius:999px;padding:20px 56px;font-size:20px;font-weight:800;
   cursor:pointer;font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-style:italic;
-  min-height:52px;touch-action:manipulation;
+  min-height:60px;touch-action:manipulation;
   background:linear-gradient(135deg,#FF6B9D,#FFB347);color:#1a0a12;
   box-shadow:0 4px 24px rgba(255,107,157,.3),0 0 48px rgba(255,179,71,.15);transition:transform .15s ease;letter-spacing:1px}
 .unmask-btn:active{transform:scale(.95)}
-.unmask-sub{font-size:12px;color:#6b7280;font-weight:500;font-style:italic}
+.unmask-sub{font-size:13px;color:#6b7280;font-weight:500;font-style:italic}
 
 .guess-wrap{display:none;flex-direction:column;align-items:center;gap:10px;
   width:100%;max-width:320px;margin:12px auto 0;padding:0}
@@ -276,8 +277,8 @@ body{background-color:#0a0a0f;
 
   <div id="unmaskSection" class="unmask-wrap">
     <div class="wordmark">Que<span class="dot">.</span></div>
-    <div id="unmaskEmoji" style="font-size:48px">\u{1F50A}</div>
-    <div style="font-size:16px;font-weight:700;color:#ffffff">Time's up!</div>
+    <div id="unmaskEmoji" style="font-size:72px">\u{1F50A}</div>
+    <div style="font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px">Time's up!</div>
     <button class="unmask-btn" id="btnUnmask" onpointerdown="hapticRevealRaw()" onclick="doReveal()">\u{1F3AD} Tap to unmask</button>
     <div class="unmask-sub">see who you've been listening to</div>
   </div>
@@ -616,7 +617,7 @@ body{background-color:#0a0a0f;
             $subtitleLabel.classList.add('revealed-meta');
             $inlineSpotify.href = data.spotifyUrl;
             revealed = true;
-            $orbPlayPause.classList.add('visible'); updatePlayPauseIcon(true);
+            $orbPlayPause.classList.add('visible'); updatePlayPauseIcon(audio && audio.paused);
             // Fade out pills, show action buttons
             $guessSection.classList.add('fade-out');
             $hint.style.opacity = '0';
@@ -644,7 +645,7 @@ body{background-color:#0a0a0f;
   window.doReveal = function() {
     if (revealed) return;
     revealed = true;
-    $orbPlayPause.classList.add('visible'); updatePlayPauseIcon(true);
+    $orbPlayPause.classList.add('visible'); updatePlayPauseIcon(audio && audio.paused);
     hapticRevealRaw();
     $unmaskSection.classList.remove('active');
     $unmaskSection.style.display = 'none';
@@ -767,7 +768,9 @@ body{background-color:#0a0a0f;
       // Set Spotify link
       $inlineSpotify.href = data.spotifyUrl;
       revealed = true;
-      $orbPlayPause.classList.add('visible'); updatePlayPauseIcon(true);
+      // Audio keeps playing after guess — show pause icon if audio is active
+      $orbPlayPause.classList.add('visible');
+      updatePlayPauseIcon(audio && audio.paused);
     }).catch(function(err) { console.error('Reveal chain failed:', err); });
 
     // After a short pause, fade out pills and show action buttons

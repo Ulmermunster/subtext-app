@@ -106,9 +106,9 @@ body{background-color:#0a0a0f;
 .orb-bars{display:flex;align-items:center;gap:3px;height:60px;opacity:0;
   position:absolute;transition:opacity .4s ease;z-index:3}
 .orb-bars.active{opacity:1}
-.orb-bar{width:4px;border-radius:2px;background:rgba(255,255,255,.9);
+.orb-bar{width:4px;border-radius:2px;background:linear-gradient(to top,#FFB347,#FF6B9D);
   animation:wave 1.2s ease-in-out infinite alternate;
-  filter:drop-shadow(0 0 4px rgba(0,255,255,.6))}
+  filter:drop-shadow(0 0 4px rgba(255,107,157,.6))}
 @keyframes wave{0%{height:12px}100%{height:var(--h,40px)}}
 
 .scrubber{width:100%;max-width:280px;margin:12px 0;opacity:0;transition:opacity .3s ease}

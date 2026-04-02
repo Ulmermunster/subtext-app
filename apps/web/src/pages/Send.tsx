@@ -175,8 +175,9 @@ export default function Send() {
     setDiscoveryError('');
   };
 
-  // Progress ring math (circumference = 2 * PI * 46 ≈ 289)
-  const circumference = 289;
+  // Progress ring math — radius=46 in a 100-unit viewBox, circumference = 2 * PI * 46
+  const radius = 46;
+  const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - discoveryProgress);
 
   // ════════════════════════════════════════════
@@ -239,16 +240,16 @@ export default function Send() {
               {/* Central Crystal Cube — shrinks on small screens */}
               <div className="flex-1 min-h-0 flex items-center justify-center w-full">
                 <div className="relative w-56 h-56 max-w-[50vw] max-h-[50vw] md:w-64 md:h-64 flex items-center justify-center">
-                  {/* Progress Ring — neon pink */}
-                  <svg className="absolute w-full h-full -rotate-90">
+                  {/* Progress Ring — neon pink, z-10 to render on top of glass card */}
+                  <svg className="absolute w-full h-full -rotate-90 z-10" viewBox="0 0 100 100">
                     <circle
                       className="text-white/5"
-                      cx="50%" cy="50%" r="48%"
+                      cx="50" cy="50" r={radius}
                       fill="none" stroke="currentColor" strokeWidth="2"
                     />
                     <circle
                       className="text-primary progress-ring"
-                      cx="50%" cy="50%" r="48%"
+                      cx="50" cy="50" r={radius}
                       fill="none" stroke="currentColor"
                       strokeWidth="4"
                       strokeLinecap="round"
