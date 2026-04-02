@@ -169,25 +169,23 @@ export default function Send() {
   // ════════════════════════════════════════════
   if (discoveryMode) {
     return (
-      <div className="bg-surface mesh-gradient min-h-screen font-body text-on-surface flex flex-col">
-        {/* ── Top App Bar ── */}
+      <div className="bg-surface sugar-rush-mesh min-h-screen font-body text-on-surface flex flex-col">
+        {/* ── Top App Bar — Centered QUE. wordmark ── */}
         <header className="fixed top-0 w-full z-50 bg-black/40 backdrop-blur-3xl border-b border-white/5">
           <div className="flex justify-between items-center px-6 h-16 w-full">
             <button
               onClick={exitDiscovery}
               className="flex items-center gap-2 scale-95 active:scale-90 transition-transform duration-200 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-primary">arrow_back</span>
+              <span className="material-symbols-outlined text-primary">music_note</span>
             </button>
-            <h1 className="text-2xl font-black text-on-surface italic tracking-tight font-headline">
-              Tasting Room<span className="text-primary">.</span>
-            </h1>
+            <div className="text-2xl font-black italic text-on-surface tracking-tight font-headline">QUE.</div>
             <div className="w-8" />
           </div>
         </header>
 
-        {/* ── Main Crystal Cube Content ── */}
-        <main className="flex-grow pt-24 pb-32 px-6 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
+        {/* ── Main Content Canvas ── */}
+        <main className="min-h-screen pt-24 pb-40 flex flex-col items-center justify-center relative px-6 overflow-hidden">
 
           {/* Loading state */}
           {discoveryLoading && (
@@ -212,202 +210,149 @@ export default function Send() {
             </div>
           )}
 
-          {/* Track loaded — Crystal Cube Player */}
+          {/* Track loaded — Vibe or Nah? Player */}
           {discoveryTrack && !discoveryError && (
             <>
-              <div className="relative w-full aspect-square flex items-center justify-center">
-                {/* Atmospheric pulse background */}
-                <div
-                  className={`absolute inset-0 rounded-full blur-[80px] ${
-                    discoveryRevealed
-                      ? 'bg-gradient-to-tr from-primary/20 via-accent-yellow/20 to-secondary/20 opacity-60 pulse-completed'
-                      : 'bg-gradient-to-tr from-primary/10 via-accent-yellow/10 to-secondary/10 opacity-40'
-                  }`}
-                />
+              {/* Editorial Header */}
+              <div className="text-center mb-10">
+                <h1 className="text-5xl md:text-6xl font-black uppercase italic tracking-tighter text-white mb-2 leading-none font-headline">
+                  Vibe or Nah?
+                </h1>
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.3em] text-white/40 font-label">The Blind Listen</p>
+              </div>
 
-                {/* Circular neon progress ring */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 scale-110">
-                  <svg className="w-[320px] h-[320px] neon-glow" viewBox="0 0 100 100">
-                    <circle
-                      className="text-white/10 stroke-current"
-                      cx="50" cy="50" r="46"
-                      fill="transparent" strokeWidth="1.5"
-                    />
-                    <circle
-                      className="text-[#00FFFF] stroke-current progress-ring"
-                      cx="50" cy="50" r="46"
-                      fill="transparent"
-                      strokeWidth="2"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={strokeDashoffset}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
+              {/* Central Crystal Cube */}
+              <div className="relative w-72 h-72 md:w-80 md:h-80 flex items-center justify-center">
+                {/* Progress Ring — neon pink */}
+                <svg className="absolute w-full h-full -rotate-90">
+                  <circle
+                    className="text-white/5"
+                    cx="50%" cy="50%" r="48%"
+                    fill="none" stroke="currentColor" strokeWidth="2"
+                  />
+                  <circle
+                    className="text-primary progress-ring"
+                    cx="50%" cy="50%" r="48%"
+                    fill="none" stroke="currentColor"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                  />
+                </svg>
 
-                {/* ── The Glass Cube ── */}
+                {/* The Cube — frosted glass card */}
                 <div
-                  className="glass-cube relative w-64 h-64 flex items-center justify-center z-10"
+                  className="crystal-cube w-56 h-56 rounded-xl flex flex-col items-center justify-center p-6 text-center relative group transition-all duration-500 hover:scale-105 shadow-2xl"
                   style={{
                     transform: discoveryPlaying ? `scale(${scale})` : undefined,
                     transition: 'transform 80ms ease-out',
                   }}
                 >
-                  {/* Inner nebula morph */}
-                  <div className="absolute inset-4 rounded-3xl overflow-hidden pointer-events-none">
-                    <div className="nebula-morph w-full h-full opacity-60" />
-                  </div>
-
-                  {/* Album art layer (blurred when unrevealed) */}
-                  {discoveryTrack.albumArt && (
-                    <img
-                      src={discoveryTrack.albumArt}
-                      alt=""
-                      className={`absolute inset-4 w-[calc(100%-2rem)] h-[calc(100%-2rem)] rounded-3xl object-cover z-[1] transition-all duration-700 ${
-                        discoveryRevealed
-                          ? 'opacity-90 blur-0 brightness-100'
-                          : 'opacity-30 blur-xl brightness-75'
-                      }`}
-                    />
-                  )}
-
-                  {/* Cube body (frosted glass) */}
-                  <div className="absolute inset-0 bg-white/10 backdrop-blur-xl rounded-[2.5rem] border-[3px] border-white/40 shadow-[inset_0px_0px_30px_rgba(255,255,255,0.4),0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/20" />
-                  </div>
-
-                  {/* Cube center controls */}
-                  <div className="relative z-30 flex flex-col items-center gap-6">
-                    {!discoveryRevealed && (
-                      <span
-                        className="text-5xl drop-shadow-lg"
-                        style={{
-                          transform: discoveryPlaying ? `scale(${scale})` : undefined,
-                          transition: 'transform 80ms ease-out',
-                        }}
-                      >
-                        🎵
-                      </span>
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50 rounded-xl" />
+                  <div className="relative z-10">
+                    {/* Album art */}
+                    {discoveryTrack.albumArt && (
+                      <img
+                        src={discoveryTrack.albumArt}
+                        alt=""
+                        className={`w-24 h-24 rounded-lg shadow-2xl mb-4 border border-white/20 object-cover transition-all duration-700 ${
+                          discoveryRevealed
+                            ? 'blur-0 brightness-100'
+                            : 'blur-md brightness-75'
+                        }`}
+                      />
                     )}
-                    <div className="text-center px-4 py-1.5 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
-                      <p className="font-headline font-extrabold text-white tracking-[0.2em] text-[10px] uppercase drop-shadow-sm">
-                        {discoveryRevealed
-                          ? 'TRACK REVEALED'
-                          : discoveryPlaying
-                          ? `${formatTime(30 - discoveryProgress * 30)} REMAINING`
-                          : 'READY'}
-                      </p>
-                    </div>
+                    <span
+                      className="material-symbols-outlined text-primary text-4xl"
+                      style={{
+                        fontVariationSettings: "'FILL' 1",
+                        transform: discoveryPlaying ? `scale(${scale})` : undefined,
+                        transition: 'transform 80ms ease-out',
+                      }}
+                    >
+                      music_note
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* ── Below the cube: action area ── */}
-              {!discoveryRevealed ? (
-                <div className="mt-12 flex flex-col items-center gap-4 w-full">
-                  {/* Vibe / Nope buttons */}
-                  <div className="flex gap-6 mt-4">
-                    <button
-                      onPointerDown={hapticTap}
-                      onClick={handleQueIt}
-                      className="px-10 py-3 rounded-full bg-white/10 backdrop-blur-md border vibe-glow transition-all duration-300 active:scale-95"
-                    >
-                      <span className="font-headline font-black italic tracking-widest text-sm text-[#00CCCC] drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]">
-                        QUE IT
-                      </span>
-                    </button>
-                    <button
-                      onPointerDown={hapticReveal}
-                      onClick={handleReveal}
-                      className="px-10 py-3 rounded-full bg-white/10 backdrop-blur-md border nope-glow transition-all duration-300 active:scale-95"
-                    >
-                      <span className="font-headline font-black italic tracking-widest text-sm text-primary drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]">
-                        REVEAL
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Hint text */}
-                  {discoveryPlaying && (
-                    <p className="text-muted text-center text-sm px-6 italic opacity-80 mt-4">
-                      Listen closely... the identity reveals itself when you choose.
-                    </p>
-                  )}
-
-                  {/* Progress info */}
-                  <div className="w-full max-w-xs mt-2">
-                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-[#00FFFF] to-primary rounded-full transition-all duration-300"
-                        style={{ width: `${discoveryProgress * 100}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-1.5">
-                      <span className="text-[10px] text-muted">{formatTime(discoveryProgress * 30)}</span>
-                      <span className="text-[10px] text-muted">{formatTime(30 - discoveryProgress * 30)}</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* ── Revealed State ── */
-                <div className="mt-8 flex flex-col items-center gap-5 w-full">
-                  {/* Revealed track identity */}
-                  <div className="text-center">
-                    <h1 className="font-headline font-black italic text-3xl text-primary tracking-tighter leading-tight uppercase">
+              {/* Track Details — below the cube */}
+              <div className="mt-10 text-center">
+                {discoveryRevealed ? (
+                  <>
+                    <h2 className="text-3xl font-black italic tracking-tighter text-primary uppercase font-headline">
                       {discoveryTrack.title}
-                    </h1>
-                    <p className="font-body font-medium text-muted text-base mt-2">
-                      by <span className="font-bold text-white uppercase tracking-widest">{discoveryTrack.artist}</span>
+                    </h2>
+                    <p className="text-lg font-bold text-white uppercase tracking-widest mt-1 font-headline">
+                      by {discoveryTrack.artist}
                     </p>
-                    {discoveryTrack.albumName && (
-                      <p className="text-xs text-muted/70 mt-1">{discoveryTrack.albumName}</p>
-                    )}
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-3xl font-black italic tracking-tighter text-white/30 uppercase font-headline">
+                      ???
+                    </h2>
+                    <p className="text-sm font-bold text-white/20 uppercase tracking-widest mt-1 font-headline">
+                      {discoveryPlaying
+                        ? `${formatTime(30 - discoveryProgress * 30)} remaining`
+                        : 'Ready'}
+                    </p>
+                  </>
+                )}
+              </div>
 
-                  {/* Vibe or Nah */}
-                  <h2 className="font-headline font-light italic text-primary text-xl tracking-[0.2em] uppercase">VIBE OR NAH?</h2>
-                  <div className="flex gap-4 w-full max-w-xs">
-                    <button
-                      onPointerDown={hapticTap}
-                      onClick={() => setDiscoveryVibe('VIBE')}
-                      className={`flex-1 h-14 rounded-full bg-white/20 backdrop-blur-lg border flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                        discoveryVibe === 'VIBE' ? 'vibe-glow ring-2 ring-cyan-400/40' : 'border-white/30'
-                      }`}
-                    >
-                      <span className="text-[#00CCCC]">❤️</span>
-                      <span className="font-headline font-bold text-[#00CCCC] tracking-widest text-sm uppercase">VIBE</span>
-                    </button>
-                    <button
-                      onPointerDown={hapticTap}
-                      onClick={() => setDiscoveryVibe('NOPE')}
-                      className={`flex-1 h-14 rounded-full bg-white/20 backdrop-blur-lg border flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                        discoveryVibe === 'NOPE' ? 'nope-glow ring-2 ring-rose-400/40' : 'border-white/30'
-                      }`}
-                    >
-                      <span className="text-[#FF4D4D]">✕</span>
-                      <span className="font-headline font-bold text-[#FF4D4D] tracking-widest text-sm uppercase">NOPE</span>
-                    </button>
-                  </div>
+              {/* Action Buttons — Glass Pill Style */}
+              <div className="mt-14 flex gap-6 w-full max-w-sm">
+                <button
+                  onPointerDown={hapticTap}
+                  onClick={discoveryRevealed ? () => setDiscoveryVibe('VIBE') : handleQueIt}
+                  className={`vibe-pill-glass flex-1 py-5 rounded-full flex items-center justify-center gap-3 active:scale-95 transition-all text-accent-yellow ${
+                    discoveryVibe === 'VIBE' ? 'ring-2 ring-yellow-400/40' : ''
+                  }`}
+                >
+                  <span className="material-symbols-outlined font-bold glow-text-yellow" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                  <span className="text-xs font-black uppercase tracking-widest glow-text-yellow">Vibe</span>
+                </button>
+                <button
+                  onPointerDown={hapticTap}
+                  onClick={discoveryRevealed ? () => setDiscoveryVibe('NOPE') : handleReveal}
+                  className={`nope-pill-glass flex-1 py-5 rounded-full flex items-center justify-center gap-3 active:scale-95 transition-all text-primary ${
+                    discoveryVibe === 'NOPE' ? 'ring-2 ring-rose-400/40' : ''
+                  }`}
+                >
+                  <span className="material-symbols-outlined font-bold glow-text-pink">close</span>
+                  <span className="text-xs font-black uppercase tracking-widest glow-text-pink">Nope</span>
+                </button>
+              </div>
 
-                  {/* Spotify link */}
+              {/* Revealed extras — Spotify + Roll Again */}
+              {discoveryRevealed && (
+                <div className="mt-8 flex flex-col items-center gap-4 w-full max-w-sm">
                   <a
                     href={`https://open.spotify.com/track/${discoveryTrack.spotifyId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-spotify w-full max-w-xs flex items-center justify-center gap-2 min-h-[48px] no-underline"
+                    className="btn-spotify w-full flex items-center justify-center gap-2 min-h-[48px] no-underline"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
                     Open in Spotify
                   </a>
-
-                  {/* Roll Again */}
                   <button
                     onPointerDown={hapticTap}
                     onClick={handleRollDice}
                     className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px] active:scale-95 transition-transform"
                   >
-                    Roll Again 🎲
+                    Roll Again
                   </button>
+                </div>
+              )}
+
+              {/* Mystery Glow Indicator — shown while listening */}
+              {!discoveryRevealed && discoveryPlaying && (
+                <div className="fixed bottom-32 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent-yellow shadow-[0_0_10px_#facc15] animate-pulse" />
+                  <p className="text-[9px] font-black uppercase tracking-[0.4em] text-accent-yellow">Decrypting</p>
                 </div>
               )}
             </>
@@ -426,7 +371,7 @@ export default function Send() {
             </button>
             <button
               onClick={() => { exitDiscovery(); navigate('/queue'); }}
-              className="flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer active:scale-[0.96] duration-300 ease-out text-white"
+              className="flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer active:scale-[0.96] duration-300 ease-out text-white/50"
             >
               <span className="material-symbols-outlined scale-110">library_music</span>
               <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Collection</span>

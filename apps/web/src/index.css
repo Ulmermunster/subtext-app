@@ -216,6 +216,56 @@ body {
   box-shadow: 0 0 25px rgba(236,72,153, 0.4);
 }
 
+/* Vibe pill glass button */
+.vibe-pill-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.15);
+}
+.vibe-pill-glass:hover {
+  box-shadow: 0 0 30px rgba(250, 204, 21, 0.3);
+}
+
+/* Nope pill glass button */
+.nope-pill-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(236, 72, 153, 0.2);
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.15);
+}
+.nope-pill-glass:hover {
+  box-shadow: 0 0 30px rgba(236, 72, 153, 0.3);
+}
+
+/* Crystal cube card — frosted dark glass */
+.crystal-cube {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.4) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Glow text utilities */
+.glow-text-yellow {
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+}
+.glow-text-pink {
+  text-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+}
+
+/* Sugar rush mesh background — enhanced Discovery mode */
+.sugar-rush-mesh {
+  background-color: #000000;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(250, 204, 21, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(34, 211, 238, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(251, 113, 133, 0.1) 0px, transparent 50%);
+}
+
 /* Completed pulse for revealed state */
 .pulse-completed {
   animation: pulse-glow 3s ease-in-out infinite;
