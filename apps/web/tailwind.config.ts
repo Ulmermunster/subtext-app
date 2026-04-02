@@ -5,56 +5,61 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Midnight Dark palette
-        background: '#0a0a0f',
-        surface: '#111116',
-        'surface-dim': '#18181c',
-        'surface-bright': '#1e1e24',
-        'surface-container': '#151519',
-        'surface-container-low': '#111116',
-        'surface-container-high': '#1e1e24',
+        // Core palette — Stitch design
+        surface: '#000000',
+        'on-surface': '#ffffff',
+        primary: '#ec4899',
+        'accent-yellow': '#facc15',
+
+        // Extended surface tones
+        background: '#000000',
+        'surface-dim': '#0a0a0a',
+        'surface-bright': '#1a1a1a',
+        'surface-container': '#111111',
+        'surface-container-low': '#0a0a0a',
+        'surface-container-high': '#1a1a1a',
         white: '#FFFFFF',
         ink: '#ffffff',
         muted: '#6b7280',
         'outline-variant': '#374151',
         border: 'rgba(255,255,255,0.08)',
 
-        // Primary – sunset pink
-        primary: '#FF6B9D',
-        'primary-container': '#FFB347',
-        'primary-dim': '#e05a88',
-        'on-primary': '#1a0a12',
-        'on-primary-container': '#3d1800',
+        // Primary tones
+        'primary-container': '#facc15',
+        'primary-dim': '#db2777',
+        'on-primary': '#ffffff',
+        'on-primary-container': '#422006',
 
-        // Secondary – neon cyan
+        // Secondary – neon cyan (kept for discovery/receiver)
         secondary: '#00CCCC',
         'secondary-container': '#0a3a3a',
         'on-secondary': '#003333',
 
-        // Tertiary – muted lavender
+        // Tertiary
         tertiary: '#9ca3af',
-        'tertiary-container': '#1e1e24',
+        'tertiary-container': '#1a1a1a',
 
         // Error / accent
         error: '#ef4444',
         'error-container': '#7f1d1d',
 
         // Legacy aliases
-        gold: '#FF6B9D',
-        'gold-light': '#FFB347',
-        'gold-pale': '#1e1e24',
-        amber: '#FFB347',
-        navy: '#0a0a0f',
+        gold: '#ec4899',
+        'gold-light': '#facc15',
+        'gold-pale': '#1a1a1a',
+        amber: '#facc15',
+        navy: '#000000',
         coral: '#ef4444',
         mint: '#00CCCC',
         sky: '#0a3a3a',
         spotify: '#1DB954',
-        cream: '#151519',
+        cream: '#111111',
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         headline: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        body: ['"Be Vietnam Pro"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        body: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        label: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         DEFAULT: '1rem',

@@ -169,53 +169,43 @@ export default function Send() {
   // ════════════════════════════════════════════
   if (discoveryMode) {
     return (
-      <div className="mesh-gradient min-h-screen font-body text-ink flex flex-col items-center overflow-hidden">
+      <div className="bg-surface mesh-gradient min-h-screen font-body text-on-surface flex flex-col">
         {/* ── Top App Bar ── */}
-        <header
-          className="fixed top-0 z-50 w-full flex justify-between items-center px-6 py-4"
-          style={{
-            background: 'rgba(10,10,15,0.8)',
-            backdropFilter: 'blur(40px)',
-            WebkitBackdropFilter: 'blur(40px)',
-            paddingTop: 'max(1rem, env(safe-area-inset-top))',
-          }}
-        >
-          <div className="flex items-center gap-3">
+        <header className="fixed top-0 w-full z-50 bg-black/40 backdrop-blur-3xl border-b border-white/5">
+          <div className="flex justify-between items-center px-6 h-16 w-full">
             <button
               onClick={exitDiscovery}
-              className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-primary active:scale-95 transition-transform"
+              className="flex items-center gap-2 scale-95 active:scale-90 transition-transform duration-200 cursor-pointer"
             >
-              ←
+              <span className="material-symbols-outlined text-primary">arrow_back</span>
             </button>
-            <span className="text-2xl font-black text-primary tracking-tighter font-headline italic">
-              Que<span className="text-primary-container">.</span>
-            </span>
+            <h1 className="text-2xl font-black text-on-surface italic tracking-tight font-headline">
+              Tasting Room<span className="text-primary">.</span>
+            </h1>
+            <div className="w-8" />
           </div>
-          <h2 className="text-lg font-extrabold text-ink tracking-tight font-headline">
-            Tasting Room<span className="text-primary-container">.</span>
-          </h2>
         </header>
 
         {/* ── Main Crystal Cube Content ── */}
-        <main className="flex-1 w-full max-w-md flex flex-col items-center justify-center px-8 pt-20 pb-32">
+        <main className="flex-grow pt-24 pb-32 px-6 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
 
           {/* Loading state */}
           {discoveryLoading && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4">
+            <div className="flex flex-col items-center justify-center gap-4">
               <div className="spinner" />
-              <p className="text-sm text-muted font-medium font-body">Rolling the dice...</p>
+              <p className="text-sm text-muted font-medium">Rolling the dice...</p>
             </div>
           )}
 
           {/* Error state */}
           {discoveryError && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4">
-              <span className="text-5xl">🎲</span>
-              <p className="text-sm text-error font-medium font-body">{discoveryError}</p>
+            <div className="flex flex-col items-center justify-center gap-4">
+              <span className="material-symbols-outlined text-5xl text-primary">casino</span>
+              <p className="text-sm text-error font-medium">{discoveryError}</p>
               <button
                 onPointerDown={hapticTap}
                 onClick={handleRollDice}
-                className="btn-primary text-sm px-6 py-3 mt-2"
+                className="tropical-gradient text-white px-8 py-3 rounded-full font-headline shadow-2xl shadow-pink-500/20 active:scale-95 transition-all duration-300 text-sm font-extrabold uppercase tracking-widest mt-2"
               >
                 Roll Again
               </button>
@@ -230,8 +220,8 @@ export default function Send() {
                 <div
                   className={`absolute inset-0 rounded-full blur-[80px] ${
                     discoveryRevealed
-                      ? 'bg-gradient-to-tr from-primary-container/20 via-secondary-container/20 to-tertiary-container/20 opacity-60 pulse-completed'
-                      : 'bg-gradient-to-tr from-primary-container/10 via-secondary-container/10 to-tertiary-container/10 opacity-40'
+                      ? 'bg-gradient-to-tr from-primary/20 via-accent-yellow/20 to-secondary/20 opacity-60 pulse-completed'
+                      : 'bg-gradient-to-tr from-primary/10 via-accent-yellow/10 to-secondary/10 opacity-40'
                   }`}
                 />
 
@@ -331,7 +321,7 @@ export default function Send() {
                       onClick={handleReveal}
                       className="px-10 py-3 rounded-full bg-white/10 backdrop-blur-md border nope-glow transition-all duration-300 active:scale-95"
                     >
-                      <span className="font-headline font-black italic tracking-widest text-sm text-[#FF6B9D] drop-shadow-[0_0_8px_rgba(255,107,157,0.8)]">
+                      <span className="font-headline font-black italic tracking-widest text-sm text-primary drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]">
                         REVEAL
                       </span>
                     </button>
@@ -339,7 +329,7 @@ export default function Send() {
 
                   {/* Hint text */}
                   {discoveryPlaying && (
-                    <p className="text-muted text-center text-sm px-6 italic opacity-80 mt-4 font-body">
+                    <p className="text-muted text-center text-sm px-6 italic opacity-80 mt-4">
                       Listen closely... the identity reveals itself when you choose.
                     </p>
                   )}
@@ -348,7 +338,7 @@ export default function Send() {
                   <div className="w-full max-w-xs mt-2">
                     <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-[#00FFFF] to-primary-container rounded-full transition-all duration-300"
+                        className="h-full bg-gradient-to-r from-[#00FFFF] to-primary rounded-full transition-all duration-300"
                         style={{ width: `${discoveryProgress * 100}%` }}
                       />
                     </div>
@@ -367,10 +357,10 @@ export default function Send() {
                       {discoveryTrack.title}
                     </h1>
                     <p className="font-body font-medium text-muted text-base mt-2">
-                      by <span className="font-bold text-ink uppercase tracking-widest">{discoveryTrack.artist}</span>
+                      by <span className="font-bold text-white uppercase tracking-widest">{discoveryTrack.artist}</span>
                     </p>
                     {discoveryTrack.albumName && (
-                      <p className="text-xs text-muted/70 mt-1 font-body">{discoveryTrack.albumName}</p>
+                      <p className="text-xs text-muted/70 mt-1">{discoveryTrack.albumName}</p>
                     )}
                   </div>
 
@@ -414,7 +404,7 @@ export default function Send() {
                   <button
                     onPointerDown={hapticTap}
                     onClick={handleRollDice}
-                    className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px] active:scale-95 transition-transform font-body"
+                    className="text-xs font-bold text-muted uppercase tracking-wider py-3 min-h-[44px] active:scale-95 transition-transform"
                   >
                     Roll Again 🎲
                   </button>
@@ -424,34 +414,24 @@ export default function Send() {
           )}
         </main>
 
-        {/* ── Bottom Nav Bar (2 buttons) ── */}
-        <nav
-          className="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pt-4 rounded-t-xl"
-          style={{
-            background: 'rgba(17,17,22,0.8)',
-            backdropFilter: 'blur(40px)',
-            WebkitBackdropFilter: 'blur(40px)',
-            boxShadow: '0 -12px 32px rgba(0,0,0,0.3)',
-            paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-          }}
-        >
-          <button
-            onClick={exitDiscovery}
-            className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full px-6 py-2 active:scale-95 transition-all duration-200"
-          >
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-            <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">SEND</span>
-          </button>
-          <button
-            onClick={() => { exitDiscovery(); navigate('/queue'); }}
-            className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
-          >
-            <span className="text-xl">📦</span>
-            <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">COLLECTION</span>
-          </button>
+        {/* ── Bottom Nav Bar ── */}
+        <nav className="fixed bottom-0 w-full z-50 bg-black/80 backdrop-blur-3xl rounded-t-[3rem] border-t border-white/5">
+          <div className="flex justify-around items-center px-12 py-8">
+            <button
+              onClick={exitDiscovery}
+              className="flex flex-col items-center justify-center text-white rounded-full px-8 py-3 shadow-xl cursor-pointer active:scale-[0.96] transition-all duration-300 ease-out tropical-gradient shadow-pink-500/20"
+            >
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+              <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Send</span>
+            </button>
+            <button
+              onClick={() => { exitDiscovery(); navigate('/queue'); }}
+              className="flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer active:scale-[0.96] duration-300 ease-out text-white"
+            >
+              <span className="material-symbols-outlined scale-110">library_music</span>
+              <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Collection</span>
+            </button>
+          </div>
         </nav>
       </div>
     );
@@ -463,72 +443,48 @@ export default function Send() {
   const hasResults = searched && (tracks.length > 0 || artists.length > 0);
 
   return (
-    <div
-      className="w-full relative overflow-hidden"
-      style={{ minHeight: '100dvh' }}
-    >
-      {/* ── Ambient pulse blob ── */}
-      <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
-        <div className="pulse-bg w-[120%] h-[60%] rounded-full animate-pulse" />
-      </div>
-
+    <div className="bg-surface font-body text-on-surface mesh-gradient min-h-screen flex flex-col">
       {/* ── Top Header ── */}
-      <header
-        className="fixed top-0 w-full z-50 flex items-center justify-between px-6 py-4"
-        style={{
-          background: 'rgba(10,10,15,0.8)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          paddingTop: 'max(1rem, env(safe-area-inset-top))',
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container bg-gradient-to-br from-primary/20 to-primary-container/30 flex items-center justify-center">
-            <span className="text-primary text-sm font-bold">Q</span>
+      <header className="fixed top-0 w-full z-50 bg-black/40 backdrop-blur-3xl border-b border-white/5">
+        <div className="flex justify-between items-center px-6 h-16 w-full">
+          <div className="flex items-center gap-2 scale-95 active:scale-90 transition-transform duration-200 cursor-pointer">
+            <span className="material-symbols-outlined text-primary">music_note</span>
           </div>
-          <span className="text-2xl font-black text-primary tracking-tighter font-headline">
-            Que<span className="text-primary-container">.</span>
-          </span>
+          <h1 className="text-2xl font-black text-on-surface italic tracking-tight font-headline">Que.</h1>
+          <div className="w-8" />
         </div>
-        <div className="w-10" />
       </header>
 
       {/* ── Main Content ── */}
-      <main
-        className="relative z-10 w-full max-w-md mx-auto px-5 flex flex-col"
-        style={{
-          paddingTop: 'calc(max(1rem, env(safe-area-inset-top)) + 80px)',
-          paddingBottom: 'max(7rem, calc(6rem + env(safe-area-inset-bottom)))',
-          minHeight: '100dvh',
-        }}
-      >
+      <main className="flex-grow pt-24 pb-32 px-6 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
+
         {/* ── Search Bar ── */}
-        <div className="mt-2">
+        <section className="w-full mb-8">
           <SearchInput onSearch={handleSearch} isLoading={searchLoading} />
-        </div>
+        </section>
 
         {/* Search loading */}
         {searchLoading && (
-          <p className="text-center text-primary text-sm font-medium mt-6 font-body">searching...</p>
+          <p className="text-center text-primary text-sm font-medium mt-6">searching...</p>
         )}
 
         {/* Search error */}
         {searchError && (
-          <p className="text-center text-error text-sm mt-4 font-body">{searchError}</p>
+          <p className="text-center text-error text-sm mt-4">{searchError}</p>
         )}
 
         {/* No results */}
         {!searchLoading && searched && !hasResults && !searchError && (
           <div className="glass-card p-6 text-center space-y-2 mt-6">
-            <p className="text-muted text-sm font-body">No results found</p>
-            <p className="text-xs text-muted font-body">Try a different search term.</p>
+            <p className="text-muted text-sm">No results found</p>
+            <p className="text-xs text-muted">Try a different search term.</p>
           </div>
         )}
 
         {/* ── Search Results ── */}
         {hasResults && (
           <div
-            className="flex-1 overflow-y-auto mt-4 -mx-1 px-1"
+            className="flex-1 overflow-y-auto w-full -mx-1 px-1"
             style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
           >
             {tracks.length > 0 && (
@@ -544,7 +500,7 @@ export default function Send() {
             )}
             {artists.length > 0 && (
               <div className="space-y-0">
-                <div className="px-1 py-2 text-xs font-semibold text-muted uppercase tracking-wider font-body">
+                <div className="px-1 py-2 text-xs font-semibold text-muted uppercase tracking-wider">
                   Artists
                 </div>
                 {artists.map((artist) => (
@@ -560,85 +516,48 @@ export default function Send() {
         )}
 
         {/* ═══════════════════════════════════════════ */}
-        {/* ── Dice Card (default empty state) ──      */}
-        {/* Show when no search is active               */}
+        {/* ── Empty State: Roll the Dice CTA ──       */}
         {/* ═══════════════════════════════════════════ */}
         {!searchLoading && !hasResults && !searchError && (
-          <div className="flex flex-col items-center mt-8 flex-1 justify-center">
-            {/* Prompt text */}
-            <p className="text-muted text-sm font-medium font-body text-center mb-6 px-4">
-              Not sure what to send?<br />
-              <span className="text-primary font-bold">Roll for a random vibe.</span>
-            </p>
+          <section className="flex flex-col items-center justify-center space-y-12 text-center">
+            <div className="space-y-6">
+              <h2 className="text-3xl font-headline tracking-tight leading-tight font-bold">
+                <span className="text-white">Not sure what to send?</span><br />
+                <span className="text-white">Roll for a random vibe.</span>
+              </h2>
+            </div>
 
-            {/* ── 3D Dice Card ── */}
-            <button
-              onPointerDown={hapticTap}
-              onClick={handleRollDice}
-              className="relative w-full max-w-[280px] aspect-square glass-card flex items-center justify-center cursor-pointer active:scale-[0.97] transition-transform duration-200 group"
-              aria-label="Roll the dice"
-            >
-              {/* Pulsing glow ring */}
-              <div className="absolute inset-0 rounded-card dice-pulse-glow pointer-events-none" />
-
-              <div className="relative w-full h-full flex items-center justify-center gap-4">
-                {/* Magenta Die */}
-                <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary-container rounded-lg shadow-xl transform -rotate-12 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                  <div className="grid grid-cols-2 gap-2.5 p-3">
-                    <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                    <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                    <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                    <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                  </div>
-                </div>
-                {/* Cyan Die */}
-                <div className="w-24 h-24 bg-gradient-to-br from-secondary to-secondary-container rounded-lg shadow-xl transform rotate-12 -translate-y-3 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                  <div className="grid grid-cols-3 gap-1.5 p-3">
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                  </div>
-                </div>
-              </div>
-            </button>
-
-            {/* Tap hint */}
-            <p className="text-muted text-[11px] font-medium tracking-widest uppercase opacity-50 mt-4">
-              Tap the dice
-            </p>
-          </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full -z-10" />
+              <button
+                onPointerDown={hapticTap}
+                onClick={handleRollDice}
+                className="tropical-gradient text-white px-12 py-5 rounded-full font-headline shadow-2xl shadow-pink-500/20 active:scale-95 transition-all duration-300 text-lg font-extrabold uppercase tracking-widest"
+              >
+                Roll the Dice
+              </button>
+            </div>
+          </section>
         )}
       </main>
 
-      {/* ── Bottom Nav Bar (2 buttons) ── */}
-      <nav
-        className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-4 rounded-t-xl"
-        style={{
-          background: 'rgba(17,17,22,0.8)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)',
-          boxShadow: '0 -12px 32px rgba(0,0,0,0.3)',
-          paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-        }}
-      >
-        <button
-          className="flex flex-col items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full px-6 py-2 active:scale-95 transition-all duration-200"
-        >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">SEND</span>
-        </button>
-        <button
-          onClick={() => navigate('/queue')}
-          className="flex flex-col items-center justify-center text-muted opacity-60 hover:scale-105 transition-transform"
-        >
-          <span className="text-xl">📦</span>
-          <span className="text-[10px] uppercase tracking-widest font-bold mt-0.5 font-body">COLLECTION</span>
-        </button>
+      {/* ── Bottom Nav Bar ── */}
+      <nav className="fixed bottom-0 w-full z-50 bg-black/80 backdrop-blur-3xl rounded-t-[3rem] border-t border-white/5">
+        <div className="flex justify-around items-center px-12 py-8">
+          <button
+            className="flex flex-col items-center justify-center text-white rounded-full px-8 py-3 shadow-xl cursor-pointer active:scale-[0.96] transition-all duration-300 ease-out tropical-gradient shadow-pink-500/20"
+          >
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+            <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Send</span>
+          </button>
+          <button
+            onClick={() => navigate('/queue')}
+            className="flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer active:scale-[0.96] duration-300 ease-out text-white"
+          >
+            <span className="material-symbols-outlined scale-110">library_music</span>
+            <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Collection</span>
+          </button>
+        </div>
       </nav>
     </div>
   );

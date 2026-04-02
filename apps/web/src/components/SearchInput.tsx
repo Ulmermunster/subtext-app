@@ -19,22 +19,23 @@ export default function SearchInput({ onSearch, isLoading }: Props) {
   }, [value]);
 
   return (
-    <div className="glass-card p-4">
-      <div className="relative">
+    <div className="relative group">
+      <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-accent-yellow/30 rounded-full blur-md opacity-20 group-focus-within:opacity-40 transition duration-500" />
+      <div className="relative flex items-center bg-zinc-900/50 backdrop-blur-xl rounded-full px-6 py-4 border border-white/10">
+        <span className="material-symbols-outlined mr-3 text-white/50">search</span>
         <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Search a track..."
-          className="w-full py-3 text-2xl font-bold text-ink placeholder:text-muted/40 bg-transparent border-none focus:outline-none font-headline tracking-tight"
+          placeholder="Search tracks, artists..."
+          className="bg-transparent border-none focus:ring-0 focus:outline-none w-full text-white font-medium placeholder:text-white/30"
         />
         {isLoading && (
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <div className="ml-2">
             <div className="spinner" />
           </div>
         )}
       </div>
-      <div className="gold-underline" />
     </div>
   );
 }
