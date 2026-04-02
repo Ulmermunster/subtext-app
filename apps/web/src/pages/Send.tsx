@@ -74,6 +74,18 @@ export default function Send() {
     };
   }, []);
 
+  // Pause audio when tab/browser is hidden (Page Visibility API)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden && audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        setDiscoveryPlaying(false);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   const handleRollDice = async () => {
     setDiscoveryMode(true);
     setDiscoveryLoading(true);

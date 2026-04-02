@@ -57,7 +57,7 @@ body{background-color:#0a0a0f;
   font-size:13px;color:#6b7280;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
 
 .ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  border-radius:2.5rem;border:1.5px solid rgba(0,255,255,.2);z-index:1;
+  border-radius:2.5rem;border:1.5px solid rgba(255,20,147,.25);z-index:3;
   animation:pulse 2.5s ease-out infinite}
 .ring-1{width:250px;height:250px}
 .ring-2{width:280px;height:280px;animation-delay:.4s}
@@ -79,8 +79,8 @@ body{background-color:#0a0a0f;
 .scrubber{width:100%;max-width:280px;margin:12px 0;opacity:0;transition:opacity .3s ease}
 .scrubber.active{opacity:1}
 .scrub-track{width:100%;height:4px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
-.scrub-fill{height:100%;background:linear-gradient(90deg,#00CCCC,#FF6B9D);border-radius:2px;
-  transition:width .3s linear;filter:drop-shadow(0 0 6px rgba(0,255,255,.4))}
+.scrub-fill{height:100%;background:linear-gradient(90deg,#FF1493,#FF6B9D);border-radius:2px;
+  transition:width .3s linear;filter:drop-shadow(0 0 6px rgba(255,20,147,.4))}
 .scrub-times{display:flex;justify-content:space-between;margin-top:4px;
   font-size:11px;color:#6b7280;font-weight:500}
 
@@ -94,18 +94,18 @@ body{background-color:#0a0a0f;
   flex:1;min-height:48px;touch-action:manipulation;backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px)}
 .react-btn:active{transform:scale(.95)}
-.btn-vibe{background:rgba(255,255,255,.05);color:#00CCCC;
-  border:1.5px solid rgba(0,204,204,.3);
-  box-shadow:0 0 15px rgba(0,204,204,.15)}
-.btn-vibe:hover{box-shadow:0 0 25px rgba(0,204,204,.3)}
-.btn-vibe.selected{box-shadow:0 0 20px rgba(0,204,204,.4);border-color:rgba(0,204,204,.6);
-  background:rgba(0,204,204,.15)}
-.btn-nope{background:rgba(255,255,255,.05);color:#FF6B9D;
-  border:1.5px solid rgba(255,107,157,.3);
-  box-shadow:0 0 15px rgba(255,107,157,.15)}
-.btn-nope:hover{box-shadow:0 0 25px rgba(255,107,157,.3)}
-.btn-nope.selected{box-shadow:0 0 20px rgba(255,107,157,.4);border-color:rgba(255,107,157,.6);
-  background:rgba(255,107,157,.15)}
+.btn-vibe{background:rgba(255,255,255,.05);color:#FACC15;
+  border:1.5px solid rgba(250,204,21,.3);
+  box-shadow:0 0 15px rgba(250,204,21,.15)}
+.btn-vibe:hover{box-shadow:0 0 25px rgba(250,204,21,.3)}
+.btn-vibe.selected{box-shadow:0 0 20px rgba(250,204,21,.4);border-color:rgba(250,204,21,.6);
+  background:rgba(250,204,21,.15)}
+.btn-nope{background:rgba(255,255,255,.05);color:#FF1493;
+  border:1.5px solid rgba(255,20,147,.3);
+  box-shadow:0 0 15px rgba(255,20,147,.15)}
+.btn-nope:hover{box-shadow:0 0 25px rgba(255,20,147,.3)}
+.btn-nope.selected{box-shadow:0 0 20px rgba(255,20,147,.4);border-color:rgba(255,20,147,.6);
+  background:rgba(255,20,147,.15)}
 
 .hint{font-size:12px;color:#6b7280;font-weight:500;text-align:center;
   margin:4px 0;transition:opacity .3s ease;font-style:italic}
@@ -159,6 +159,15 @@ body{background-color:#0a0a0f;
 .orb-revealed-art{width:100%;height:100%;object-fit:cover;border-radius:2rem;
   position:absolute;top:0;left:0;opacity:0;transition:opacity .6s ease;z-index:3}
 .orb-revealed-art.visible{opacity:1;box-shadow:0 0 0 3px #FF1493,0 0 20px rgba(255,20,147,.4),0 0 40px rgba(255,20,147,.2)}
+.orb-play-pause{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:5;width:56px;height:56px;border-radius:50%;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;
+  border:1.5px solid rgba(255,255,255,.2);
+  transition:opacity .3s ease,transform .15s ease;cursor:pointer}
+.orb-play-pause.visible{display:flex}
+.orb-play-pause:active{transform:translate(-50%,-50%) scale(.9)}
+.orb-play-pause svg{fill:#ffffff;width:24px;height:24px}
 .mystery.revealed-title{color:#FF6B9D;font-size:22px;font-weight:900;font-style:italic;
   letter-spacing:-1px;text-transform:uppercase;
   font-family:'Plus Jakarta Sans',system-ui,sans-serif;transition:all .4s ease}
@@ -176,14 +185,14 @@ body{background-color:#0a0a0f;
   touch-action:manipulation;transition:transform .15s ease,box-shadow .15s ease;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .inline-actions .vibe-btn:active{transform:scale(.95)}
-.inline-actions .vibe-btn-yes{background:rgba(255,255,255,.05);color:#00CCCC;
-  border:1.5px solid rgba(0,204,204,.3);box-shadow:0 0 15px rgba(0,204,204,.15)}
-.inline-actions .vibe-btn-yes.selected{box-shadow:0 0 20px rgba(0,204,204,.4);
-  border-color:rgba(0,204,204,.6);background:rgba(0,204,204,.15)}
-.inline-actions .vibe-btn-no{background:rgba(255,255,255,.05);color:#FF6B9D;
-  border:1.5px solid rgba(255,107,157,.3);box-shadow:0 0 15px rgba(255,107,157,.15)}
-.inline-actions .vibe-btn-no.selected{box-shadow:0 0 20px rgba(255,107,157,.4);
-  border-color:rgba(255,107,157,.6);background:rgba(255,107,157,.15)}
+.inline-actions .vibe-btn-yes{background:rgba(255,255,255,.05);color:#FACC15;
+  border:1.5px solid rgba(250,204,21,.3);box-shadow:0 0 15px rgba(250,204,21,.15)}
+.inline-actions .vibe-btn-yes.selected{box-shadow:0 0 20px rgba(250,204,21,.4);
+  border-color:rgba(250,204,21,.6);background:rgba(250,204,21,.15)}
+.inline-actions .vibe-btn-no{background:rgba(255,255,255,.05);color:#FF1493;
+  border:1.5px solid rgba(255,20,147,.3);box-shadow:0 0 15px rgba(255,20,147,.15)}
+.inline-actions .vibe-btn-no.selected{box-shadow:0 0 20px rgba(255,20,147,.4);
+  border-color:rgba(255,20,147,.6);background:rgba(255,20,147,.15)}
 .inline-actions .action-link{display:inline-flex;align-items:center;justify-content:center;
   gap:8px;border-radius:999px;padding:12px 24px;font-size:14px;font-weight:700;
   text-decoration:none;min-height:48px;touch-action:manipulation;width:100%}
@@ -222,6 +231,9 @@ body{background-color:#0a0a0f;
         <span class="orb-emoji" id="orbEmoji">\u{1F3B5}</span>
         <div class="orb-bars" id="orbBars"></div>
         <img class="orb-revealed-art" id="orbRevealArt" src="" alt="">
+        <div class="orb-play-pause" id="orbPlayPause">
+          <svg id="playPauseIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
       </div>
       <div class="orb-hint" id="orbHint">tap to play</div>
     </div>
@@ -289,6 +301,8 @@ body{background-color:#0a0a0f;
   var $inlineActions = document.getElementById('inlineActions');
   var $inlineSpotify = document.getElementById('inlineSpotify');
   var $orbRevealArt = document.getElementById('orbRevealArt');
+  var $orbPlayPause = document.getElementById('orbPlayPause');
+  var $playPauseIcon = document.getElementById('playPauseIcon');
   var $mysteryLabel = document.getElementById('mysteryLabel');
   var $subtitleLabel = document.getElementById('subtitleLabel');
   var $fromTag = document.getElementById('fromTag');
@@ -492,9 +506,28 @@ body{background-color:#0a0a0f;
     if (!revealed && vibeData) triggerHaptic();
   });
 
+  function updatePlayPauseIcon(paused) {
+    if (!$playPauseIcon) return;
+    $playPauseIcon.innerHTML = paused
+      ? '<path d="M8 5v14l11-7z"/>'
+      : '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  }
+
   $orbWrap.addEventListener('click', function() {
-    if (revealed) return;
     if (!vibeData) return;
+
+    // Post-reveal: toggle play/pause on the audio
+    if (revealed) {
+      if (!audio) return;
+      if (audio.paused) {
+        audio.play();
+        updatePlayPauseIcon(false);
+      } else {
+        audio.pause();
+        updatePlayPauseIcon(true);
+      }
+      return;
+    }
 
     if (playing) {
       if (audio) {
@@ -583,6 +616,7 @@ body{background-color:#0a0a0f;
             $subtitleLabel.classList.add('revealed-meta');
             $inlineSpotify.href = data.spotifyUrl;
             revealed = true;
+            $orbPlayPause.classList.add('visible'); updatePlayPauseIcon(true);
             // Fade out pills, show action buttons
             $guessSection.classList.add('fade-out');
             $hint.style.opacity = '0';
@@ -610,6 +644,7 @@ body{background-color:#0a0a0f;
   window.doReveal = function() {
     if (revealed) return;
     revealed = true;
+    $orbPlayPause.classList.add('visible'); updatePlayPauseIcon(true);
     hapticRevealRaw();
     $unmaskSection.classList.remove('active');
     $unmaskSection.style.display = 'none';
@@ -732,6 +767,7 @@ body{background-color:#0a0a0f;
       // Set Spotify link
       $inlineSpotify.href = data.spotifyUrl;
       revealed = true;
+      $orbPlayPause.classList.add('visible'); updatePlayPauseIcon(true);
     }).catch(function(err) { console.error('Reveal chain failed:', err); });
 
     // After a short pause, fade out pills and show action buttons
@@ -813,6 +849,16 @@ body{background-color:#0a0a0f;
     }
     requestAnimationFrame(frame);
   }
+
+  // Page Visibility API — pause audio when tab/browser is hidden
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden && audio && !audio.paused) {
+      audio.pause();
+      $orbBars.classList.remove('active');
+      stopBassPulse();
+      if (revealed && $orbPlayPause) updatePlayPauseIcon(true);
+    }
+  });
 })();
 </script>
 </body>

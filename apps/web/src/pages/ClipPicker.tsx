@@ -104,29 +104,29 @@ export default function ClipPicker() {
           {gameMode === 'guess' ? 'Guessing game sent.' : 'Send this blind clip.'}
         </p>
 
-        {/* Album art with badge */}
-        <div className="relative mb-8">
-          <img
-            src={track.albumArt}
-            alt=""
-            className="w-40 h-40 rounded-[2rem] object-cover border-none"
-            style={{
-              transform: 'rotate(-3deg)',
-              boxShadow: '0 12px 48px rgba(0,0,0,.3), 0 0 0 3px #FF1493, 0 0 20px rgba(255,20,147,.3)',
-            }}
-          />
-          <div className="absolute -bottom-3 -right-3 w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-surface flex items-center justify-center shadow-lg">
-            {gameMode === 'guess' ? (
-              <span className="text-lg">🎯</span>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8L6.5 11.5L13 5" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
+        {/* Album art with badge — large & centered */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="relative">
+            <img
+              src={track.albumArt}
+              alt=""
+              className="w-64 h-64 rounded-[2rem] object-cover border-none"
+              style={{
+                transform: 'rotate(-3deg)',
+                boxShadow: '0 16px 64px rgba(0,0,0,.4), 0 0 0 3px #FF1493, 0 0 30px rgba(255,20,147,.3)',
+              }}
+            />
+            <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-surface flex items-center justify-center shadow-lg">
+              {gameMode === 'guess' ? (
+                <span className="text-xl">🎯</span>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 8L6.5 11.5L13 5" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
           </div>
         </div>
-
-        <div className="flex-1" />
 
         {/* Action buttons */}
         <div className="flex gap-3 w-full mb-4">

@@ -92,7 +92,7 @@ body{background-color:#0a0a0f;
   font-size:13px;color:#6b7280;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
 
 .ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  border-radius:2.5rem;border:1.5px solid rgba(0,255,255,.2);z-index:1;
+  border-radius:2.5rem;border:1.5px solid rgba(255,20,147,.25);z-index:3;
   animation:pulse 2.5s ease-out infinite}
 .ring-1{width:250px;height:250px}
 .ring-2{width:280px;height:280px;animation-delay:.4s}
@@ -114,8 +114,8 @@ body{background-color:#0a0a0f;
 .scrubber{width:100%;max-width:280px;margin:12px 0;opacity:0;transition:opacity .3s ease}
 .scrubber.active{opacity:1}
 .scrub-track{width:100%;height:4px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
-.scrub-fill{height:100%;background:linear-gradient(90deg,#00CCCC,#FF6B9D);border-radius:2px;
-  transition:width .3s linear;filter:drop-shadow(0 0 6px rgba(0,255,255,.4))}
+.scrub-fill{height:100%;background:linear-gradient(90deg,#FF1493,#FF6B9D);border-radius:2px;
+  transition:width .3s linear;filter:drop-shadow(0 0 6px rgba(255,20,147,.4))}
 .scrub-times{display:flex;justify-content:space-between;margin-top:4px;
   font-size:11px;color:#6b7280;font-weight:500}
 
@@ -129,18 +129,18 @@ body{background-color:#0a0a0f;
   flex:1;min-height:48px;touch-action:manipulation;backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px)}
 .react-btn:active{transform:scale(.95)}
-.btn-vibe{background:rgba(255,255,255,.05);color:#00CCCC;
-  border:1.5px solid rgba(0,204,204,.3);
-  box-shadow:0 0 15px rgba(0,204,204,.15)}
-.btn-vibe:hover{box-shadow:0 0 25px rgba(0,204,204,.3)}
-.btn-vibe.selected{box-shadow:0 0 20px rgba(0,204,204,.4);border-color:rgba(0,204,204,.6);
-  background:rgba(0,204,204,.15)}
-.btn-nope{background:rgba(255,255,255,.05);color:#FF6B9D;
-  border:1.5px solid rgba(255,107,157,.3);
-  box-shadow:0 0 15px rgba(255,107,157,.15)}
-.btn-nope:hover{box-shadow:0 0 25px rgba(255,107,157,.3)}
-.btn-nope.selected{box-shadow:0 0 20px rgba(255,107,157,.4);border-color:rgba(255,107,157,.6);
-  background:rgba(255,107,157,.15)}
+.btn-vibe{background:rgba(255,255,255,.05);color:#FACC15;
+  border:1.5px solid rgba(250,204,21,.3);
+  box-shadow:0 0 15px rgba(250,204,21,.15)}
+.btn-vibe:hover{box-shadow:0 0 25px rgba(250,204,21,.3)}
+.btn-vibe.selected{box-shadow:0 0 20px rgba(250,204,21,.4);border-color:rgba(250,204,21,.6);
+  background:rgba(250,204,21,.15)}
+.btn-nope{background:rgba(255,255,255,.05);color:#FF1493;
+  border:1.5px solid rgba(255,20,147,.3);
+  box-shadow:0 0 15px rgba(255,20,147,.15)}
+.btn-nope:hover{box-shadow:0 0 25px rgba(255,20,147,.3)}
+.btn-nope.selected{box-shadow:0 0 20px rgba(255,20,147,.4);border-color:rgba(255,20,147,.6);
+  background:rgba(255,20,147,.15)}
 
 .hint{font-size:12px;color:#6b7280;font-weight:500;text-align:center;
   margin:4px 0;transition:opacity .3s ease;font-style:italic}
@@ -150,10 +150,20 @@ body{background-color:#0a0a0f;
 .reveal.active{display:flex}
 .reveal-label{font-size:13px;color:#6b7280;font-weight:600;letter-spacing:2px;
   text-transform:uppercase;opacity:0;animation:fadeUp .5s ease forwards}
+.album-art-wrap{position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .album-art{width:min(220px,55vw);height:min(220px,55vw);border-radius:2rem;object-fit:cover;
   box-shadow:0 12px 48px rgba(0,0,0,.3),0 0 0 3px #FF1493,0 0 20px rgba(255,20,147,.3);
   border:none;opacity:0;transform:scale(.7) rotate(-3deg);
   animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards;animation-delay:.15s}
+.album-play-pause{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:5;width:56px;height:56px;border-radius:50%;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid rgba(255,255,255,.2);
+  opacity:0;animation:fadeUp .4s ease forwards;animation-delay:.5s;
+  transition:transform .15s ease}
+.album-play-pause:active{transform:translate(-50%,-50%) scale(.9)}
+.album-play-pause svg{fill:#ffffff;width:24px;height:24px}
 .reveal-title{font-size:28px;font-weight:900;font-style:italic;color:#FF6B9D;text-align:center;
   text-transform:uppercase;letter-spacing:-1px;line-height:1.1;
   font-family:'Plus Jakarta Sans',system-ui,sans-serif;
@@ -248,7 +258,12 @@ body{background-color:#0a0a0f;
   <div id="revealSection" class="reveal">
     <div class="wordmark">Que<span class="dot">.</span></div>
     <div class="reveal-label">The song was...</div>
-    <img class="album-art" id="revealArt" src="" alt="">
+    <div class="album-art-wrap" id="albumArtWrap">
+      <img class="album-art" id="revealArt" src="" alt="">
+      <div class="album-play-pause" id="albumPlayPause">
+        <svg id="revealPlayPauseIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+    </div>
     <div class="reveal-title" id="revealTitle"></div>
     <div class="reveal-meta" id="revealMeta"></div>
     <div class="reaction-badge" id="revealBadge"></div>
@@ -285,6 +300,8 @@ body{background-color:#0a0a0f;
   var $btnNope = document.getElementById('btnNope');
   var $hint = document.getElementById('hint');
   var $revealArt = document.getElementById('revealArt');
+  var $albumArtWrap = document.getElementById('albumArtWrap');
+  var $revealPlayPauseIcon = document.getElementById('revealPlayPauseIcon');
   var $revealTitle = document.getElementById('revealTitle');
   var $revealMeta = document.getElementById('revealMeta');
   var $revealBadge = document.getElementById('revealBadge');
@@ -457,6 +474,24 @@ body{background-color:#0a0a0f;
       });
   }
 
+  // Play/pause on revealed album art
+  function updateRevealPlayPause(paused) {
+    if (!$revealPlayPauseIcon) return;
+    $revealPlayPauseIcon.innerHTML = paused
+      ? '<path d="M8 5v14l11-7z"/>'
+      : '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  }
+  $albumArtWrap.addEventListener('click', function() {
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play();
+      updateRevealPlayPause(false);
+    } else {
+      audio.pause();
+      updateRevealPlayPause(true);
+    }
+  });
+
   function launchConfetti() {
     var canvas = document.getElementById('confetti');
     var ctx = canvas.getContext('2d');
@@ -505,6 +540,14 @@ body{background-color:#0a0a0f;
     }
     requestAnimationFrame(frame);
   }
+
+  // Page Visibility API — pause audio when tab/browser is hidden
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden && audio && !audio.paused) {
+      audio.pause();
+      $orbBars.classList.remove('active');
+    }
+  });
 })();
 </script>
 </body>
