@@ -141,6 +141,8 @@ export async function spotifyRoutes(app: FastifyInstance) {
   // Spotify track shape with a working previewUrl.
   //
   app.get('/spotify/random', async (request, reply) => {
+    const { genre } = request.query as { genre?: string };
+
     const searchTerms = [
       'love', 'baby', 'night', 'heart', 'time', 'dance', 'fire', 'dream',
       'life', 'world', 'rain', 'sun', 'blue', 'home', 'road', 'star',
@@ -167,7 +169,9 @@ export async function spotifyRoutes(app: FastifyInstance) {
       for (let attempt = 0; attempt < 3; attempt++) {
         const term = searchTerms[Math.floor(Math.random() * searchTerms.length)];
         const offset = Math.floor(Math.random() * 20);
-        const q = encodeURIComponent(term);
+        // If genre is specified, combine it with the random term for more relevant results
+        const searchQuery = genre ? `${term} genre:${genre}` : term;
+        const q = encodeURIComponent(searchQuery);
 
         let items: any[];
         try {

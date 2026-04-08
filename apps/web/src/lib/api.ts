@@ -42,5 +42,6 @@ export const api = {
       body: JSON.stringify(body),
     }),
   getHistory: () => request<{ sent: any[]; received: any[] }>('/vibes/history'),
-  getRandomTrack: () => request<any>('/spotify/random'),
+  getRandomTrack: (genre?: string) =>
+    request<any>(genre ? `/spotify/random?genre=${encodeURIComponent(genre)}` : '/spotify/random'),
 };

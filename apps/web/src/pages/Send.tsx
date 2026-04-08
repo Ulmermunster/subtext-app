@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import TrackResult from '../components/TrackResult';
 import ArtistResult from '../components/ArtistResult';
+import BottomNav from '../components/BottomNav';
 import { api } from '../lib/api';
 import { hapticTap, hapticReveal } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
@@ -410,24 +411,7 @@ export default function Send() {
         </main>
 
         {/* ── Bottom Nav Bar ── */}
-        <nav className="shrink-0 bg-black/80 backdrop-blur-3xl rounded-t-[2rem] border-t border-white/5 z-50">
-          <div className="flex justify-around items-center px-12 py-5">
-            <button
-              onClick={exitDiscovery}
-              className="flex flex-col items-center justify-center text-white rounded-full px-8 py-3 shadow-xl cursor-pointer active:scale-[0.96] transition-all duration-300 ease-out tropical-gradient shadow-pink-500/20"
-            >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
-              <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Send</span>
-            </button>
-            <button
-              onClick={() => { exitDiscovery(); navigate('/queue'); }}
-              className="flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer active:scale-[0.96] duration-300 ease-out text-white/50"
-            >
-              <span className="material-symbols-outlined scale-110">library_music</span>
-              <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Collection</span>
-            </button>
-          </div>
-        </nav>
+        <BottomNav active="send" />
       </div>
     );
   }
@@ -537,23 +521,7 @@ export default function Send() {
       </main>
 
       {/* ── Bottom Nav Bar ── */}
-      <nav className="fixed bottom-0 w-full z-50 bg-black/80 backdrop-blur-3xl rounded-t-[3rem] border-t border-white/5">
-        <div className="flex justify-around items-center px-12 py-8">
-          <button
-            className="flex flex-col items-center justify-center text-white rounded-full px-8 py-3 shadow-xl cursor-pointer active:scale-[0.96] transition-all duration-300 ease-out tropical-gradient shadow-pink-500/20"
-          >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
-            <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Send</span>
-          </button>
-          <button
-            onClick={() => navigate('/queue')}
-            className="flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer active:scale-[0.96] duration-300 ease-out text-white"
-          >
-            <span className="material-symbols-outlined scale-110">library_music</span>
-            <span className="font-label text-[11px] uppercase tracking-[0.15em] mt-1 font-extrabold">Collection</span>
-          </button>
-        </div>
-      </nav>
+      <BottomNav active="send" />
     </div>
   );
 }

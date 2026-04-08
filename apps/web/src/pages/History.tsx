@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import BottomNav from '../components/BottomNav';
 
 interface QueItem {
   id: string;
@@ -107,26 +108,19 @@ export default function History() {
   const items = tab === 'sent' ? sent : received;
 
   return (
-    <div
-      className="w-full max-w-md mx-auto px-5 flex flex-col"
-      style={{
-        minHeight: '100dvh',
-        paddingTop: 'max(1rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
-      }}
-    >
+    <div className="bg-surface font-body text-on-surface mesh-gradient min-h-screen flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 py-3">
-        <button
-          onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-primary text-lg active:scale-95 transition-transform"
-        >
-          ←
-        </button>
-        <h1 className="text-xl font-black italic text-primary tracking-tighter font-headline">
-          Queue<span className="text-primary-container">.</span>
-        </h1>
-      </div>
+      <header className="fixed top-0 w-full z-50 bg-black/40 backdrop-blur-3xl border-b border-white/5">
+        <div className="flex justify-between items-center px-6 h-16 w-full">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">music_note</span>
+          </div>
+          <h1 className="text-2xl font-black text-on-surface italic tracking-tight font-headline">Que.</h1>
+          <div className="w-8" />
+        </div>
+      </header>
+
+      <div className="flex-grow pt-20 pb-32 px-5 max-w-md mx-auto w-full flex flex-col">
 
       {/* Tabs */}
       <div className="flex gap-2 mt-2 mb-4">
@@ -191,6 +185,9 @@ export default function History() {
           ))}
         </div>
       )}
+      </div>
+
+      <BottomNav active="collection" />
     </div>
   );
 }
