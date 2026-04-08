@@ -4,6 +4,7 @@ import SearchInput from '../components/SearchInput';
 import TrackResult from '../components/TrackResult';
 import ArtistResult from '../components/ArtistResult';
 import BottomNav from '../components/BottomNav';
+import OrbVisualizer from '../components/OrbVisualizer';
 import { api } from '../lib/api';
 import { hapticTap, hapticReveal } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
@@ -176,13 +177,8 @@ export default function Send() {
     setDiscoveryError('');
   };
 
-  // Progress ring math — radius=46 in a 100-unit viewBox, circumference = 2 * PI * 46
-  const radius = 46;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - discoveryProgress);
-
   // ════════════════════════════════════════════
-  // ── Discovery Mode UI (Crystal Cube Player) ──
+  // ── Discovery Mode UI (Orb Visualizer Player) ──
   // ════════════════════════════════════════════
   if (discoveryMode) {
     return (
@@ -238,62 +234,15 @@ export default function Send() {
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.3em] text-white/40 font-label">The Blind Listen</p>
               </div>
 
-              {/* Central Crystal Cube — shrinks on small screens */}
+              {/* Orb Visualizer — matches Discover, Guess, and Receiver */}
               <div className="flex-1 min-h-0 flex items-center justify-center w-full">
-                <div className="relative w-56 h-56 max-w-[50vw] max-h-[50vw] md:w-64 md:h-64 flex items-center justify-center">
-                  {/* Progress Ring — neon pink, z-10 to render on top of glass card */}
-                  <svg className="absolute w-full h-full -rotate-90 z-10" viewBox="0 0 100 100">
-                    <circle
-                      className="text-white/5"
-                      cx="50" cy="50" r={radius}
-                      fill="none" stroke="currentColor" strokeWidth="2"
-                    />
-                    <circle
-                      className="text-primary progress-ring"
-                      cx="50" cy="50" r={radius}
-                      fill="none" stroke="currentColor"
-                      strokeWidth="4"
-                      strokeLinecap="round"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={strokeDashoffset}
-                    />
-                  </svg>
-
-                  {/* The Cube — frosted glass card */}
-                  <div
-                    className="crystal-cube w-44 h-44 md:w-48 md:h-48 rounded-xl flex flex-col items-center justify-center p-4 text-center relative group transition-all duration-500 shadow-2xl"
-                    style={{
-                      transform: discoveryPlaying ? `scale(${scale})` : undefined,
-                      transition: 'transform 80ms ease-out',
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50 rounded-xl" />
-                    <div className="relative z-10 flex flex-col items-center">
-                      {/* Album art */}
-                      {discoveryTrack.albumArt && (
-                        <img
-                          src={discoveryTrack.albumArt}
-                          alt=""
-                          className={`w-20 h-20 rounded-lg shadow-2xl mb-3 border border-white/20 object-cover transition-all duration-700 ${
-                            discoveryRevealed
-                              ? 'blur-0 brightness-100'
-                              : 'blur-md brightness-75'
-                          }`}
-                        />
-                      )}
-                      <span
-                        className="material-symbols-outlined text-primary text-3xl"
-                        style={{
-                          fontVariationSettings: "'FILL' 1",
-                          transform: discoveryPlaying ? `scale(${scale})` : undefined,
-                          transition: 'transform 80ms ease-out',
-                        }}
-                      >
-                        music_note
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <OrbVisualizer
+                  playing={discoveryPlaying}
+                  scale={scale}
+                  albumArt={discoveryTrack.albumArt}
+                  revealed={discoveryRevealed}
+                  size="lg"
+                />
               </div>
 
               {/* Track Details — below the cube */}
