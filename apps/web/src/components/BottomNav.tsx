@@ -13,14 +13,14 @@ export default function BottomNav({ active }: { active: Tab }) {
 
   return (
     <nav className="fixed bottom-0 w-full z-50 bg-black/80 backdrop-blur-3xl rounded-t-[2rem] border-t border-white/5">
-      <div className="flex justify-around items-center px-6 py-5">
+      <div className="w-full flex justify-evenly items-center px-4 py-5">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => navigate(tab.path)}
-              className={`flex flex-col items-center justify-center px-6 py-2 rounded-full transition-all duration-300 ease-out active:scale-[0.96] cursor-pointer ${
+              className={`flex-1 flex flex-col items-center justify-center py-2 mx-1 rounded-full transition-all duration-300 ease-out active:scale-[0.96] cursor-pointer ${
                 isActive
                   ? 'tropical-gradient text-white shadow-xl shadow-pink-500/20'
                   : 'text-white/50 hover:text-white/70'

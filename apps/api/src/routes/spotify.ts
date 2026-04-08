@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { searchTracks, spotifyFetch, getTrack, getRelatedArtists, getArtistAlbums, getAlbumTracks, getClientToken } from '../lib/spotify.js';
+import { searchTracks, spotifyFetch, getTrack, getRelatedArtists, getArtistAlbums, getAlbumTracks, getClientToken, generateDecoys } from '../lib/spotify.js';
 import { env } from '../config.js';
 
 async function getAppToken() {
@@ -87,7 +87,17 @@ export async function spotifyRoutes(app: FastifyInstance) {
       const t = await getTrack(id, token);
       const artistName = t.artists.map((a: any) => a.name).join(', ');
       const artistId = t.artists[0]?.id || '';
-      const decoyArtists = artistId ? await resolveDecoys(artistId, artistName, token) : [];
+      const releaseYear = t.album?.release_date
+        ? parseInt(t.album.release_date.slice(0, 4), 10) || null
+        : null;
+      let decoyArtists: string[] = [];
+      if (artistId) {
+        try {
+          decoyArtists = await generateDecoys(artistId, artistName, releaseYear, token);
+        } catch {
+          decoyArtists = await resolveDecoys(artistId, artistName, token);
+        }
+      }
       return {
         id: t.id,
         title: t.name,
@@ -211,7 +221,18 @@ export async function spotifyRoutes(app: FastifyInstance) {
           if (previewUrl) {
             console.error(`[random] hit — "${t.name}" by ${artistName}`);
             const artId = t.artists[0]?.id || '';
-            const decoyArtists = artId ? await resolveDecoys(artId, artistName, token) : [];
+            const releaseYear = t.album?.release_date
+              ? parseInt(t.album.release_date.slice(0, 4), 10) || null
+              : null;
+            let decoyArtists: string[] = [];
+            if (artId) {
+              try {
+                decoyArtists = await generateDecoys(artId, artistName, releaseYear, token);
+              } catch (err: any) {
+                console.error(`[random] generateDecoys failed, using resolveDecoys: ${err.message}`);
+                decoyArtists = await resolveDecoys(artId, artistName, token);
+              }
+            }
             return {
               id: t.id,
               title: t.name,

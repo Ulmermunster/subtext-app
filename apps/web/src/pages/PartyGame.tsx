@@ -20,6 +20,32 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+const CLIENT_FALLBACK_ARTISTS = [
+  'Drake', 'Taylor Swift', 'Billie Eilish', 'The Weeknd', 'Dua Lipa',
+  'Kendrick Lamar', 'Olivia Rodrigo', 'Bad Bunny', 'SZA', 'Harry Styles',
+  'Doja Cat', 'Post Malone', 'Ariana Grande', 'Travis Scott', 'Beyoncé',
+];
+
+/** Build exactly 4 unique choices with the correct artist always included. */
+function buildChoices(correctArtist: string, decoys: string[]): string[] {
+  const lower = correctArtist.toLowerCase();
+  // Remove any decoy that duplicates the correct artist
+  const uniqueDecoys = decoys.filter(d => d.toLowerCase() !== lower);
+
+  // If we don't have 3 unique decoys, pad from the client fallback list
+  if (uniqueDecoys.length < 3) {
+    const pool = shuffle(
+      CLIENT_FALLBACK_ARTISTS.filter(n => n.toLowerCase() !== lower && !uniqueDecoys.some(d => d.toLowerCase() === n.toLowerCase())),
+    );
+    while (uniqueDecoys.length < 3 && pool.length > 0) {
+      uniqueDecoys.push(pool.pop()!);
+    }
+  }
+
+  // Explicitly construct [correct, decoy1, decoy2, decoy3] then shuffle
+  return shuffle([correctArtist, ...uniqueDecoys.slice(0, 3)]);
+}
+
 const GENRES = [
   { id: 'pop', label: 'Pop' },
   { id: 'hip-hop', label: 'Hip-Hop' },
@@ -102,11 +128,8 @@ export default function PartyGame() {
       const t = await api.getRandomTrack(genre || undefined);
       setTrack(t);
 
-      // Build 4 choices from real artist + decoys
-      const realArtist = t.artist;
-      const decoys: string[] = t.decoyArtists || [];
-      const allChoices = shuffle([realArtist, ...decoys.slice(0, 3)]);
-      setChoices(allChoices);
+      // Build exactly 4 choices — correct artist is always guaranteed present
+      setChoices(buildChoices(t.artist, t.decoyArtists || []));
       setLoading(false);
 
       // Auto-play

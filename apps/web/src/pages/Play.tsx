@@ -47,7 +47,7 @@ export default function Play() {
           onClick={() => navigate('/play/guess')}
           className="w-full glass-card p-6 flex items-center gap-5 text-left active:scale-[0.98] transition-all duration-200 cursor-pointer group"
         >
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00CCCC] to-[#0088AA] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#00CCCC]/20 group-active:scale-95 transition-transform">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/20 group-active:scale-95 transition-transform">
             <span className="material-symbols-outlined text-white text-2xl">target</span>
           </div>
           <div className="flex-1 min-w-0">
