@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { hapticTap, hapticConfirm, hapticError } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
+import OrbVisualizer from '../components/OrbVisualizer';
 
 function formatTime(sec: number) {
   const m = Math.floor(sec / 60);
@@ -183,11 +184,6 @@ export default function PartyGame() {
     setGenre(null);
   };
 
-  // Progress ring
-  const radius = 46;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - progress);
-
   // ═══════════════════════════════════════
   // ── SETUP SCREEN ──
   // ═══════════════════════════════════════
@@ -199,15 +195,24 @@ export default function PartyGame() {
             <button onClick={() => navigate('/play')} className="flex items-center gap-2 active:scale-90 transition-transform cursor-pointer">
               <span className="material-symbols-outlined text-white/50">arrow_back</span>
             </button>
-            <div className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Guess the Artist</div>
+            <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
+              Que<span className="text-[#FFB347]">.</span>
+            </h1>
             <div className="w-8" />
           </div>
         </header>
 
         <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 py-8 overflow-y-auto">
           <div className="w-full max-w-sm flex flex-col items-center gap-6">
+            {/* Mode Badge */}
+            <div className="mode-badge">
+              <span className="text-xs font-medium tracking-widest uppercase text-white/70">
+                🎯 PARTY MODE
+              </span>
+            </div>
+
             <div className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#00CCCC] to-[#0088AA] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#00CCCC]/20">
+              <div className="w-16 h-16 rounded-2xl tropical-gradient flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/20">
                 <span className="material-symbols-outlined text-white text-3xl">target</span>
               </div>
               <h2 className="text-2xl font-black italic tracking-tighter text-white font-headline">How do you want to play?</h2>
@@ -219,15 +224,15 @@ export default function PartyGame() {
               onPointerDown={hapticTap}
               onClick={() => setGenre(null)}
               className={`w-full glass-card p-4 flex items-center gap-4 text-left active:scale-[0.98] transition-all cursor-pointer ${
-                genre === null ? 'ring-2 ring-[#00CCCC]/50 shadow-[0_0_20px_rgba(0,204,204,0.15)]' : ''
+                genre === null ? 'ring-2 ring-[#FF1493]/50 shadow-[0_0_20px_rgba(255,20,147,0.15)]' : ''
               }`}
             >
-              <span className="material-symbols-outlined text-2xl text-[#00CCCC]">casino</span>
+              <span className="material-symbols-outlined text-2xl text-[#FF1493]">casino</span>
               <div>
                 <h3 className="font-bold text-white font-headline">Random</h3>
                 <p className="text-xs text-white/40">Anything goes</p>
               </div>
-              {genre === null && <span className="material-symbols-outlined text-[#00CCCC] ml-auto">check_circle</span>}
+              {genre === null && <span className="material-symbols-outlined text-[#FF1493] ml-auto">check_circle</span>}
             </button>
 
             {/* Genre grid */}
@@ -241,7 +246,7 @@ export default function PartyGame() {
                     onClick={() => setGenre(g.id)}
                     className={`py-3 px-4 rounded-xl text-sm font-bold transition-all active:scale-[0.97] font-headline ${
                       genre === g.id
-                        ? 'bg-gradient-to-br from-[#00CCCC] to-[#0088AA] text-white shadow-lg shadow-[#00CCCC]/20'
+                        ? 'tropical-gradient text-white shadow-lg shadow-pink-500/20'
                         : 'bg-white/10 backdrop-blur-md border border-white/10 text-white/60 hover:text-white/80'
                     }`}
                   >
@@ -255,7 +260,7 @@ export default function PartyGame() {
             <button
               onPointerDown={hapticTap}
               onClick={handleStartGame}
-              className="w-full bg-gradient-to-r from-[#00CCCC] to-[#0088AA] text-white min-h-[52px] rounded-full font-headline shadow-2xl shadow-[#00CCCC]/20 active:scale-95 transition-all duration-300 text-base font-extrabold uppercase tracking-widest"
+              className="w-full tropical-gradient text-white min-h-[52px] rounded-full font-headline shadow-2xl shadow-pink-500/20 active:scale-95 transition-all duration-300 text-base font-extrabold uppercase tracking-widest"
             >
               Start Game
             </button>
@@ -275,16 +280,25 @@ export default function PartyGame() {
         <header className="shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
           <div className="flex justify-between items-center px-6 h-14 w-full">
             <div className="w-8" />
-            <div className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Game Over</div>
+            <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
+              Que<span className="text-[#FFB347]">.</span>
+            </h1>
             <div className="w-8" />
           </div>
         </header>
 
         <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 py-8">
           <div className="w-full max-w-sm flex flex-col items-center gap-8">
+            {/* Mode Badge */}
+            <div className="mode-badge">
+              <span className="text-xs font-medium tracking-widest uppercase text-white/70">
+                🎯 PARTY MODE
+              </span>
+            </div>
+
             {/* Score display */}
             <div className="text-center">
-              <div className="text-6xl font-black italic text-[#00CCCC] font-headline mb-2">
+              <div className="text-6xl font-black italic text-[#FF6B9D] font-headline mb-2">
                 {correct}/{total}
               </div>
               <p className="text-lg font-bold text-white/60 font-headline">{pct}% correct</p>
@@ -293,7 +307,7 @@ export default function PartyGame() {
             {/* Stats */}
             <div className="flex gap-4 w-full">
               <div className="flex-1 glass-card p-4 text-center">
-                <div className="text-2xl font-black text-primary font-headline">{bestStreak}</div>
+                <div className="text-2xl font-black text-[#FF1493] font-headline">{bestStreak}</div>
                 <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Best Streak</p>
               </div>
               <div className="flex-1 glass-card p-4 text-center">
@@ -307,7 +321,7 @@ export default function PartyGame() {
               <button
                 onPointerDown={hapticTap}
                 onClick={handlePlayAgain}
-                className="w-full bg-gradient-to-r from-[#00CCCC] to-[#0088AA] text-white min-h-[48px] rounded-full font-headline shadow-2xl shadow-[#00CCCC]/20 active:scale-95 transition-all duration-300 text-sm font-extrabold uppercase tracking-widest"
+                className="w-full tropical-gradient text-white min-h-[48px] rounded-full font-headline shadow-2xl shadow-pink-500/20 active:scale-95 transition-all duration-300 text-sm font-extrabold uppercase tracking-widest"
               >
                 Play Again
               </button>
@@ -336,10 +350,12 @@ export default function PartyGame() {
           <button onPointerDown={hapticTap} onClick={handleEndGame} className="text-xs font-bold text-white/40 uppercase tracking-wider active:scale-95 transition-transform">
             End
           </button>
-          <div className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Guess</div>
+          <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
+            Que<span className="text-[#FFB347]">.</span>
+          </h1>
           <div className="flex items-center gap-1.5">
             {streak > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-primary-container/15 text-primary">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#FF1493]/15 text-[#FF1493]">
                 {streak}
               </span>
             )}
@@ -361,12 +377,12 @@ export default function PartyGame() {
         {/* Error */}
         {error && (
           <div className="flex flex-col items-center justify-center gap-4">
-            <span className="material-symbols-outlined text-5xl text-[#00CCCC]">error</span>
+            <span className="material-symbols-outlined text-5xl text-[#FF1493]">error</span>
             <p className="text-sm text-error font-medium">{error}</p>
             <button
               onPointerDown={hapticTap}
               onClick={loadRound}
-              className="bg-gradient-to-r from-[#00CCCC] to-[#0088AA] text-white px-8 py-3 rounded-full font-headline shadow-2xl active:scale-95 transition-all duration-300 text-sm font-extrabold uppercase tracking-widest mt-2"
+              className="tropical-gradient text-white px-8 py-3 rounded-full font-headline shadow-2xl shadow-pink-500/20 active:scale-95 transition-all duration-300 text-sm font-extrabold uppercase tracking-widest mt-2"
             >
               Try Again
             </button>
@@ -376,56 +392,27 @@ export default function PartyGame() {
         {/* Track loaded — gameplay */}
         {track && !error && (
           <div className="flex flex-col items-center w-full max-w-sm gap-3">
-            {/* Mini orb player */}
-            <div className="relative w-40 h-40 flex items-center justify-center">
-              <svg className="absolute w-full h-full -rotate-90 z-10" viewBox="0 0 100 100">
-                <circle className="text-white/5" cx="50" cy="50" r={radius} fill="none" stroke="currentColor" strokeWidth="2" />
-                <circle
-                  className="text-[#00CCCC] progress-ring"
-                  cx="50" cy="50" r={radius}
-                  fill="none" stroke="currentColor"
-                  strokeWidth="4" strokeLinecap="round"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                />
-              </svg>
-              <div
-                className="crystal-cube w-28 h-28 rounded-xl flex flex-col items-center justify-center p-3 text-center relative shadow-2xl"
-                style={{
-                  transform: playing ? `scale(${scale})` : undefined,
-                  transition: 'transform 80ms ease-out',
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-[#00CCCC]/10 to-transparent opacity-50 rounded-xl" />
-                <div className="relative z-10 flex flex-col items-center">
-                  {track.albumArt && (
-                    <img
-                      src={track.albumArt}
-                      alt=""
-                      className={`w-14 h-14 rounded-lg shadow-2xl mb-2 border border-white/20 object-cover transition-all duration-700 ${
-                        revealed ? 'blur-0 brightness-100' : 'blur-md brightness-75'
-                      }`}
-                    />
-                  )}
-                  <span
-                    className="material-symbols-outlined text-[#00CCCC] text-xl"
-                    style={{
-                      fontVariationSettings: "'FILL' 1",
-                      transform: playing ? `scale(${scale})` : undefined,
-                      transition: 'transform 80ms ease-out',
-                    }}
-                  >
-                    music_note
-                  </span>
-                </div>
-              </div>
+            {/* Mode Badge */}
+            <div className="mode-badge">
+              <span className="text-xs font-medium tracking-widest uppercase text-white/70">
+                🎯 PARTY MODE
+              </span>
             </div>
+
+            {/* Orb Visualizer — replaces old SVG progress ring */}
+            <OrbVisualizer
+              playing={playing}
+              scale={scale}
+              albumArt={track.albumArt}
+              revealed={revealed}
+              size="sm"
+            />
 
             {/* Timer / track info */}
             <div className="text-center shrink-0">
               {revealed ? (
                 <>
-                  <h2 className="text-xl font-black italic tracking-tighter text-[#00CCCC] uppercase font-headline">{track.title}</h2>
+                  <h2 className="text-xl font-black italic tracking-tighter text-[#FF6B9D] uppercase font-headline">{track.title}</h2>
                   <p className="text-sm font-bold text-white uppercase tracking-widest mt-0.5 font-headline">by {track.artist}</p>
                 </>
               ) : (
@@ -478,7 +465,7 @@ export default function PartyGame() {
                 <button
                   onPointerDown={hapticTap}
                   onClick={handleNextRound}
-                  className="flex-1 bg-gradient-to-r from-[#00CCCC] to-[#0088AA] text-white min-h-[44px] rounded-full font-headline shadow-2xl shadow-[#00CCCC]/20 active:scale-95 transition-all duration-300 text-sm font-extrabold uppercase tracking-widest"
+                  className="flex-1 tropical-gradient text-white min-h-[44px] rounded-full font-headline shadow-2xl shadow-pink-500/20 active:scale-95 transition-all duration-300 text-sm font-extrabold uppercase tracking-widest"
                 >
                   Next Song
                 </button>
@@ -495,8 +482,8 @@ export default function PartyGame() {
             {/* Streak indicator during play */}
             {!revealed && streak > 0 && (
               <div className="shrink-0 flex items-center gap-2 mt-1">
-                <span className="text-primary text-sm">🔥</span>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/70">{streak} in a row</p>
+                <span className="text-[#FF1493] text-sm">🔥</span>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#FF1493]/70">{streak} in a row</p>
               </div>
             )}
           </div>

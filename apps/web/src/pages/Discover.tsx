@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { hapticTap, hapticReveal } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
+import OrbVisualizer from '../components/OrbVisualizer';
 
 function formatTime(sec: number) {
   const m = Math.floor(sec / 60);
@@ -106,11 +107,6 @@ export default function Discover() {
     rollDice();
   };
 
-  // Progress ring
-  const radius = 46;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - progress);
-
   // ── Initial state: big Roll the Dice CTA ──
   if (!track && !loading && !error) {
     return (
@@ -120,12 +116,21 @@ export default function Discover() {
             <button onClick={() => navigate('/play')} className="flex items-center gap-2 active:scale-90 transition-transform cursor-pointer">
               <span className="material-symbols-outlined text-white/50">arrow_back</span>
             </button>
-            <div className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Discover</div>
+            <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
+              Que<span className="text-[#FFB347]">.</span>
+            </h1>
             <div className="w-8" />
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col items-center justify-center px-6 gap-8">
+        <main className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
+          {/* Mode Badge */}
+          <div className="mode-badge">
+            <span className="text-xs font-medium tracking-widest uppercase text-white/70">
+              🎲 ENDLESS DISCOVERY
+            </span>
+          </div>
+
           {sessionCount > 0 && (
             <div className="text-center">
               <p className="text-xs font-bold text-white/30 uppercase tracking-widest">
@@ -163,7 +168,9 @@ export default function Discover() {
           <button onClick={() => navigate('/play')} className="flex items-center gap-2 active:scale-90 transition-transform cursor-pointer">
             <span className="material-symbols-outlined text-white/50">arrow_back</span>
           </button>
-          <div className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Discover</div>
+          <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
+            Que<span className="text-[#FFB347]">.</span>
+          </h1>
           <div className="flex items-center gap-1">
             {sessionCount > 0 && (
               <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider">{sessionCount}</span>
@@ -200,6 +207,13 @@ export default function Discover() {
         {/* Track loaded */}
         {track && !error && (
           <div className="flex flex-col items-center w-full max-w-sm gap-4">
+            {/* Mode Badge */}
+            <div className="mode-badge">
+              <span className="text-xs font-medium tracking-widest uppercase text-white/70">
+                🎲 ENDLESS DISCOVERY
+              </span>
+            </div>
+
             {/* Header */}
             <div className="text-center shrink-0">
               <h1 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter text-white mb-1 leading-none font-headline">
@@ -208,58 +222,22 @@ export default function Discover() {
               <p className="text-[11px] font-extrabold uppercase tracking-[0.3em] text-white/40 font-label">The Blind Listen</p>
             </div>
 
-            {/* Crystal Cube */}
+            {/* Orb Visualizer — replaces old SVG progress ring */}
             <div className="flex-1 min-h-0 flex items-center justify-center w-full">
-              <div className="relative w-56 h-56 max-w-[50vw] max-h-[50vw] md:w-64 md:h-64 flex items-center justify-center">
-                <svg className="absolute w-full h-full -rotate-90 z-10" viewBox="0 0 100 100">
-                  <circle className="text-white/5" cx="50" cy="50" r={radius} fill="none" stroke="currentColor" strokeWidth="2" />
-                  <circle
-                    className="text-primary progress-ring"
-                    cx="50" cy="50" r={radius}
-                    fill="none" stroke="currentColor"
-                    strokeWidth="4" strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                  />
-                </svg>
-                <div
-                  className="crystal-cube w-44 h-44 md:w-48 md:h-48 rounded-xl flex flex-col items-center justify-center p-4 text-center relative group transition-all duration-500 shadow-2xl"
-                  style={{
-                    transform: playing ? `scale(${scale})` : undefined,
-                    transition: 'transform 80ms ease-out',
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50 rounded-xl" />
-                  <div className="relative z-10 flex flex-col items-center">
-                    {track.albumArt && (
-                      <img
-                        src={track.albumArt}
-                        alt=""
-                        className={`w-20 h-20 rounded-lg shadow-2xl mb-3 border border-white/20 object-cover transition-all duration-700 ${
-                          revealed ? 'blur-0 brightness-100' : 'blur-md brightness-75'
-                        }`}
-                      />
-                    )}
-                    <span
-                      className="material-symbols-outlined text-primary text-3xl"
-                      style={{
-                        fontVariationSettings: "'FILL' 1",
-                        transform: playing ? `scale(${scale})` : undefined,
-                        transition: 'transform 80ms ease-out',
-                      }}
-                    >
-                      music_note
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <OrbVisualizer
+                playing={playing}
+                scale={scale}
+                albumArt={track.albumArt}
+                revealed={revealed}
+                size="lg"
+              />
             </div>
 
             {/* Track info */}
             <div className="text-center shrink-0">
               {revealed ? (
                 <>
-                  <h2 className="text-2xl font-black italic tracking-tighter text-primary uppercase font-headline">{track.title}</h2>
+                  <h2 className="text-2xl font-black italic tracking-tighter text-[#FF6B9D] uppercase font-headline">{track.title}</h2>
                   <p className="text-base font-bold text-white uppercase tracking-widest mt-1 font-headline">by {track.artist}</p>
                 </>
               ) : (
