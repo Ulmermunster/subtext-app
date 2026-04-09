@@ -2,15 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Global viewport lock ───────────────────────────────────────────────────
+   Kills iOS rubber-banding and Android over-scroll entirely.
+   position:fixed on body is the only reliable cross-browser way to prevent
+   the bounce effect; overflow:hidden + overscroll-behavior reinforce it.
+   ────────────────────────────────────────────────────────────────────────── */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: auto;
   background: #000000;
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
-  min-height: max(884px, 100dvh);
   color: #ffffff;
   letter-spacing: 0.025em;
+}
+
+/* React root inherits the lock */
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Safe-area bottom padding for iPhone home bar */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Ambient pulse blob */

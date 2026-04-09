@@ -188,7 +188,7 @@ export default function Send() {
   // ════════════════════════════════════════════
   if (discoveryMode) {
     return (
-      <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
+      <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden bg-surface sugar-rush-mesh font-body text-on-surface">
         {/* ── Top App Bar — Centered Que. wordmark ── */}
         <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
           <div className="flex justify-between items-center px-6 h-14 w-full">
@@ -377,7 +377,7 @@ export default function Send() {
   const hasResults = searched && (tracks.length > 0 || artists.length > 0);
 
   return (
-    <div className="h-[100dvh] w-full fixed inset-0 flex flex-col overflow-hidden bg-surface font-body text-on-surface mesh-gradient">
+    <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden bg-surface font-body text-on-surface mesh-gradient">
       {/* ── Top Header ── */}
       <header className="fixed top-0 w-full z-50 bg-black/40 backdrop-blur-3xl border-b border-white/5">
         <div className="flex justify-between items-center px-6 h-16 w-full">

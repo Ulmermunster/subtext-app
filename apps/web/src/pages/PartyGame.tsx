@@ -218,7 +218,7 @@ export default function PartyGame() {
   // ═══════════════════════════════════════
   if (phase === 'setup') {
     return (
-      <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
+      <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden bg-surface sugar-rush-mesh font-body text-on-surface">
         <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
           <div className="flex justify-between items-center px-6 h-14 w-full">
             <button onClick={() => navigate('/play')} className="flex items-center gap-2 active:scale-90 transition-transform cursor-pointer">
@@ -303,7 +303,7 @@ export default function PartyGame() {
   if (phase === 'ended') {
     const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
     return (
-      <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
+      <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden bg-surface sugar-rush-mesh font-body text-on-surface">
         <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
           <div className="flex justify-between items-center px-6 h-14 w-full">
             <div className="w-8" />
@@ -368,7 +368,7 @@ export default function PartyGame() {
   // ── GAMEPLAY SCREEN ──
   // ═══════════════════════════════════════
   return (
-    <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
+    <div className="flex-1 w-full flex flex-col min-h-0 overflow-hidden bg-surface sugar-rush-mesh font-body text-on-surface">
       {/* Header with streak */}
       <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
         <div className="flex justify-between items-center px-6 h-14 w-full">

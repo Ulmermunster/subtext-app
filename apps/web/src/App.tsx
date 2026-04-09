@@ -24,7 +24,7 @@ function Loading() {
 export default function App() {
   return (
     <>
-      <div className="relative z-10 min-h-screen">
+      <div className="relative z-10 h-full w-full flex flex-col overflow-hidden">
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/" element={<Home />} />
