@@ -189,8 +189,8 @@ export default function Send() {
   if (discoveryMode) {
     return (
       <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
-        {/* ── Top App Bar — Centered QUE. wordmark ── */}
-        <header className="shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
+        {/* ── Top App Bar — Centered Que. wordmark ── */}
+        <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
           <div className="flex justify-between items-center px-6 h-14 w-full">
             <button
               onClick={exitDiscovery}
@@ -198,7 +198,7 @@ export default function Send() {
             >
               <span className="material-symbols-outlined text-primary">music_note</span>
             </button>
-            <div className="text-2xl font-black italic text-on-surface tracking-tight font-headline">QUE.</div>
+            <Link to="/" className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Que<span className="text-[#FFB347]">.</span></Link>
             <div className="w-8" />
           </div>
         </header>
@@ -384,7 +384,7 @@ export default function Send() {
           <div className="flex items-center gap-2 scale-95 active:scale-90 transition-transform duration-200 cursor-pointer">
             <span className="material-symbols-outlined text-primary">music_note</span>
           </div>
-          <Link to="/" className="text-2xl font-black text-on-surface italic tracking-tight font-headline">Que.</Link>
+          <Link to="/" className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Que<span className="text-[#FFB347]">.</span></Link>
           <div className="w-8" />
         </div>
       </header>

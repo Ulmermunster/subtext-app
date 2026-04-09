@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { hapticTap, hapticConfirm, hapticError } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
@@ -219,14 +219,12 @@ export default function PartyGame() {
   if (phase === 'setup') {
     return (
       <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
-        <header className="shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
+        <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
           <div className="flex justify-between items-center px-6 h-14 w-full">
             <button onClick={() => navigate('/play')} className="flex items-center gap-2 active:scale-90 transition-transform cursor-pointer">
               <span className="material-symbols-outlined text-white/50">arrow_back</span>
             </button>
-            <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
-              Que<span className="text-[#FFB347]">.</span>
-            </h1>
+            <Link to="/" className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Que<span className="text-[#FFB347]">.</span></Link>
             <div className="w-8" />
           </div>
         </header>
@@ -306,12 +304,10 @@ export default function PartyGame() {
     const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
     return (
       <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
-        <header className="shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
+        <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
           <div className="flex justify-between items-center px-6 h-14 w-full">
             <div className="w-8" />
-            <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
-              Que<span className="text-[#FFB347]">.</span>
-            </h1>
+            <Link to="/" className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Que<span className="text-[#FFB347]">.</span></Link>
             <div className="w-8" />
           </div>
         </header>
@@ -374,14 +370,12 @@ export default function PartyGame() {
   return (
     <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
       {/* Header with streak */}
-      <header className="shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
+      <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
         <div className="flex justify-between items-center px-6 h-14 w-full">
           <button onPointerDown={hapticTap} onClick={handleEndGame} className="text-xs font-bold text-white/40 uppercase tracking-wider active:scale-95 transition-transform">
             End
           </button>
-          <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
-            Que<span className="text-[#FFB347]">.</span>
-          </h1>
+          <Link to="/" className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Que<span className="text-[#FFB347]">.</span></Link>
           <div className="flex items-center gap-1.5">
             {streak > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#FF1493]/15 text-[#FF1493]">

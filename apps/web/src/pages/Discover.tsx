@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { hapticTap } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
@@ -117,14 +117,12 @@ export default function Discover() {
   if (!track && !loading && !error) {
     return (
       <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
-        <header className="shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
+        <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
           <div className="flex justify-between items-center px-6 h-14 w-full">
             <button onClick={() => navigate('/play')} className="flex items-center gap-2 active:scale-90 transition-transform cursor-pointer">
               <span className="material-symbols-outlined text-white/50">arrow_back</span>
             </button>
-            <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
-              Que<span className="text-[#FFB347]">.</span>
-            </h1>
+            <Link to="/" className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Que<span className="text-[#FFB347]">.</span></Link>
             <div className="w-8" />
           </div>
         </header>
@@ -169,14 +167,12 @@ export default function Discover() {
   return (
     <div className="h-[100dvh] w-full fixed inset-0 overflow-hidden flex flex-col bg-surface sugar-rush-mesh font-body text-on-surface">
       {/* Header */}
-      <header className="shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
+      <header className="relative shrink-0 bg-black/40 backdrop-blur-3xl border-b border-white/5 z-50">
         <div className="flex justify-between items-center px-6 h-14 w-full">
           <button onClick={() => navigate('/play')} className="flex items-center gap-2 active:scale-90 transition-transform cursor-pointer">
             <span className="material-symbols-outlined text-white/50">arrow_back</span>
           </button>
-          <h1 className="text-2xl font-black italic text-on-surface tracking-tight font-headline">
-            Que<span className="text-[#FFB347]">.</span>
-          </h1>
+          <Link to="/" className="text-2xl font-black italic text-on-surface tracking-tight font-headline">Que<span className="text-[#FFB347]">.</span></Link>
           <div className="flex items-center gap-1">
             {sessionCount > 0 && (
               <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider">{sessionCount}</span>
