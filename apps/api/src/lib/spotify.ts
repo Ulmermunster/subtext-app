@@ -247,26 +247,28 @@ function sortGenresBySpecificity(genres: string[]): string[] {
 }
 
 /**
- * Progressive Fallback Cascade — guarantees exactly 3 decoys.
+ * Progressive Fallback Cascade — guarantees 3 decoys.
  *
- * Attempt 1 (Strict):   genre tag + decade year range
- * Attempt 2 (Medium):   decade year range + broad genres, pop ≥ 40
- *                        (in Spotify Dev Mode pop=0, so pop filter is skipped)
- * Attempt 3 (Loose):    broad genres, no year, no pop filter
- * Attempt 4 (Nuclear):  simple word searches — identical to /spotify/random
- *                        which is proven to always return results
+ * CRITICAL: Spotify Dev Mode caps search at limit=10 and returns nothing past
+ * offset ~20. All queries use limit=10 and small offsets to mirror the working
+ * /spotify/random endpoint exactly. Genre queries use `word genre:X` format
+ * (no quotes, no year clause) — the same format the random endpoint uses.
  *
- * Each search is isolated in its own try/catch so a single Spotify error
- * cannot abort the whole cascade. Never throws. Always returns 0–3 names.
+ * Attempt 1: word + artist's specific genre  (contextual)
+ * Attempt 2: word + broad genre              (semi-contextual)
+ * Attempt 3: plain word searches             (guaranteed — same as /random)
+ *
+ * Each search is isolated in its own try/catch. Never throws.
  */
 export async function generateDecoys(
   artistId: string,
   realArtistName: string,
-  releaseYear: number | null,
+  _releaseYear: number | null,
   accessToken: string
 ): Promise<string[]> {
-  // ── Utilities ─────────────────────────────────────────────────────────────
   const realNames = new Set(realArtistName.split(', ').map(n => n.toLowerCase().trim()));
+  const seen = new Set<string>();
+  const decoys: string[] = [];
 
   function shuffleArr<T>(arr: T[]): T[] {
     const a = [...arr];
@@ -277,9 +279,6 @@ export async function generateDecoys(
     return a;
   }
 
-  const seen = new Set<string>();
-  const decoys: string[] = [];
-
   function tryAdd(name: string) {
     const key = name.toLowerCase().trim();
     if (!key || realNames.has(key) || seen.has(key)) return;
@@ -287,91 +286,73 @@ export async function generateDecoys(
     decoys.push(name);
   }
 
-  /** Search tracks for a query, harvest unique artist names into decoys[]. */
-  async function harvest(query: string, minPop = 0): Promise<void> {
-    const offset = Math.floor(Math.random() * 5) * 10;
+  /**
+   * One track search using the EXACT same parameters as /spotify/random:
+   * limit=10, offset 0–19, market=US. Collects all artist names from results.
+   */
+  async function searchTracks(query: string): Promise<void> {
+    const offset = Math.floor(Math.random() * 20);
     const data: any = await spotifyFetch(
-      `/search?q=${encodeURIComponent(query)}&type=track&limit=50&offset=${offset}&market=US`,
+      `/search?q=${encodeURIComponent(query)}&type=track&limit=10&offset=${offset}&market=US`,
       accessToken,
     );
     for (const track of (data.tracks?.items ?? [])) {
-      // minPop filter only applied when caller asks for it AND track has real data
-      if (minPop > 0 && (track.popularity || 0) < minPop) continue;
       for (const artist of (track.artists ?? [])) {
         tryAdd(artist.name);
       }
     }
   }
 
-  // Resolve artist metadata once
+  // Common words pool — same as /spotify/random
+  const WORDS = shuffleArr([
+    'love', 'baby', 'night', 'heart', 'time', 'dance', 'fire', 'dream',
+    'life', 'world', 'rain', 'sun', 'blue', 'home', 'road', 'star',
+    'girl', 'feel', 'soul', 'stay', 'gone', 'high', 'rock', 'man',
+  ]);
+
+  // Resolve artist genres (best-effort; cascade continues even if this fails)
   let genres: string[] = [];
   try {
     const data = await getArtist(artistId, accessToken);
-    genres = sortGenresBySpecificity(data.genres).slice(0, 3);
-  } catch (err: any) {
-    console.error('[generateDecoys] artist fetch failed:', err.message);
+    genres = sortGenresBySpecificity(data.genres).slice(0, 2);
+  } catch (e: any) {
+    console.error('[generateDecoys] artist fetch failed:', e.message);
   }
 
-  const decadeStart = releaseYear ? Math.floor(releaseYear / 10) * 10 : null;
-  const yearRange   = decadeStart ? `${decadeStart}-${decadeStart + 9}` : null;
-
-  // ── Attempt 1: Strict — specific genre + year ────────────────────────────
-  if (decoys.length < 3 && genres.length > 0 && yearRange) {
-    for (const genre of genres) {
+  // ── Attempt 1: word + artist's specific genre ────────────────────────────
+  if (genres.length > 0) {
+    for (const word of WORDS.slice(0, 6)) {
       if (decoys.length >= 3) break;
-      try { await harvest(`genre:"${genre}" year:${yearRange}`); }
-      catch (e: any) { console.error('[generateDecoys] A1 failed:', e.message); }
-    }
-    if (decoys.length >= 3) {
-      console.log('[generateDecoys] Attempt 1 (strict genre+year):', decoys.slice(0, 3));
-      return shuffleArr(decoys).slice(0, 3);
+      try { await searchTracks(`${word} genre:${genres[0]}`); }
+      catch (e: any) { console.error(`[generateDecoys] A1 failed: ${e.message}`); }
     }
   }
-
-  // ── Attempt 2: Medium — broad genre + year, pop ≥ 40 ────────────────────
-  // pop filter is a no-op in Spotify Dev Mode (all pops = 0) but helps in prod
-  if (decoys.length < 3 && yearRange) {
-    for (const genre of ['pop', 'rock', 'hip-hop', 'r-n-b', 'electronic', 'country']) {
-      if (decoys.length >= 3) break;
-      try { await harvest(`genre:"${genre}" year:${yearRange}`, 40); }
-      catch (e: any) { console.error('[generateDecoys] A2 failed:', e.message); }
-    }
-    if (decoys.length >= 3) {
-      console.log('[generateDecoys] Attempt 2 (medium year+pop):', decoys.slice(0, 3));
-      return shuffleArr(decoys).slice(0, 3);
-    }
+  if (decoys.length >= 3) {
+    console.log('[generateDecoys] A1 (specific genre):', decoys.slice(0, 3));
+    return shuffleArr(decoys).slice(0, 3);
   }
 
-  // ── Attempt 3: Loose — broad genres, no year, no pop filter ─────────────
-  if (decoys.length < 3) {
-    for (const genre of ['pop', 'rock', 'hip-hop', 'r-n-b', 'soul', 'electronic', 'country']) {
-      if (decoys.length >= 3) break;
-      try { await harvest(`genre:"${genre}"`); }
-      catch (e: any) { console.error('[generateDecoys] A3 failed:', e.message); }
-    }
-    if (decoys.length >= 3) {
-      console.log('[generateDecoys] Attempt 3 (loose genre):', decoys.slice(0, 3));
-      return shuffleArr(decoys).slice(0, 3);
-    }
+  // ── Attempt 2: word + broad genre ───────────────────────────────────────
+  for (const genre of ['pop', 'rock', 'hip-hop', 'r-n-b', 'electronic', 'country', 'soul']) {
+    if (decoys.length >= 3) break;
+    const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+    try { await searchTracks(`${word} genre:${genre}`); }
+    catch (e: any) { console.error(`[generateDecoys] A2 failed: ${e.message}`); }
+  }
+  if (decoys.length >= 3) {
+    console.log('[generateDecoys] A2 (broad genre):', decoys.slice(0, 3));
+    return shuffleArr(decoys).slice(0, 3);
   }
 
-  // ── Attempt 4: Nuclear — plain word searches, each isolated ─────────────
-  // Same strategy as /spotify/random which is proven to always return tracks.
-  // Each word has its own try/catch so one rate-limit can't abort the cascade.
-  if (decoys.length < 3) {
-    const words = shuffleArr([
-      'love', 'baby', 'night', 'heart', 'time', 'dance', 'fire', 'dream',
-      'life', 'world', 'rain', 'sun', 'blue', 'home', 'star', 'soul',
-    ]);
-    for (const word of words) {
-      if (decoys.length >= 3) break;
-      try { await harvest(word); }
-      catch (e: any) { console.error(`[generateDecoys] A4 "${word}" failed:`, e.message); }
-    }
+  // ── Attempt 3: plain word — mirrors /spotify/random, cannot fail ─────────
+  for (const word of WORDS) {
+    if (decoys.length >= 3) break;
+    try { await searchTracks(word); }
+    catch (e: any) { console.error(`[generateDecoys] A3 "${word}" failed: ${e.message}`); }
   }
 
   const result = shuffleArr(decoys).slice(0, 3);
-  console.log(`[generateDecoys] final result (${result.length} decoys):`, result);
+  console.log(`[generateDecoys] result (${result.length}) for "${realArtistName}":`, result);
   return result;
 }
 
