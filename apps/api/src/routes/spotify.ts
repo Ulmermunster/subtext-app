@@ -1,43 +1,11 @@
 import { FastifyInstance } from 'fastify';
-import { searchTracks, spotifyFetch, getTrack, getRelatedArtists, getArtistAlbums, getAlbumTracks, getClientToken, generateDecoys } from '../lib/spotify.js';
+import { searchTracks, spotifyFetch, getTrack, getArtistAlbums, getAlbumTracks, getClientToken, generateDecoys } from '../lib/spotify.js';
 import { env } from '../config.js';
 
 async function getAppToken() {
   return getClientToken(env.SPOTIFY_CLIENT_ID, env.SPOTIFY_CLIENT_SECRET);
 }
 
-const FALLBACK_ARTISTS = [
-  'Drake', 'Taylor Swift', 'Tame Impala', 'Billie Eilish', 'The Weeknd',
-  'Dua Lipa', 'Kendrick Lamar', 'Olivia Rodrigo', 'Bad Bunny', 'SZA',
-  'Harry Styles', 'Doja Cat', 'Post Malone', 'Ariana Grande', 'Travis Scott',
-  'Radiohead', 'Frank Ocean', 'Lana Del Rey', 'Tyler, The Creator', 'Beyoncé',
-];
-
-/** Pick 3 decoy artists, excluding the real artist name. */
-async function resolveDecoys(artistId: string, realArtistName: string, token: string): Promise<string[]> {
-  try {
-    const related = await getRelatedArtists(artistId, token);
-    const filtered = related.filter(name => name.toLowerCase() !== realArtistName.toLowerCase());
-    if (filtered.length >= 3) {
-      // Shuffle and pick 3
-      for (let i = filtered.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
-      }
-      return filtered.slice(0, 3);
-    }
-  } catch (err: any) {
-    console.error(`[decoys] Related artists failed for ${artistId}: ${err.message}`);
-  }
-
-  // Fallback: pick 3 from hardcoded list, excluding real artist
-  const pool = FALLBACK_ARTISTS.filter(name => name.toLowerCase() !== realArtistName.toLowerCase());
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, 3);
-}
 
 export async function spotifyRoutes(app: FastifyInstance) {
   // --- Search ---
@@ -94,8 +62,8 @@ export async function spotifyRoutes(app: FastifyInstance) {
       if (artistId) {
         try {
           decoyArtists = await generateDecoys(artistId, artistName, releaseYear, token);
-        } catch {
-          decoyArtists = await resolveDecoys(artistId, artistName, token);
+        } catch (err: any) {
+          console.error(`[decoys] All Spotify tiers failed for ${artistId}: ${err.message}`);
         }
       }
       return {
@@ -229,8 +197,7 @@ export async function spotifyRoutes(app: FastifyInstance) {
               try {
                 decoyArtists = await generateDecoys(artId, artistName, releaseYear, token);
               } catch (err: any) {
-                console.error(`[random] generateDecoys failed, using resolveDecoys: ${err.message}`);
-                decoyArtists = await resolveDecoys(artId, artistName, token);
+                console.error(`[random] All Spotify tiers failed for ${artId}: ${err.message}`);
               }
             }
             return {

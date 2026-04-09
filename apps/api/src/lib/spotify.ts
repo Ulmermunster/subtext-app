@@ -294,36 +294,8 @@ export async function generateDecoys(
     console.error('[generateDecoys] Tier 3 failed:', err.status || '', err.message);
   }
 
-  // --- Tier 4: Era-Matched Defaults ---
-  const ERA_DEFAULTS: Record<string, string[]> = {
-    '2020s': ['Olivia Rodrigo', 'Sabrina Carpenter', 'Chappell Roan', 'Gracie Abrams', 'Reneé Rapp',
-              'Ice Spice', 'NewJeans', 'Tyla', 'Zach Bryan', 'Noah Kahan'],
-    '2010s': ['Lorde', 'Halsey', 'Khalid', 'Cardi B', 'Lizzo',
-              'Bazzi', 'Rex Orange County', 'Clairo', 'BROCKHAMPTON', 'Glass Animals'],
-    '2000s': ['Amy Winehouse', 'Nelly Furtado', 'The Killers', 'Kings of Leon', 'Gnarls Barkley',
-              'Fergie', 'Panic! At The Disco', 'Fall Out Boy', 'My Chemical Romance', 'Paramore'],
-    '1990s': ['Alanis Morissette', 'No Doubt', 'Garbage', 'Third Eye Blind', 'Weezer',
-              'Jewel', 'Blind Melon', 'Collective Soul', 'Counting Crows', 'Live'],
-    'classic': ['Fleetwood Mac', 'Blondie', 'The Cure', 'Talking Heads', 'The Smiths',
-                'Siouxsie and the Banshees', 'Echo & the Bunnymen', 'Cocteau Twins', 'Joy Division', 'New Order'],
-  };
-  const year = releaseYear || new Date().getFullYear();
-  let eraKey: string;
-  if (year >= 2020) eraKey = '2020s';
-  else if (year >= 2010) eraKey = '2010s';
-  else if (year >= 2000) eraKey = '2000s';
-  else if (year >= 1990) eraKey = '1990s';
-  else eraKey = 'classic';
-
-  const eraPool = ERA_DEFAULTS[eraKey].filter(isNotReal);
-  // Shuffle
-  for (let i = eraPool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [eraPool[i], eraPool[j]] = [eraPool[j], eraPool[i]];
-  }
-  const picked = eraPool.slice(0, 3);
-  console.log('[generateDecoys] Tier 4 (era "' + eraKey + '" defaults):', picked);
-  return picked;
+  // All Spotify tiers exhausted — let the caller decide how to handle it
+  throw new Error(`generateDecoys: all Spotify tiers exhausted for artist ${artistId}`);
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
