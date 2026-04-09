@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import SearchInput from '../components/SearchInput';
 import TrackResult from '../components/TrackResult';
 import ArtistResult from '../components/ArtistResult';
@@ -384,7 +384,7 @@ export default function Send() {
           <div className="flex items-center gap-2 scale-95 active:scale-90 transition-transform duration-200 cursor-pointer">
             <span className="material-symbols-outlined text-primary">music_note</span>
           </div>
-          <h1 className="text-2xl font-black text-on-surface italic tracking-tight font-headline">Que.</h1>
+          <Link to="/" className="text-2xl font-black text-on-surface italic tracking-tight font-headline">Que.</Link>
           <div className="w-8" />
         </div>
       </header>

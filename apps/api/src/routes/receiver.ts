@@ -5,6 +5,10 @@ const RECEIVER_HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
 <title>Que. — The Blind Taste Test</title>
+<meta property="og:title" content="Someone que'd you a song 👀">
+<meta property="og:description" content="No artist. No title. Just listen and react.">
+<meta property="og:image" content="https://que.app/og-cover.png">
+<meta property="og:type" content="website">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,800&family=Be+Vietnam+Pro:wght@400;500;700&display=swap');

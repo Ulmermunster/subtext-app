@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { hapticTap } from '../lib/haptics';
 
@@ -13,7 +13,7 @@ export default function Play() {
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">music_note</span>
           </div>
-          <h1 className="text-2xl font-black text-on-surface italic tracking-tight font-headline">Que.</h1>
+          <Link to="/" className="text-2xl font-black text-on-surface italic tracking-tight font-headline">Que.</Link>
           <div className="w-8" />
         </div>
       </header>
