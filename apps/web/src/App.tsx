@@ -1,5 +1,27 @@
 import { Routes, Route } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, Component, ReactNode } from 'react';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
+          <p className="text-2xl font-black italic text-white font-headline">Something broke.</p>
+          <p className="text-sm text-white/40 font-body">Try refreshing the page.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="tropical-gradient text-white px-8 py-3 rounded-full font-headline text-sm font-extrabold uppercase tracking-widest mt-2"
+          >
+            Refresh
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import Home from './pages/Home';
 import Send from './pages/Send';
 
@@ -25,6 +47,7 @@ export default function App() {
   return (
     <>
       <div className="relative z-10 h-full w-full flex flex-col overflow-hidden">
+        <ErrorBoundary>
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -40,6 +63,7 @@ export default function App() {
             <Route path="/debug-haptics" element={<DebugHaptics />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </div>
     </>
   );

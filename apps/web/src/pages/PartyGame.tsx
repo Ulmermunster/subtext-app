@@ -20,30 +20,15 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-const CLIENT_FALLBACK_ARTISTS = [
-  'Drake', 'Taylor Swift', 'Billie Eilish', 'The Weeknd', 'Dua Lipa',
-  'Kendrick Lamar', 'Olivia Rodrigo', 'Bad Bunny', 'SZA', 'Harry Styles',
-  'Doja Cat', 'Post Malone', 'Ariana Grande', 'Travis Scott', 'Beyoncé',
-];
-
-/** Build exactly 4 unique choices with the correct artist always included. */
+/** Build choices with the correct artist always included. Shows 2–4 options
+ *  depending on how many genuine decoys the backend returned. Never pads with
+ *  unrelated hardcoded artists — fewer choices is better than misleading ones. */
 function buildChoices(correctArtist: string, decoys: string[]): string[] {
   const lower = correctArtist.toLowerCase();
-  // Remove any decoy that duplicates the correct artist
-  const uniqueDecoys = decoys.filter(d => d.toLowerCase() !== lower);
-
-  // If we don't have 3 unique decoys, pad from the client fallback list
-  if (uniqueDecoys.length < 3) {
-    const pool = shuffle(
-      CLIENT_FALLBACK_ARTISTS.filter(n => n.toLowerCase() !== lower && !uniqueDecoys.some(d => d.toLowerCase() === n.toLowerCase())),
-    );
-    while (uniqueDecoys.length < 3 && pool.length > 0) {
-      uniqueDecoys.push(pool.pop()!);
-    }
-  }
-
-  // Explicitly construct [correct, decoy1, decoy2, decoy3] then shuffle
-  return shuffle([correctArtist, ...uniqueDecoys.slice(0, 3)]);
+  const uniqueDecoys = decoys
+    .filter(d => d.toLowerCase() !== lower)
+    .slice(0, 3);
+  return shuffle([correctArtist, ...uniqueDecoys]);
 }
 
 const GENRES = [
@@ -126,7 +111,7 @@ export default function PartyGame() {
     stopAudio();
 
     try {
-      const t = await api.getRandomTrack(genre || undefined);
+      const t = await api.getRandomTrack(genre || undefined, true);
       setTrack(t);
 
       // Build exactly 4 choices — correct artist is always guaranteed present

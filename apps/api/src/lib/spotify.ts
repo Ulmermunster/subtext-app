@@ -146,21 +146,6 @@ export async function getTrack(trackId: string, accessToken: string) {
   return spotifyFetch(`/tracks/${trackId}?market=US`, accessToken);
 }
 
-type ArtistStub = { name: string; popularity: number };
-
-export async function getRelatedArtists(artistId: string, accessToken: string): Promise<ArtistStub[]> {
-  if (!artistId) return [];
-  const cacheKey = `related:${artistId}`;
-  const cached = cacheGet<ArtistStub[]>(cacheKey);
-  if (cached) return cached;
-  const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
-  const artists: any[] = data.artists || [];
-  // Return all related artists — no popularity sort so we don't always get superstars
-  const result: ArtistStub[] = artists.map((a: any) => ({ name: a.name, popularity: a.popularity || 50 }));
-  cacheSet(cacheKey, result);
-  return result;
-}
-
 export async function getArtist(artistId: string, accessToken: string): Promise<{ name: string; genres: string[]; popularity: number }> {
   const cacheKey = `artist:${artistId}`;
   const cached = cacheGet<{ name: string; genres: string[]; popularity: number }>(cacheKey);
@@ -171,65 +156,7 @@ export async function getArtist(artistId: string, accessToken: string): Promise<
   return result;
 }
 
-/**
- * Search TRACKS by genre + optional year range, then extract unique artists from results.
- *
- * Why tracks instead of artists:
- * - Spotify's artist search (type=artist) returns a static popularity-ranked list —
- *   genre:"pop" always returns Taylor Swift / The Weeknd / Billie Eilish at the top.
- * - The year: filter is largely ignored on artist searches but works correctly on tracks.
- * - Track search surfaces mid-tier and niche artists as primary performers, giving
- *   a much more contextually appropriate decoy pool.
- *
- * A randomised page offset breaks the "always the same top-50" problem.
- */
-async function searchArtistsByTrackSearch(
-  genre: string,
-  accessToken: string,
-  yearRange?: [number, number],
-): Promise<ArtistStub[]> {
-  // 5 possible pages (0-40 offset) so repeated calls for the same genre get variety
-  const offset = Math.floor(Math.random() * 5) * 10;
-  const yearClause = yearRange ? ` year:${yearRange[0]}-${yearRange[1]}` : '';
-  const cacheKey = `trackgen:${genre}:${yearRange?.[0] ?? 'any'}:${offset}`;
-  const cached = cacheGet<ArtistStub[]>(cacheKey);
-  if (cached) return cached;
 
-  const q = encodeURIComponent(`genre:"${genre}"${yearClause}`);
-  const data: any = await spotifyFetch(
-    `/search?q=${q}&type=track&limit=50&offset=${offset}&market=US`,
-    accessToken
-  );
-
-  // Extract unique artists; use the track's popularity as a proxy for the artist's tier
-  const seen = new Set<string>();
-  const result: ArtistStub[] = [];
-  for (const track of (data.tracks?.items ?? [])) {
-    const trackPop: number = track.popularity ?? 50;
-    for (const artist of (track.artists ?? [])) {
-      if (!seen.has(artist.id)) {
-        seen.add(artist.id);
-        result.push({ name: artist.name, popularity: trackPop || 50 });
-      }
-    }
-  }
-
-  cacheSet(cacheKey, result, 4 * 60 * 60 * 1000); // 4h — fresh enough, cheap enough
-  return result;
-}
-
-export async function getArtistTopTracks(artistId: string, accessToken: string): Promise<Array<{ name: string; artists: string[] }>> {
-  const cacheKey = `toptracks:${artistId}`;
-  const cached = cacheGet<Array<{ name: string; artists: string[] }>>(cacheKey);
-  if (cached) return cached;
-  const data: any = await spotifyFetch(`/artists/${artistId}/top-tracks?market=US`, accessToken);
-  const result = (data.tracks || []).map((t: any) => ({
-    name: t.name,
-    artists: (t.artists || []).map((a: any) => a.name),
-  }));
-  cacheSet(cacheKey, result, 12 * 60 * 60 * 1000); // 12h TTL for top tracks
-  return result;
-}
 
 /**
  * Prefer more specific genre tags ("indie electropop") over broad ones ("pop").

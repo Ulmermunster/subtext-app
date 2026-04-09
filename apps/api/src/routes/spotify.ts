@@ -119,7 +119,8 @@ export async function spotifyRoutes(app: FastifyInstance) {
   // Spotify track shape with a working previewUrl.
   //
   app.get('/spotify/random', async (request, reply) => {
-    const { genre } = request.query as { genre?: string };
+    const { genre, decoys: wantDecoys } = request.query as { genre?: string; decoys?: string };
+    const needDecoys = wantDecoys === 'true';
 
     const searchTerms = [
       'love', 'baby', 'night', 'heart', 'time', 'dance', 'fire', 'dream',
@@ -193,12 +194,8 @@ export async function spotifyRoutes(app: FastifyInstance) {
               ? parseInt(t.album.release_date.slice(0, 4), 10) || null
               : null;
             let decoyArtists: string[] = [];
-            if (artId) {
-              try {
-                decoyArtists = await generateDecoys(artId, artistName, releaseYear, token);
-              } catch (err: any) {
-                console.error(`[random] All Spotify tiers failed for ${artId}: ${err.message}`);
-              }
+            if (needDecoys && artId) {
+              decoyArtists = await generateDecoys(artId, artistName, releaseYear, token);
             }
             return {
               id: t.id,

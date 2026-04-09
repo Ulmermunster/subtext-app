@@ -5,6 +5,10 @@ import { prisma } from '../lib/prisma.js';
 import { refreshAccessToken } from '../lib/spotify.js';
 import { env } from '../config.js';
 
+// Prevents concurrent requests from double-refreshing the same Spotify token.
+// If a refresh is already in flight for a session, subsequent requests wait for it.
+const refreshInFlight = new Map<string, Promise<void>>();
+
 export interface SessionData {
   sessionId: string;
   accessToken: string;
@@ -51,32 +55,34 @@ export async function requireSession(request: FastifyRequest, reply: FastifyRepl
     await redis.set(`session:${sessionId}`, JSON.stringify(session), 'EX', 60 * 60 * 24 * 30);
   }
 
-  // Auto-refresh if token expires within 5 minutes
+  // Auto-refresh if token expires within 5 minutes.
+  // Use an in-flight guard so concurrent requests share one refresh call.
   if (session.tokenExpiresAt.getTime() - Date.now() < 5 * 60 * 1000) {
+    if (!refreshInFlight.has(sessionId)) {
+      const doRefresh = async () => {
+        const refreshed = await refreshAccessToken(
+          session.refreshToken,
+          env.SPOTIFY_CLIENT_ID,
+          env.SPOTIFY_CLIENT_SECRET,
+        );
+        session.accessToken = refreshed.access_token;
+        if (refreshed.refresh_token) session.refreshToken = refreshed.refresh_token;
+        session.tokenExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000);
+
+        await prisma.session.update({
+          where: { id: sessionId },
+          data: {
+            spotifyAccessToken: encrypt(session.accessToken),
+            spotifyRefreshToken: encrypt(session.refreshToken),
+            tokenExpiresAt: session.tokenExpiresAt,
+          },
+        });
+        await redis.set(`session:${sessionId}`, JSON.stringify(session), 'EX', 60 * 60 * 24 * 30);
+      };
+      refreshInFlight.set(sessionId, doRefresh().finally(() => refreshInFlight.delete(sessionId)));
+    }
     try {
-      const refreshed = await refreshAccessToken(
-        session.refreshToken,
-        env.SPOTIFY_CLIENT_ID,
-        env.SPOTIFY_CLIENT_SECRET
-      );
-      session.accessToken = refreshed.access_token;
-      if (refreshed.refresh_token) {
-        session.refreshToken = refreshed.refresh_token;
-      }
-      session.tokenExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000);
-
-      // Update DB
-      await prisma.session.update({
-        where: { id: sessionId },
-        data: {
-          spotifyAccessToken: encrypt(session.accessToken),
-          spotifyRefreshToken: encrypt(session.refreshToken),
-          tokenExpiresAt: session.tokenExpiresAt,
-        },
-      });
-
-      // Update Redis
-      await redis.set(`session:${sessionId}`, JSON.stringify(session), 'EX', 60 * 60 * 24 * 30);
+      await refreshInFlight.get(sessionId);
     } catch (err) {
       console.error('Token refresh failed:', err);
       return reply.status(401).send({ error: 'Session expired, please reconnect Spotify' });

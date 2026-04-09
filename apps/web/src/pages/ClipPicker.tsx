@@ -43,11 +43,7 @@ export default function ClipPicker() {
       setSent(true);
       try { localStorage.removeItem(TRACK_STORAGE_KEY); } catch {}
     } catch (err: any) {
-      if (err.body?.error === 'no_preview') {
-        setError(err.body.message);
-      } else {
-        setError(err.message || 'Failed to create link');
-      }
+      setError(err.message || 'Failed to create link');
     } finally {
       setSending(false);
     }

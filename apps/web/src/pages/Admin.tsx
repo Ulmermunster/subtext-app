@@ -65,11 +65,13 @@ export default function Admin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Check URL param for secret
+  // Read secret from URL param, then immediately remove it from history
+  // so it doesn't persist in browser history or server logs
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const s = params.get('secret');
     if (s) {
+      window.history.replaceState({}, '', window.location.pathname);
       setSecret(s);
       fetchStats(s);
     }
