@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { hapticTap, hapticReveal } from '../lib/haptics';
+import { hapticTap } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
 import OrbVisualizer from '../components/OrbVisualizer';
 
@@ -49,6 +49,7 @@ export default function Discover() {
   }, []);
 
   const rollDice = async () => {
+    if (loading) return; // Prevent concurrent API calls on rapid clicks
     setLoading(true);
     setTrack(null);
     setRevealed(false);
@@ -65,6 +66,11 @@ export default function Discover() {
       const t = await api.getRandomTrack();
       setTrack(t);
       setLoading(false);
+
+      if (!t.previewUrl) {
+        setError('No preview available for this track. Roll again!');
+        return;
+      }
 
       const audio = new Audio(t.previewUrl);
       audio.crossOrigin = 'anonymous';
@@ -93,7 +99,7 @@ export default function Discover() {
         setProgress(1);
         setRevealed(true);
         disconnectPulse();
-      });
+      }, { once: true });
     } catch {
       setError('No track found. Roll again!');
       setLoading(false);

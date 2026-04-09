@@ -20,6 +20,12 @@ export function useBassPulse() {
 
   function connectAudio(audio: HTMLAudioElement) {
     try {
+      // Stop any existing animation loop first
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+
       // Only create AudioContext once (and only after user interaction)
       if (!ctxRef.current) {
         const AC = window.AudioContext || (window as any).webkitAudioContext;
@@ -30,20 +36,27 @@ export function useBassPulse() {
       const ctx = ctxRef.current;
       if (ctx.state === 'suspended') ctx.resume();
 
-      // Only create source once per audio element
-      if (!sourceRef.current) {
-        const source = ctx.createMediaElementSource(audio);
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.8;
-        source.connect(analyser);
-        analyser.connect(ctx.destination);
-        sourceRef.current = source;
-        analyserRef.current = analyser;
+      // Tear down previous source/analyser so we wire up to the NEW audio element
+      if (sourceRef.current) {
+        try { sourceRef.current.disconnect(); } catch {}
+        sourceRef.current = null;
+      }
+      if (analyserRef.current) {
+        try { analyserRef.current.disconnect(); } catch {}
+        analyserRef.current = null;
       }
 
+      // Create fresh source + analyser for this audio element
+      const source = ctx.createMediaElementSource(audio);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+      sourceRef.current = source;
+      analyserRef.current = analyser;
+
       // Start the animation loop
-      const analyser = analyserRef.current!;
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
       function tick() {
@@ -66,6 +79,15 @@ export function useBassPulse() {
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+    }
+    // Tear down audio graph nodes
+    if (sourceRef.current) {
+      try { sourceRef.current.disconnect(); } catch {}
+      sourceRef.current = null;
+    }
+    if (analyserRef.current) {
+      try { analyserRef.current.disconnect(); } catch {}
+      analyserRef.current = null;
     }
     setScale(1);
   }

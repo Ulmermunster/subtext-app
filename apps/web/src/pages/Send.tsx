@@ -6,7 +6,7 @@ import ArtistResult from '../components/ArtistResult';
 import BottomNav from '../components/BottomNav';
 import OrbVisualizer from '../components/OrbVisualizer';
 import { api } from '../lib/api';
-import { hapticTap, hapticReveal } from '../lib/haptics';
+import { hapticTap } from '../lib/haptics';
 import { useBassPulse } from '../lib/useBassPulse';
 
 function formatTime(sec: number) {
@@ -89,6 +89,7 @@ export default function Send() {
   }, []);
 
   const handleRollDice = async () => {
+    if (discoveryLoading) return; // Prevent concurrent API calls on rapid clicks
     setDiscoveryMode(true);
     setDiscoveryLoading(true);
     setDiscoveryTrack(null);
@@ -112,6 +113,11 @@ export default function Send() {
       const track = await api.getRandomTrack();
       setDiscoveryTrack(track);
       setDiscoveryLoading(false);
+
+      if (!track.previewUrl) {
+        setDiscoveryError('No preview available. Roll again!');
+        return;
+      }
 
       // Auto-play preview
       const audio = new Audio(track.previewUrl);
@@ -144,7 +150,7 @@ export default function Send() {
         setDiscoveryProgress(1);
         setDiscoveryRevealed(true);
         disconnectPulse();
-      });
+      }, { once: true });
     } catch {
       setDiscoveryError('No track found. Roll again!');
       setDiscoveryLoading(false);

@@ -115,6 +115,7 @@ export default function PartyGame() {
   }, [disconnectPulse]);
 
   const loadRound = useCallback(async () => {
+    if (loading) return; // Prevent concurrent API calls on rapid clicks
     setLoading(true);
     setTrack(null);
     setPicked(null);
@@ -131,6 +132,11 @@ export default function PartyGame() {
       // Build exactly 4 choices — correct artist is always guaranteed present
       setChoices(buildChoices(t.artist, t.decoyArtists || []));
       setLoading(false);
+
+      if (!t.previewUrl) {
+        setError('No preview available. Try again!');
+        return;
+      }
 
       // Auto-play
       const audio = new Audio(t.previewUrl);
@@ -157,12 +163,12 @@ export default function PartyGame() {
         if (progressRef.current) clearInterval(progressRef.current);
         setProgress(1);
         disconnectPulse();
-      });
+      }, { once: true });
     } catch {
       setError('No track found. Try again!');
       setLoading(false);
     }
-  }, [genre, stopAudio, connectAudio, disconnectPulse]);
+  }, [loading, genre, stopAudio, connectAudio, disconnectPulse]);
 
   const handleStartGame = () => {
     setPhase('playing');

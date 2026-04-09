@@ -153,8 +153,6 @@ body {
   opacity: 0;
 }
 
-/* ── Crystal Cube Player (Discovery Mode) ── */
-
 /* Mesh gradient background — Stitch design */
 .mesh-gradient {
   background-color: #000000;
@@ -165,56 +163,6 @@ body {
     radial-gradient(at 0% 100%, rgba(250,204,21,0.03) 0px, transparent 40%);
 }
 
-/* Floating glass cube animation */
-.glass-cube {
-  transform-style: preserve-3d;
-  animation: float 6s ease-in-out infinite;
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
-  50% { transform: translateY(-20px) rotateX(5deg) rotateY(10deg); }
-}
-
-/* Inner nebula morph — tropical */
-.nebula-morph {
-  background: linear-gradient(135deg, #ec4899, #facc15, #00CCCC);
-  filter: blur(40px);
-  animation: morph 8s ease-in-out infinite alternate;
-}
-@keyframes morph {
-  0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; transform: scale(1); }
-  100% { border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%; transform: scale(1.2); }
-}
-
-/* Neon glow for progress ring */
-.neon-glow {
-  filter: drop-shadow(0 0 8px rgba(236,72,153, 0.6));
-}
-
-/* SVG progress ring transition */
-.progress-ring {
-  transition: stroke-dashoffset 0.35s;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
-}
-
-/* Vibe button neon glow */
-.vibe-glow {
-  border-color: rgba(0, 204, 204, 0.3);
-  box-shadow: 0 0 15px rgba(0, 204, 204, 0.2);
-}
-.vibe-glow:hover {
-  box-shadow: 0 0 25px rgba(0, 204, 204, 0.4);
-}
-
-/* Nope button neon glow */
-.nope-glow {
-  border-color: rgba(236,72,153, 0.3);
-  box-shadow: 0 0 15px rgba(236,72,153, 0.2);
-}
-.nope-glow:hover {
-  box-shadow: 0 0 25px rgba(236,72,153, 0.4);
-}
 
 /* Vibe pill glass button */
 .vibe-pill-glass {
@@ -238,14 +186,6 @@ body {
 }
 .nope-pill-glass:hover {
   box-shadow: 0 0 30px rgba(236, 72, 153, 0.3);
-}
-
-/* Crystal cube card — frosted dark glass */
-.crystal-cube {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.4) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Glow text utilities */
