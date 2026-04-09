@@ -231,8 +231,8 @@ export default function PartyGame() {
           </div>
         </header>
 
-        <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 py-8 overflow-y-auto">
-          <div className="w-full max-w-sm flex flex-col items-center gap-6">
+        <main className="flex-1 min-h-0 flex flex-col items-center px-6 py-4 overflow-hidden">
+          <div className="w-full max-w-sm flex flex-col flex-1 min-h-0 items-center gap-6">
             {/* Mode Badge */}
             <div className="mode-badge">
               <span className="text-xs font-medium tracking-widest uppercase text-white/70">
@@ -265,7 +265,7 @@ export default function PartyGame() {
             </button>
 
             {/* Genre grid */}
-            <div className="w-full">
+            <div className="w-full flex-1 min-h-0 overflow-y-auto py-4">
               <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-3 text-center">Or pick a genre</p>
               <div className="grid grid-cols-2 gap-2">
                 {GENRES.map((g) => (

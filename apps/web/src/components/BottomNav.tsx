@@ -12,7 +12,7 @@ export default function BottomNav({ active }: { active: Tab }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full z-50 bg-black/80 backdrop-blur-3xl rounded-t-[2rem] border-t border-white/5">
+    <nav className="shrink-0 fixed bottom-0 w-full z-50 bg-black/80 backdrop-blur-3xl rounded-t-[2rem] border-t border-white/5">
       <div className="w-full flex justify-evenly items-center px-4 py-5">
         {tabs.map((tab) => {
           const isActive = active === tab.id;

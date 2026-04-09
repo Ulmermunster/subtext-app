@@ -229,7 +229,7 @@ export default function Discover() {
             </div>
 
             {/* Orb Visualizer — replaces old SVG progress ring */}
-            <div className="flex-1 min-h-0 flex items-center justify-center w-full">
+            <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full">
               <OrbVisualizer
                 playing={playing}
                 scale={scale}
