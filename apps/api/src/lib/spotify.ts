@@ -171,28 +171,50 @@ export async function getArtist(artistId: string, accessToken: string): Promise<
   return result;
 }
 
-/** Search artists by genre tag, with optional era filter via Spotify's year: operator. */
-export async function searchArtistsByGenre(
+/**
+ * Search TRACKS by genre + optional year range, then extract unique artists from results.
+ *
+ * Why tracks instead of artists:
+ * - Spotify's artist search (type=artist) returns a static popularity-ranked list —
+ *   genre:"pop" always returns Taylor Swift / The Weeknd / Billie Eilish at the top.
+ * - The year: filter is largely ignored on artist searches but works correctly on tracks.
+ * - Track search surfaces mid-tier and niche artists as primary performers, giving
+ *   a much more contextually appropriate decoy pool.
+ *
+ * A randomised page offset breaks the "always the same top-50" problem.
+ */
+async function searchArtistsByTrackSearch(
   genre: string,
   accessToken: string,
-  limit = 10,
   yearRange?: [number, number],
 ): Promise<ArtistStub[]> {
+  // 5 possible pages (0-40 offset) so repeated calls for the same genre get variety
+  const offset = Math.floor(Math.random() * 5) * 10;
   const yearClause = yearRange ? ` year:${yearRange[0]}-${yearRange[1]}` : '';
-  const cacheKey = `genre:${genre}:${limit}:${yearRange?.[0] ?? 'any'}`;
+  const cacheKey = `trackgen:${genre}:${yearRange?.[0] ?? 'any'}:${offset}`;
   const cached = cacheGet<ArtistStub[]>(cacheKey);
   if (cached) return cached;
-  const safeLimit = Math.min(limit, 10);
+
   const q = encodeURIComponent(`genre:"${genre}"${yearClause}`);
   const data: any = await spotifyFetch(
-    `/search?q=${q}&type=artist&limit=${safeLimit}&market=US`,
+    `/search?q=${q}&type=track&limit=50&offset=${offset}&market=US`,
     accessToken
   );
-  const result: ArtistStub[] = (data.artists?.items || []).map((a: any) => ({
-    name: a.name,
-    popularity: a.popularity ?? 50,
-  }));
-  cacheSet(cacheKey, result, yearRange ? 6 * 60 * 60 * 1000 : CACHE_TTL); // shorter TTL for era searches
+
+  // Extract unique artists; use the track's popularity as a proxy for the artist's tier
+  const seen = new Set<string>();
+  const result: ArtistStub[] = [];
+  for (const track of (data.tracks?.items ?? [])) {
+    const trackPop: number = track.popularity ?? 50;
+    for (const artist of (track.artists ?? [])) {
+      if (!seen.has(artist.id)) {
+        seen.add(artist.id);
+        result.push({ name: artist.name, popularity: trackPop });
+      }
+    }
+  }
+
+  cacheSet(cacheKey, result, 4 * 60 * 60 * 1000); // 4h — fresh enough, cheap enough
   return result;
 }
 
@@ -210,13 +232,31 @@ export async function getArtistTopTracks(artistId: string, accessToken: string):
 }
 
 /**
- * Creative Cascade — 3-step decoy generation.
+ * Prefer more specific genre tags ("indie electropop") over broad ones ("pop").
+ * Specific tags produce diverse track-search results; broad tags produce the Billboard Hot 100.
+ */
+function sortGenresBySpecificity(genres: string[]): string[] {
+  const BROAD = new Set(['pop', 'rock', 'rap', 'hip hop', 'r&b', 'soul', 'country',
+                         'jazz', 'electronic', 'metal', 'folk', 'dance', 'indie']);
+  return [...genres].sort((a, b) => {
+    const aB = BROAD.has(a.toLowerCase());
+    const bB = BROAD.has(b.toLowerCase());
+    if (aB !== bB) return aB ? 1 : -1; // specific first
+    return b.length - a.length;        // longer name = more specific
+  });
+}
+
+/**
+ * Creative Cascade — track-search-first decoy generation.
  *
- * Step 1 (Musical DNA):   Genre-tag search with era filter so decoys share the sonic vibe.
- * Step 2 (Related):       Spotify's related-artists graph, popularity-band filtered.
- * Step 3 (Broad Genre):   Same genres, relaxed constraints, no era restriction.
+ * Step 1 (Musical DNA + Era):  TRACK search by genre + decade → extracts actual artists
+ *                               from real songs. Far more varied than artist search.
+ * Step 2 (Related Artists):    Spotify graph — naturally era/genre appropriate.
+ * Step 3 (Broad fallback):     Track search without era lock, all genres.
  *
- * Never uses hardcoded artist lists. Always Spotify-derived.
+ * Key invariant: decoys for non-mainstream artists NEVER include global megastars.
+ * The popularity ceiling is asymmetric — you can go slightly above the real artist,
+ * but hard-capped at 80 unless the real artist is already mainstream (pop ≥ 78).
  */
 export async function generateDecoys(
   artistId: string,
@@ -224,67 +264,75 @@ export async function generateDecoys(
   releaseYear: number | null,
   accessToken: string
 ): Promise<string[]> {
-  // Exclusion set handles "Artist A, Artist B" multi-artist track names
   const realNames = new Set(realArtistName.split(', ').map(n => n.toLowerCase().trim()));
   const isNotReal = (name: string) => !realNames.has(name.toLowerCase().trim());
 
-  // --- Fetch Musical DNA: genres + popularity of the real artist ---
+  // ── Musical DNA ──────────────────────────────────────────────────────────
   let artistGenres: string[] = [];
   let artistPopularity = 50;
   try {
     const data = await getArtist(artistId, accessToken);
-    artistGenres = data.genres;
+    artistGenres = sortGenresBySpecificity(data.genres); // specific first
     artistPopularity = data.popularity;
   } catch (err: any) {
     console.error('[generateDecoys] Artist fetch failed:', err.message);
   }
 
-  // Decade window for era filtering  (e.g. 2017 → 2010–2019)
+  // Decade window (e.g. 2017 → 2010–2019)
   const decadeStart = releaseYear ? Math.floor(releaseYear / 10) * 10 : null;
   const decadeEnd   = decadeStart ? decadeStart + 9 : null;
 
-  // Popularity band: only include artists within ±35 of the real artist's fame.
-  // This prevents obscure indie acts from being paired with Billie Eilish.
-  const popMin = Math.max(0,   artistPopularity - 35);
-  const popMax = Math.min(100, artistPopularity + 35);
+  // ── Asymmetric popularity band ───────────────────────────────────────────
+  // Lower bound: real artist − 30 (decoys can be a bit more obscure)
+  // Upper bound:
+  //   • If artist is mainstream (pop ≥ 78): no cap — decoys can be superstars too
+  //   • Otherwise: hard cap at 80, preventing Beyoncé/Drake from appearing next
+  //     to a 45-popularity indie act
+  const MAINSTREAM = 78;
+  const popMin = Math.max(0, artistPopularity - 30);
+  const popMax = artistPopularity >= MAINSTREAM ? 100 : Math.min(80, artistPopularity + 22);
 
-  /** Pick 3 unique, valid names from a pool of ArtistStub objects. */
-  function pickThree(pool: ArtistStub[], strict = true): string[] | null {
+  // Even the "relaxed" pass keeps the superstar cap — just allows slightly wider range
+  const relaxedMin = Math.max(0, popMin - 15);
+  const relaxedMax = artistPopularity >= MAINSTREAM ? 100 : Math.min(85, popMax + 5);
+
+  function shuffle<T>(arr: T[]): T[] {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function pickThree(pool: ArtistStub[], relaxed = false): string[] | null {
+    const lo = relaxed ? relaxedMin : popMin;
+    const hi = relaxed ? relaxedMax : popMax;
     const seen = new Set<string>();
     const filtered = pool.filter(a => {
       const key = a.name.toLowerCase().trim();
-      if (!isNotReal(a.name)) return false;
-      if (seen.has(key)) return false;
-      if (strict && (a.popularity < popMin || a.popularity > popMax)) return false;
+      if (!isNotReal(a.name) || seen.has(key)) return false;
+      if (a.popularity < lo || a.popularity > hi) return false;
       seen.add(key);
       return true;
     });
     if (filtered.length < 3) return null;
-    // Fisher-Yates shuffle — randomise so we don't always get index-0 artists
-    for (let i = filtered.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
-    }
-    return filtered.slice(0, 3).map(a => a.name);
+    return shuffle(filtered).slice(0, 3).map(a => a.name);
   }
 
-  // ─── Step 1: Musical DNA — genre search with era filter ───────────────────
+  // ─── Step 1: Musical DNA + Era — track-based search ──────────────────────
+  // Uses top 3 genres (specific-first) with era-locked and era-free track searches.
   if (artistGenres.length > 0) {
     try {
       const pool: ArtistStub[] = [];
-      for (const genre of artistGenres.slice(0, 2)) {
-        // Era-locked first (same decade): gives the most contextually accurate decoys
+      for (const genre of artistGenres.slice(0, 3)) {
         if (decadeStart && decadeEnd) {
-          const era = await searchArtistsByGenre(genre, accessToken, 10, [decadeStart, decadeEnd]);
-          pool.push(...era);
+          pool.push(...await searchArtistsByTrackSearch(genre, accessToken, [decadeStart, decadeEnd]));
         }
-        // Broad same-genre search as a supplement
-        const broad = await searchArtistsByGenre(genre, accessToken, 10);
-        pool.push(...broad);
+        pool.push(...await searchArtistsByTrackSearch(genre, accessToken));
       }
-      const picked = pickThree(pool);
+      const picked = pickThree(pool) ?? pickThree(pool, true);
       if (picked) {
-        console.log(`[generateDecoys] Step 1 (genre DNA: "${artistGenres.slice(0, 2).join(', ')}", decade: ${decadeStart ?? 'any'}):`, picked);
+        console.log(`[generateDecoys] Step 1 (track DNA "${artistGenres.slice(0, 3).join(', ')}" decade ${decadeStart ?? 'any'} pop ${popMin}-${popMax}):`, picked);
         return picked;
       }
       console.log('[generateDecoys] Step 1 insufficient, trying Step 2');
@@ -293,36 +341,29 @@ export async function generateDecoys(
     }
   }
 
-  // ─── Step 2: Related Artists — popularity-band filtered ───────────────────
+  // ─── Step 2: Related Artists ──────────────────────────────────────────────
   try {
     const related = await getRelatedArtists(artistId, accessToken);
-    const picked = pickThree(related);
+    const picked = pickThree(related) ?? pickThree(related, true);
     if (picked) {
-      console.log('[generateDecoys] Step 2 (related artists, pop band:', popMin + '-' + popMax + '):', picked);
+      console.log(`[generateDecoys] Step 2 (related artists pop ${popMin}-${popMax}):`, picked);
       return picked;
-    }
-    // Retry with relaxed popularity (wider band) before moving on
-    const relaxed = pickThree(related, false);
-    if (relaxed) {
-      console.log('[generateDecoys] Step 2 (related artists, relaxed pop):', relaxed);
-      return relaxed;
     }
     console.log('[generateDecoys] Step 2 insufficient, trying Step 3');
   } catch (err: any) {
     console.error('[generateDecoys] Step 2 failed:', err.message);
   }
 
-  // ─── Step 3: Broad genre search — all genres, no era or popularity constraint ─
+  // ─── Step 3: Broad track search — all genres, relaxed, no era lock ───────
   if (artistGenres.length > 0) {
     try {
       const pool: ArtistStub[] = [];
       for (const genre of artistGenres) {
-        const results = await searchArtistsByGenre(genre, accessToken, 10);
-        pool.push(...results);
+        pool.push(...await searchArtistsByTrackSearch(genre, accessToken));
       }
-      const picked = pickThree(pool, false); // relaxed — just exclude real artist
+      const picked = pickThree(pool, true);
       if (picked) {
-        console.log('[generateDecoys] Step 3 (broad genre, relaxed):', picked);
+        console.log('[generateDecoys] Step 3 (broad track fallback):', picked);
         return picked;
       }
     } catch (err: any) {
@@ -330,7 +371,6 @@ export async function generateDecoys(
     }
   }
 
-  // All Spotify steps exhausted — caller logs and returns []
   throw new Error(`generateDecoys: all steps exhausted for artist ${artistId}`);
 }
 
