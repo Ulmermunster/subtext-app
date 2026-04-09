@@ -156,7 +156,7 @@ export async function getRelatedArtists(artistId: string, accessToken: string): 
   const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
   const artists: any[] = data.artists || [];
   // Return all related artists — no popularity sort so we don't always get superstars
-  const result: ArtistStub[] = artists.map((a: any) => ({ name: a.name, popularity: a.popularity ?? 50 }));
+  const result: ArtistStub[] = artists.map((a: any) => ({ name: a.name, popularity: a.popularity || 50 }));
   cacheSet(cacheKey, result);
   return result;
 }
@@ -166,7 +166,7 @@ export async function getArtist(artistId: string, accessToken: string): Promise<
   const cached = cacheGet<{ name: string; genres: string[]; popularity: number }>(cacheKey);
   if (cached) return cached;
   const data: any = await spotifyFetch(`/artists/${artistId}`, accessToken);
-  const result = { name: data.name, genres: data.genres || [], popularity: data.popularity ?? 50 };
+  const result = { name: data.name, genres: data.genres || [], popularity: data.popularity || 50 };
   cacheSet(cacheKey, result);
   return result;
 }
@@ -209,7 +209,7 @@ async function searchArtistsByTrackSearch(
     for (const artist of (track.artists ?? [])) {
       if (!seen.has(artist.id)) {
         seen.add(artist.id);
-        result.push({ name: artist.name, popularity: trackPop });
+        result.push({ name: artist.name, popularity: trackPop || 50 });
       }
     }
   }
@@ -371,7 +371,26 @@ export async function generateDecoys(
     }
   }
 
-  throw new Error(`generateDecoys: all steps exhausted for artist ${artistId}`);
+  // ─── Step 4: Last resort — related artists, zero popularity filter ───────
+  // At this point Steps 1-3 found no 3-artist cluster that fits the popularity band.
+  // Rather than throw (which makes the frontend fall back to hardcoded superstars),
+  // grab whatever related artists Spotify has and return up to 3 of them raw.
+  // Any real related artist is better than a hardcoded global superstar.
+  try {
+    const related = await getRelatedArtists(artistId, accessToken);
+    const pool = shuffle(related.filter(a => isNotReal(a.name)));
+    if (pool.length > 0) {
+      const picked = pool.slice(0, 3).map(a => a.name);
+      console.log('[generateDecoys] Step 4 (last resort, no pop filter):', picked);
+      return picked;
+    }
+  } catch (err: any) {
+    console.error('[generateDecoys] Step 4 failed:', err.message);
+  }
+
+  // Completely unable to find any decoys — return empty, frontend shows fewer choices
+  console.error(`[generateDecoys] All steps exhausted for artist ${artistId}, returning []`);
+  return [];
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
