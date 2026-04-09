@@ -53,9 +53,9 @@ export default function ClipPicker() {
     }
   };
 
-  const handleSms = () => {
+  const handleSms = async () => {
     const displayName = senderName || 'Someone';
-    openSms(displayName, vibeId, window.location.origin);
+    await openSms(displayName, vibeId, window.location.origin);
   };
 
   const handleCopy = async () => {
