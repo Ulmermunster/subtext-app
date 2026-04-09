@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { hapticTap } from '../lib/haptics';
 
 type Tab = 'send' | 'play' | 'collection';
 
@@ -19,6 +20,7 @@ export default function BottomNav({ active }: { active: Tab }) {
           return (
             <button
               key={tab.id}
+              onPointerDown={hapticTap}
               onClick={() => navigate(tab.path)}
               className={`flex-1 flex flex-col items-center justify-center py-2 mx-1 rounded-full transition-all duration-300 ease-out active:scale-[0.96] cursor-pointer ${
                 isActive
