@@ -247,16 +247,20 @@ function sortGenresBySpecificity(genres: string[]): string[] {
 }
 
 /**
- * Creative Cascade — track-search-first decoy generation.
+ * Decoy generation — three-tier cascade, no popularity filtering.
  *
- * Step 1 (Musical DNA + Era):  TRACK search by genre + decade → extracts actual artists
- *                               from real songs. Far more varied than artist search.
- * Step 2 (Related Artists):    Spotify graph — naturally era/genre appropriate.
- * Step 3 (Broad fallback):     Track search without era lock, all genres.
+ * Step 1: Genre-based track search. Pulls artists from real tracks in the same
+ *         genre (and optionally the same decade). No popularity filter — Dev Mode
+ *         returns popularity=0 for everything, making filters useless.
  *
- * Key invariant: decoys for non-mainstream artists NEVER include global megastars.
- * The popularity ceiling is asymmetric — you can go slightly above the real artist,
- * but hard-capped at 80 unless the real artist is already mainstream (pop ≥ 78).
+ * Step 2: Artist-name track search. Searches tracks that mention the artist,
+ *         harvesting featured/collaborative artists from results.
+ *
+ * Step 3: Random word searches — identical to the working /spotify/random
+ *         endpoint. Guaranteed to return results. Last resort only.
+ *
+ * Never throws. Returns whatever was found (0–3 names); frontend shows
+ * however many choices are available.
  */
 export async function generateDecoys(
   artistId: string,
@@ -267,130 +271,96 @@ export async function generateDecoys(
   const realNames = new Set(realArtistName.split(', ').map(n => n.toLowerCase().trim()));
   const isNotReal = (name: string) => !realNames.has(name.toLowerCase().trim());
 
-  // ── Musical DNA ──────────────────────────────────────────────────────────
-  let artistGenres: string[] = [];
-  let artistPopularity = 50;
-  try {
-    const data = await getArtist(artistId, accessToken);
-    artistGenres = sortGenresBySpecificity(data.genres); // specific first
-    artistPopularity = data.popularity;
-  } catch (err: any) {
-    console.error('[generateDecoys] Artist fetch failed:', err.message);
-  }
-
-  // Decade window (e.g. 2017 → 2010–2019)
-  const decadeStart = releaseYear ? Math.floor(releaseYear / 10) * 10 : null;
-  const decadeEnd   = decadeStart ? decadeStart + 9 : null;
-
-  // ── Asymmetric popularity band ───────────────────────────────────────────
-  // Lower bound: real artist − 30 (decoys can be a bit more obscure)
-  // Upper bound:
-  //   • If artist is mainstream (pop ≥ 78): no cap — decoys can be superstars too
-  //   • Otherwise: hard cap at 80, preventing Beyoncé/Drake from appearing next
-  //     to a 45-popularity indie act
-  const MAINSTREAM = 78;
-  const popMin = Math.max(0, artistPopularity - 30);
-  const popMax = artistPopularity >= MAINSTREAM ? 100 : Math.min(80, artistPopularity + 22);
-
-  // Even the "relaxed" pass keeps the superstar cap — just allows slightly wider range
-  const relaxedMin = Math.max(0, popMin - 15);
-  const relaxedMax = artistPopularity >= MAINSTREAM ? 100 : Math.min(85, popMax + 5);
-
   function shuffle<T>(arr: T[]): T[] {
-    for (let i = arr.length - 1; i > 0; i--) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+      [a[i], a[j]] = [a[j], a[i]];
     }
-    return arr;
+    return a;
   }
 
-  function pickThree(pool: ArtistStub[], relaxed = false): string[] | null {
-    const lo = relaxed ? relaxedMin : popMin;
-    const hi = relaxed ? relaxedMax : popMax;
-    const seen = new Set<string>();
-    const filtered = pool.filter(a => {
-      const key = a.name.toLowerCase().trim();
-      if (!isNotReal(a.name) || seen.has(key)) return false;
-      if (a.popularity < lo || a.popularity > hi) return false;
-      seen.add(key);
-      return true;
-    });
-    if (filtered.length < 3) return null;
-    return shuffle(filtered).slice(0, 3).map(a => a.name);
+  const seen = new Set<string>();
+  const pool: string[] = [];
+
+  function collect(names: string[]) {
+    for (const name of names) {
+      const key = name.toLowerCase().trim();
+      if (key && isNotReal(name) && !seen.has(key)) {
+        seen.add(key);
+        pool.push(name);
+      }
+    }
   }
 
-  // ─── Step 1: Musical DNA + Era — track-based search ──────────────────────
-  // Uses top 3 genres (specific-first) with era-locked and era-free track searches.
-  if (artistGenres.length > 0) {
-    try {
-      const pool: ArtistStub[] = [];
-      for (const genre of artistGenres.slice(0, 3)) {
-        if (decadeStart && decadeEnd) {
-          pool.push(...await searchArtistsByTrackSearch(genre, accessToken, [decadeStart, decadeEnd]));
+  // ── Step 1: Genre-based track search ────────────────────────────────────
+  try {
+    const artistData = await getArtist(artistId, accessToken);
+    const genres = sortGenresBySpecificity(artistData.genres).slice(0, 3);
+    if (genres.length > 0) {
+      const decadeStart = releaseYear ? Math.floor(releaseYear / 10) * 10 : null;
+      for (const genre of genres) {
+        if (decadeStart) {
+          const artists = await searchArtistsByTrackSearch(genre, accessToken, [decadeStart, decadeStart + 9]);
+          collect(artists.map(a => a.name));
         }
-        pool.push(...await searchArtistsByTrackSearch(genre, accessToken));
+        const artists = await searchArtistsByTrackSearch(genre, accessToken);
+        collect(artists.map(a => a.name));
+        if (pool.length >= 10) break;
       }
-      const picked = pickThree(pool) ?? pickThree(pool, true);
-      if (picked) {
-        console.log(`[generateDecoys] Step 1 (track DNA "${artistGenres.slice(0, 3).join(', ')}" decade ${decadeStart ?? 'any'} pop ${popMin}-${popMax}):`, picked);
-        return picked;
-      }
-      console.log('[generateDecoys] Step 1 insufficient, trying Step 2');
-    } catch (err: any) {
-      console.error('[generateDecoys] Step 1 failed:', err.message);
     }
-  }
-
-  // ─── Step 2: Related Artists ──────────────────────────────────────────────
-  try {
-    const related = await getRelatedArtists(artistId, accessToken);
-    const picked = pickThree(related) ?? pickThree(related, true);
-    if (picked) {
-      console.log(`[generateDecoys] Step 2 (related artists pop ${popMin}-${popMax}):`, picked);
-      return picked;
-    }
-    console.log('[generateDecoys] Step 2 insufficient, trying Step 3');
-  } catch (err: any) {
-    console.error('[generateDecoys] Step 2 failed:', err.message);
-  }
-
-  // ─── Step 3: Broad track search — all genres, relaxed, no era lock ───────
-  if (artistGenres.length > 0) {
-    try {
-      const pool: ArtistStub[] = [];
-      for (const genre of artistGenres) {
-        pool.push(...await searchArtistsByTrackSearch(genre, accessToken));
-      }
-      const picked = pickThree(pool, true);
-      if (picked) {
-        console.log('[generateDecoys] Step 3 (broad track fallback):', picked);
-        return picked;
-      }
-    } catch (err: any) {
-      console.error('[generateDecoys] Step 3 failed:', err.message);
-    }
-  }
-
-  // ─── Step 4: Last resort — related artists, zero popularity filter ───────
-  // At this point Steps 1-3 found no 3-artist cluster that fits the popularity band.
-  // Rather than throw (which makes the frontend fall back to hardcoded superstars),
-  // grab whatever related artists Spotify has and return up to 3 of them raw.
-  // Any real related artist is better than a hardcoded global superstar.
-  try {
-    const related = await getRelatedArtists(artistId, accessToken);
-    const pool = shuffle(related.filter(a => isNotReal(a.name)));
-    if (pool.length > 0) {
-      const picked = pool.slice(0, 3).map(a => a.name);
-      console.log('[generateDecoys] Step 4 (last resort, no pop filter):', picked);
-      return picked;
+    if (pool.length >= 3) {
+      const result = shuffle(pool).slice(0, 3);
+      console.log('[generateDecoys] Step 1 (genre):', result);
+      return result;
     }
   } catch (err: any) {
-    console.error('[generateDecoys] Step 4 failed:', err.message);
+    console.error('[generateDecoys] Step 1 (genre) failed:', err.message);
   }
 
-  // Completely unable to find any decoys — return empty, frontend shows fewer choices
-  console.error(`[generateDecoys] All steps exhausted for artist ${artistId}, returning []`);
-  return [];
+  // ── Step 2: Artist-name track search — harvest featured/collab artists ───
+  try {
+    const q = encodeURIComponent(realArtistName.split(', ')[0]);
+    const data: any = await spotifyFetch(
+      `/search?q=${q}&type=track&limit=50&market=US`,
+      accessToken,
+    );
+    for (const track of (data.tracks?.items ?? [])) {
+      collect((track.artists ?? []).map((a: any) => a.name));
+    }
+    if (pool.length >= 3) {
+      const result = shuffle(pool).slice(0, 3);
+      console.log('[generateDecoys] Step 2 (artist name search):', result);
+      return result;
+    }
+  } catch (err: any) {
+    console.error('[generateDecoys] Step 2 (artist name search) failed:', err.message);
+  }
+
+  // ── Step 3: Random word searches — same as /spotify/random, guaranteed ───
+  const WORDS = shuffle([
+    'love', 'baby', 'night', 'heart', 'time', 'dance', 'fire', 'dream',
+    'life', 'world', 'rain', 'sun', 'blue', 'home', 'star', 'soul',
+  ]);
+  try {
+    for (const word of WORDS.slice(0, 6)) {
+      const offset = Math.floor(Math.random() * 20);
+      const data: any = await spotifyFetch(
+        `/search?q=${encodeURIComponent(word)}&type=track&limit=20&offset=${offset}&market=US`,
+        accessToken,
+      );
+      for (const track of (data.tracks?.items ?? [])) {
+        collect((track.artists ?? []).map((a: any) => a.name));
+      }
+      if (pool.length >= 3) break;
+    }
+  } catch (err: any) {
+    console.error('[generateDecoys] Step 3 (random words) failed:', err.message);
+  }
+
+  const result = shuffle(pool).slice(0, 3);
+  console.log(`[generateDecoys] returning ${result.length} decoys:`, result);
+  return result;
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
