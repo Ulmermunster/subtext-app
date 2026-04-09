@@ -146,50 +146,53 @@ export async function getTrack(trackId: string, accessToken: string) {
   return spotifyFetch(`/tracks/${trackId}?market=US`, accessToken);
 }
 
-export async function getRelatedArtists(artistId: string, accessToken: string): Promise<string[]> {
-  if (!artistId) {
-    console.error('[getRelatedArtists] artistId is empty/undefined!');
-    return [];
-  }
+type ArtistStub = { name: string; popularity: number };
+
+export async function getRelatedArtists(artistId: string, accessToken: string): Promise<ArtistStub[]> {
+  if (!artistId) return [];
   const cacheKey = `related:${artistId}`;
-  const cached = cacheGet<string[]>(cacheKey);
-  if (cached) {
-    console.log('[getRelatedArtists] CACHE HIT for', artistId, '(' + cached.length + ' artists)');
-    return cached;
-  }
-  console.log('[getRelatedArtists] CACHE MISS, fetching from Spotify for', artistId);
+  const cached = cacheGet<ArtistStub[]>(cacheKey);
+  if (cached) return cached;
   const data: any = await spotifyFetch(`/artists/${artistId}/related-artists`, accessToken);
-  const artists = data.artists || [];
-  console.log('[getRelatedArtists] Spotify returned', artists.length, 'related artists');
-  const sorted = artists
-    .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
-    .slice(0, 10);
-  const result = sorted.map((a: any) => a.name);
+  const artists: any[] = data.artists || [];
+  // Return all related artists — no popularity sort so we don't always get superstars
+  const result: ArtistStub[] = artists.map((a: any) => ({ name: a.name, popularity: a.popularity ?? 50 }));
   cacheSet(cacheKey, result);
   return result;
 }
 
-export async function getArtist(artistId: string, accessToken: string): Promise<{ name: string; genres: string[] }> {
+export async function getArtist(artistId: string, accessToken: string): Promise<{ name: string; genres: string[]; popularity: number }> {
   const cacheKey = `artist:${artistId}`;
-  const cached = cacheGet<{ name: string; genres: string[] }>(cacheKey);
+  const cached = cacheGet<{ name: string; genres: string[]; popularity: number }>(cacheKey);
   if (cached) return cached;
   const data: any = await spotifyFetch(`/artists/${artistId}`, accessToken);
-  const result = { name: data.name, genres: data.genres || [] };
+  const result = { name: data.name, genres: data.genres || [], popularity: data.popularity ?? 50 };
   cacheSet(cacheKey, result);
   return result;
 }
 
-export async function searchArtistsByGenre(genre: string, accessToken: string, limit = 10): Promise<string[]> {
-  const cacheKey = `genre:${genre}:${limit}`;
-  const cached = cacheGet<string[]>(cacheKey);
+/** Search artists by genre tag, with optional era filter via Spotify's year: operator. */
+export async function searchArtistsByGenre(
+  genre: string,
+  accessToken: string,
+  limit = 10,
+  yearRange?: [number, number],
+): Promise<ArtistStub[]> {
+  const yearClause = yearRange ? ` year:${yearRange[0]}-${yearRange[1]}` : '';
+  const cacheKey = `genre:${genre}:${limit}:${yearRange?.[0] ?? 'any'}`;
+  const cached = cacheGet<ArtistStub[]>(cacheKey);
   if (cached) return cached;
   const safeLimit = Math.min(limit, 10);
+  const q = encodeURIComponent(`genre:"${genre}"${yearClause}`);
   const data: any = await spotifyFetch(
-    `/search?q=${encodeURIComponent(`genre:"${genre}"`)}&type=artist&limit=${safeLimit}&market=US`,
+    `/search?q=${q}&type=artist&limit=${safeLimit}&market=US`,
     accessToken
   );
-  const result = (data.artists?.items || []).map((a: any) => a.name);
-  cacheSet(cacheKey, result);
+  const result: ArtistStub[] = (data.artists?.items || []).map((a: any) => ({
+    name: a.name,
+    popularity: a.popularity ?? 50,
+  }));
+  cacheSet(cacheKey, result, yearRange ? 6 * 60 * 60 * 1000 : CACHE_TTL); // shorter TTL for era searches
   return result;
 }
 
@@ -207,13 +210,13 @@ export async function getArtistTopTracks(artistId: string, accessToken: string):
 }
 
 /**
- * Multi-tier decoy generation cascade.
- * Guarantees 3 contextually relevant decoy artist names.
+ * Creative Cascade — 3-step decoy generation.
  *
- * Tier 1: Spotify Related Artists API
- * Tier 2: Genre-based artist search
- * Tier 3: Featured/collaborator artists from top tracks
- * Tier 4: Era-matched defaults based on release year
+ * Step 1 (Musical DNA):   Genre-tag search with era filter so decoys share the sonic vibe.
+ * Step 2 (Related):       Spotify's related-artists graph, popularity-band filtered.
+ * Step 3 (Broad Genre):   Same genres, relaxed constraints, no era restriction.
+ *
+ * Never uses hardcoded artist lists. Always Spotify-derived.
  */
 export async function generateDecoys(
   artistId: string,
@@ -221,81 +224,114 @@ export async function generateDecoys(
   releaseYear: number | null,
   accessToken: string
 ): Promise<string[]> {
-  const realNames = new Set(realArtistName.split(', ').map(n => n.toLowerCase()));
-  const isNotReal = (name: string) => !realNames.has(name.toLowerCase());
+  // Exclusion set handles "Artist A, Artist B" multi-artist track names
+  const realNames = new Set(realArtistName.split(', ').map(n => n.toLowerCase().trim()));
+  const isNotReal = (name: string) => !realNames.has(name.toLowerCase().trim());
 
-  function pickThree(pool: string[]): string[] | null {
-    const filtered = pool.filter(isNotReal);
-    // Dedupe
-    const unique = [...new Set(filtered.map(n => n.trim()))];
-    if (unique.length >= 3) {
-      // Fisher-Yates shuffle
-      for (let i = unique.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [unique[i], unique[j]] = [unique[j], unique[i]];
-      }
-      return unique.slice(0, 3);
-    }
-    return null;
+  // --- Fetch Musical DNA: genres + popularity of the real artist ---
+  let artistGenres: string[] = [];
+  let artistPopularity = 50;
+  try {
+    const data = await getArtist(artistId, accessToken);
+    artistGenres = data.genres;
+    artistPopularity = data.popularity;
+  } catch (err: any) {
+    console.error('[generateDecoys] Artist fetch failed:', err.message);
   }
 
-  // --- Tier 1: Related Artists ---
+  // Decade window for era filtering  (e.g. 2017 → 2010–2019)
+  const decadeStart = releaseYear ? Math.floor(releaseYear / 10) * 10 : null;
+  const decadeEnd   = decadeStart ? decadeStart + 9 : null;
+
+  // Popularity band: only include artists within ±35 of the real artist's fame.
+  // This prevents obscure indie acts from being paired with Billie Eilish.
+  const popMin = Math.max(0,   artistPopularity - 35);
+  const popMax = Math.min(100, artistPopularity + 35);
+
+  /** Pick 3 unique, valid names from a pool of ArtistStub objects. */
+  function pickThree(pool: ArtistStub[], strict = true): string[] | null {
+    const seen = new Set<string>();
+    const filtered = pool.filter(a => {
+      const key = a.name.toLowerCase().trim();
+      if (!isNotReal(a.name)) return false;
+      if (seen.has(key)) return false;
+      if (strict && (a.popularity < popMin || a.popularity > popMax)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (filtered.length < 3) return null;
+    // Fisher-Yates shuffle — randomise so we don't always get index-0 artists
+    for (let i = filtered.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+    }
+    return filtered.slice(0, 3).map(a => a.name);
+  }
+
+  // ─── Step 1: Musical DNA — genre search with era filter ───────────────────
+  if (artistGenres.length > 0) {
+    try {
+      const pool: ArtistStub[] = [];
+      for (const genre of artistGenres.slice(0, 2)) {
+        // Era-locked first (same decade): gives the most contextually accurate decoys
+        if (decadeStart && decadeEnd) {
+          const era = await searchArtistsByGenre(genre, accessToken, 10, [decadeStart, decadeEnd]);
+          pool.push(...era);
+        }
+        // Broad same-genre search as a supplement
+        const broad = await searchArtistsByGenre(genre, accessToken, 10);
+        pool.push(...broad);
+      }
+      const picked = pickThree(pool);
+      if (picked) {
+        console.log(`[generateDecoys] Step 1 (genre DNA: "${artistGenres.slice(0, 2).join(', ')}", decade: ${decadeStart ?? 'any'}):`, picked);
+        return picked;
+      }
+      console.log('[generateDecoys] Step 1 insufficient, trying Step 2');
+    } catch (err: any) {
+      console.error('[generateDecoys] Step 1 failed:', err.message);
+    }
+  }
+
+  // ─── Step 2: Related Artists — popularity-band filtered ───────────────────
   try {
     const related = await getRelatedArtists(artistId, accessToken);
     const picked = pickThree(related);
     if (picked) {
-      console.log('[generateDecoys] Tier 1 (related artists):', picked);
+      console.log('[generateDecoys] Step 2 (related artists, pop band:', popMin + '-' + popMax + '):', picked);
       return picked;
     }
-    console.log('[generateDecoys] Tier 1 insufficient (' + related.length + ' results), trying Tier 2');
+    // Retry with relaxed popularity (wider band) before moving on
+    const relaxed = pickThree(related, false);
+    if (relaxed) {
+      console.log('[generateDecoys] Step 2 (related artists, relaxed pop):', relaxed);
+      return relaxed;
+    }
+    console.log('[generateDecoys] Step 2 insufficient, trying Step 3');
   } catch (err: any) {
-    console.error('[generateDecoys] Tier 1 failed:', err.status || '', err.message);
+    console.error('[generateDecoys] Step 2 failed:', err.message);
   }
 
-  // --- Tier 2: Genre Search ---
-  try {
-    const artist = await getArtist(artistId, accessToken);
-    if (artist.genres.length > 0) {
-      // Try first two genres for better coverage
-      const allResults: string[] = [];
-      for (const genre of artist.genres.slice(0, 2)) {
+  // ─── Step 3: Broad genre search — all genres, no era or popularity constraint ─
+  if (artistGenres.length > 0) {
+    try {
+      const pool: ArtistStub[] = [];
+      for (const genre of artistGenres) {
         const results = await searchArtistsByGenre(genre, accessToken, 10);
-        allResults.push(...results);
+        pool.push(...results);
       }
-      const picked = pickThree(allResults);
+      const picked = pickThree(pool, false); // relaxed — just exclude real artist
       if (picked) {
-        console.log('[generateDecoys] Tier 2 (genre search "' + artist.genres.slice(0, 2).join(', ') + '"):', picked);
+        console.log('[generateDecoys] Step 3 (broad genre, relaxed):', picked);
         return picked;
       }
-      console.log('[generateDecoys] Tier 2 insufficient, trying Tier 3');
-    } else {
-      console.log('[generateDecoys] Tier 2 skipped (no genres), trying Tier 3');
+    } catch (err: any) {
+      console.error('[generateDecoys] Step 3 failed:', err.message);
     }
-  } catch (err: any) {
-    console.error('[generateDecoys] Tier 2 failed:', err.status || '', err.message);
   }
 
-  // --- Tier 3: Featured Artists from Top Tracks ---
-  try {
-    const topTracks = await getArtistTopTracks(artistId, accessToken);
-    const featured: string[] = [];
-    for (const track of topTracks) {
-      for (const name of track.artists) {
-        if (isNotReal(name)) featured.push(name);
-      }
-    }
-    const picked = pickThree(featured);
-    if (picked) {
-      console.log('[generateDecoys] Tier 3 (featured artists):', picked);
-      return picked;
-    }
-    console.log('[generateDecoys] Tier 3 insufficient (' + featured.length + ' unique), trying Tier 4');
-  } catch (err: any) {
-    console.error('[generateDecoys] Tier 3 failed:', err.status || '', err.message);
-  }
-
-  // All Spotify tiers exhausted — let the caller decide how to handle it
-  throw new Error(`generateDecoys: all Spotify tiers exhausted for artist ${artistId}`);
+  // All Spotify steps exhausted — caller logs and returns []
+  throw new Error(`generateDecoys: all steps exhausted for artist ${artistId}`);
 }
 
 export async function getArtistAlbums(artistId: string, accessToken: string) {
